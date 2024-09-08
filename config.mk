@@ -1,0 +1,3 @@
+WINDOWING=-DLF_X11
+ADDITIONAL_FLAGS=-DLF_RUNARA
+RUNARA_LIBS=-lrunara -lharfbuzz -lfreetype -lm -lGL

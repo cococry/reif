@@ -1,0 +1,88 @@
+#pragma once
+
+#include <cglm/cglm.h>
+#include <cglm/struct.h>
+
+#include "color.h"
+#include "util.h"
+
+typedef struct lf_ui_state_t lf_ui_state_t;
+typedef struct lf_widget_t lf_widget_t;
+
+typedef struct {
+  float width, height;
+} lf_text_dimension_t;
+
+typedef void (*lf_render_rect_func_t)(
+      void*, vec2s, vec2s, 
+      lf_color_t, lf_color_t, 
+      float, float);
+
+typedef lf_text_dimension_t (*lf_render_text_func_t)(
+      void*, const char*,
+      void*,
+      vec2s, lf_color_t);
+
+typedef lf_text_dimension_t (*lf_render_get_text_dimension_func_t)(
+      void*,
+      const char*, void*); 
+
+typedef void (*lf_render_clear_color_func_t)(lf_color_t); 
+
+typedef void (*lf_render_clear_color_area_func_t)(lf_color_t, lf_container_t, uint32_t); 
+
+typedef void (*lf_render_begin_func_t)(void*); 
+
+typedef void (*lf_render_end_func_t)(void*); 
+
+typedef void (*lf_render_resize_display_func_t)(
+    void*, uint32_t, uint32_t);
+
+#ifdef LF_RUNARA
+
+void lf_rn_render_rect(
+    void* render_state, 
+    vec2s pos,
+    vec2s size, 
+    lf_color_t color, 
+    lf_color_t border_color,
+    float border_width,
+    float corner_radius);
+
+lf_text_dimension_t lf_rn_render_text(
+      void* render_state,
+      const char* text,
+      void* font,
+      vec2s pos,
+      lf_color_t color);
+
+lf_text_dimension_t lf_rn_render_get_text_dimension(
+      void* render_state,
+      const char* text,
+      void* font); 
+
+void lf_rn_render_clear_color(
+    lf_color_t color);
+
+void lf_rn_render_clear_color_area(
+    lf_color_t color, 
+    lf_container_t area,
+    uint32_t render_height);
+
+void lf_rn_render_begin(
+    void* render_state);
+
+void lf_rn_render_end(
+    void* render_state);
+
+void lf_rn_render_resize_display(
+    void* render_state,
+    uint32_t width,
+    uint32_t height
+    );
+
+#endif 
+
+void lf_render_container(
+    lf_ui_state_t* ui, 
+    lf_widget_t* widget);
