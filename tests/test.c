@@ -7,12 +7,15 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
+lf_font_t big_font, small_font;
 void on_button_click(lf_ui_state_t* ui, lf_widget_t* widget) {
   (void)widget;
   (void)ui;
   lf_button_t* button = (lf_button_t*)widget;
-  printf("Pressed button with label '%s'\n", button->label);
-  lf_widget_set_padding(ui, widget, 20);
+  if(button->font == small_font)
+    lf_button_set_font(ui, button, big_font);
+  else
+    lf_button_set_font(ui, button, small_font);
 }
 
 int main(void) {
@@ -27,16 +30,18 @@ int main(void) {
   lf_div_t* div = lf_div_create(ui, ui->root);
   div->base.props.color = LF_NO_COLOR;
 
-  lf_button_t* button = lf_button_create_with_label(ui, (lf_widget_t*)div, "Нажмите на меня (Russian)");
-  lf_button_create_with_label(ui, (lf_widget_t*)div, "Click Me (English)");
+  lf_button_t* button = lf_button_create_with_label(ui, (lf_widget_t*)div, "Button");
 
   button->on_click = on_button_click; 
-  lf_widget_set_padding(ui, &button->base, 10);
+  button->base.props.padding_left =  20;
+  button->base.props.padding_right=  20;
   lf_widget_set_padding(ui, &div->base, 10);
+  
+  big_font = lf_load_font_from_name(ui, "Inter", 40); 
+  small_font = lf_load_font_from_name(ui, "Inter", 24); 
 
+  lf_button_set_font(ui, button, small_font);
   bool running = true;
-  ui->root->props.color = lf_color_from_hex(0x282828);
-  div->base.props.color = lf_color_from_hex(0x999999);
 
   while(running) {
     running = lf_ui_core_next_event(ui);

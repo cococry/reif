@@ -39,7 +39,7 @@ _button_render(
         .x = widget->container.pos.x + widget->props.padding_left, 
         .y =  widget->container.pos.y + widget->props.padding_top 
       },
-      lf_color_from_hex(0xffffff)
+      button->text_color
     );
   }
 }
@@ -87,6 +87,7 @@ lf_button_create(
   );
   button->label = NULL;
   button->font = ui->font_p;
+  button->text_color = ui->theme->text_color;
 
   lf_widget_add_child(parent, (lf_widget_t*)button);
 
@@ -98,9 +99,11 @@ lf_button_create_with_label(
   lf_ui_state_t* ui,
   lf_widget_t* parent,
   const char* label) {
+
   lf_button_t* button = (lf_button_t*)malloc(sizeof(lf_button_t));
   button->label = strdup(label);
   button->font = ui->font_p;
+  button->text_color = ui->theme->text_color;
 
   lf_text_dimension_t text_dimension = ui->render_get_text_dimension(
     ui->render_state,
@@ -129,6 +132,10 @@ void lf_button_set_font(
     lf_ui_state_t* ui, 
     lf_button_t* button,
     void* font) {
+
+  if(button->font == font) {
+    return;
+  }
   button->font = font;
   lf_text_dimension_t text_dimension = ui->render_get_text_dimension(
     ui->render_state,
@@ -138,6 +145,6 @@ void lf_button_set_font(
   button->base.container.size.x = text_dimension.width;
   button->base.container.size.y = text_dimension.height;
   
-  button->base.container.size = 
-    LF_WIDGET_SIZE_V2(&button->base);
+  lf_widget_reshape(ui, &button->base);
+  lf_ui_core_rerender(ui);
 }

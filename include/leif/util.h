@@ -6,6 +6,8 @@
 
 #include "color.h"
 
+typedef struct lf_ui_state_t lf_ui_state_t;
+
 #define LF_SCALE_CONTAINER(width, height) ((lf_container_t){  \
   .pos = (vec2s){.x = 0, .y = 0},                             \
   .size = (vec2s){.x = (width), .y = (height)}}) 
@@ -47,3 +49,7 @@ typedef struct {
 bool lf_point_intersets_container(vec2s point, lf_container_t container);
 
 float lf_container_area(lf_container_t container);
+
+lf_font_t lf_load_font(lf_ui_state_t* ui, const char* filepath, uint32_t size);
+
+lf_font_t lf_load_font_from_name(lf_ui_state_t* ui, const char* font_name, uint32_t size);

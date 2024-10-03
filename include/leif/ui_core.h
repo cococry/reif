@@ -11,12 +11,16 @@ typedef struct lf_widget_t lf_widget_t;
 typedef struct {
   lf_widget_props_t div_props;
   lf_widget_props_t button_props;
+  lf_color_t text_color, background_color;
 } lf_theme_t;
 
 struct lf_ui_state_t {
   lf_window_t* win;
 
   lf_widget_t* root;
+
+  lf_widget_t** dirty_widgets;
+  uint32_t num_dirty;
 
   lf_render_rect_func_t render_rect;
   lf_render_text_func_t render_text;
@@ -68,13 +72,11 @@ lf_ui_state_t* lf_ui_core_init_ex(
 
 bool lf_ui_core_next_event(lf_ui_state_t* ui);
 
-bool lf_ui_core_needs_rerender(
-    lf_ui_state_t* ui,
-    lf_widget_t* widget); 
+void lf_ui_core_rerender(lf_ui_state_t* ui);
 
-lf_container_t lf_ui_core_get_max_render_area(
-    lf_ui_state_t* ui,
-    lf_widget_t* widget); 
+void lf_ui_core_make_dirty(lf_ui_state_t* ui, lf_widget_t* widget);
+
+void lf_ui_core_rerender_dirty(lf_ui_state_t* ui);
 
 void lf_ui_core_begin_render(
     lf_ui_state_t* ui, 
@@ -85,3 +87,4 @@ void lf_ui_core_begin_render(
 void lf_ui_core_end_render(lf_ui_state_t* ui);
 
 void lf_ui_core_terminate(lf_ui_state_t* ui);
+

@@ -4,9 +4,15 @@
 #include "../include/leif/util.h"
 
 #include <GL/gl.h>
+#include <cglm/types-struct.h>
 #include <time.h>
 
+#define RENDER_OVERDRAW_FACTOR 8
+#define MAX_DIRTY_WIDGETS 10
+
 static void init_fonts(lf_ui_state_t* ui);
+
+static void render_widget_and_submit(lf_ui_state_t* ui, lf_widget_t* widget);
 
 void 
 init_fonts(lf_ui_state_t* ui) {
@@ -19,6 +25,23 @@ init_fonts(lf_ui_state_t* ui) {
   ui->font_h5 = ui->render_font_create(ui->render_state, fontfile, 13);
   ui->font_h6 = ui->render_font_create(ui->render_state, fontfile, 10);
   ui->font_p = ui->render_font_create(ui->render_state,  fontfile, 16);
+}
+
+void 
+render_widget_and_submit(lf_ui_state_t* ui, lf_widget_t* widget) {
+  lf_ui_core_begin_render(
+    ui, 
+    ui->win->width, ui->win->height, 
+    (lf_container_t){
+      .pos = (vec2s){
+        .x = widget->container.pos.x - widget->props.corner_radius,
+        .y = widget->container.pos.y - widget->props.corner_radius},
+      .size = (vec2s){
+        .x = lf_widget_width(widget) + RENDER_OVERDRAW_FACTOR, 
+        .y = lf_widget_height(widget) + RENDER_OVERDRAW_FACTOR, 
+      }}); 
+  lf_widget_render(ui, widget);
+  lf_ui_core_end_render(ui);
 }
 
 #ifdef LF_RUNARA
@@ -65,12 +88,17 @@ lf_ui_core_init(lf_window_t* win) {
 
   init_fonts(state);
 
+  state->dirty_widgets = malloc(sizeof(lf_widget_t*) * MAX_DIRTY_WIDGETS);
+  state->num_dirty = 0;
+
   state->root = lf_widget_create(
     WidgetTypeUndefined,
     LF_SCALE_CONTAINER(win->width, win->height),
     (lf_widget_props_t){0},
     NULL, NULL, NULL);
  
+  state->root->props.color = state->theme->background_color;
+
   return state;
 }
 
@@ -79,40 +107,31 @@ lf_ui_core_default_theme(void) {
   lf_theme_t* theme = malloc(sizeof(*theme));
 
   const uint32_t global_padding = 10;
-  const lf_color_t global_color = (lf_color_t){
-    .r = 25,
-    .g = 25,
-    .b = 25,
-    .a = 255
-  };
-  const lf_color_t lighter_color = (lf_color_t){
-    .r = 100,
-    .g = 100,
-    .b = 100,
-    .a = 255
-  };
+
 
   theme->div_props = (lf_widget_props_t){
-    .color = global_color,
+    .color = lf_color_from_hex(0xffffff),
     .padding_left = global_padding,
     .padding_right = global_padding,
     .padding_top = global_padding,
     .padding_bottom = global_padding,
     .corner_radius = 0.0, 
-    .border_width = 0.0,
+    .border_width = 3.0,
     .border_color = lf_color_from_hex(0),
   };
 
   theme->button_props = (lf_widget_props_t){
-    .color = lighter_color, 
+    .color = lf_color_from_hex(0xffffff),
     .padding_left = global_padding,
     .padding_right = global_padding,
     .padding_top = global_padding,
     .padding_bottom = global_padding,
-    .corner_radius = 0.0, 
-    .border_width = 1.0,
-    .border_color = lf_color_from_hex(0xffffff)
+    .corner_radius = 3.0, 
+    .border_width = 0.0,
   };
+
+  theme->text_color = lf_color_from_hex(0x333333);
+  theme->background_color = lf_color_from_hex(0xeeeeee);
 
   return theme;
 }
@@ -163,6 +182,9 @@ lf_ui_core_init_ex(
 
   state->theme = lf_ui_core_default_theme();
 
+  state->dirty_widgets = malloc(sizeof(lf_widget_t*) * MAX_DIRTY_WIDGETS);
+  state->num_dirty = 0;
+
   init_fonts(state);
 
   state->root = lf_widget_create(
@@ -170,6 +192,8 @@ lf_ui_core_init_ex(
     LF_SCALE_CONTAINER(win->win, win->height),
     (lf_widget_props_t){0},
     NULL, NULL, NULL);
+
+  state->root->props.color = state->theme->background_color;
 
   return state;
 }
@@ -192,11 +216,8 @@ lf_ui_core_next_event(lf_ui_state_t* ui) {
 
     // Begin a rendering context 
     lf_ui_core_begin_render(
-      ui, ev.width, ev.height, 
-      (lf_container_t){
-        .pos = (vec2s){.x = 0, .y = 0},
-        .size = (vec2s){.x = ev.width, .y = ev.height}
-      });
+      ui, ev.width, ev.height,
+      ui->root->container);
 
     // Rerender the root widget if needs rerender
     if(ui->root->needs_rerender) {
@@ -211,67 +232,40 @@ lf_ui_core_next_event(lf_ui_state_t* ui) {
   lf_widget_handle_event(ui, ui->root, ev);
 
   // Check if there is some widget to be rerendered
-  if(lf_ui_core_needs_rerender(ui, ui->root) && ev.type != WinEventExpose) {
-    // Get the area of the largest widget that needs to be rerenderd, so 
-    // that we only clear the color buffer where the widget actually is. 
-    // This let's us rerender on the widgets that changed instead of the entire 
-    // tree.
-    lf_container_t max_area = lf_ui_core_get_max_render_area(ui, ui->root);
-    lf_ui_core_begin_render(ui, ui->win->width, ui->win->height, max_area); 
-    for(uint32_t i = 0; i < ui->root->num_childs; i++) {
-      lf_widget_t* child = ui->root->childs[i];
-      if(!child->needs_rerender) continue;
-      lf_widget_render(ui, child); 
+  if(ui->root->needs_rerender && ev.type != WinEventExpose) {
+    render_widget_and_submit(ui, ui->root);
+      ui->root->needs_rerender = false;
+  } else if(ev.type != WinEventExpose) {
+    if(ui->num_dirty < MAX_DIRTY_WIDGETS && ui->num_dirty != 0) { 
+      lf_ui_core_rerender_dirty(ui);
+    } else {
+      render_widget_and_submit(ui, ui->root);
+      ui->root->needs_rerender = false;
     }
-    lf_ui_core_end_render(ui);
   }
   return true;
 }
 
-bool
-lf_ui_core_needs_rerender(
-  lf_ui_state_t* ui, 
-  lf_widget_t* widget) {
-  if(widget->needs_rerender) {
-    return true;
+
+void lf_ui_core_rerender_dirty(lf_ui_state_t* ui) {
+  for(uint32_t i = 0; i < ui->num_dirty; i++) {
+    render_widget_and_submit(ui, ui->dirty_widgets[i]);
   }
-  for(uint32_t i = 0; i < widget->num_childs; i++) {
-    if(lf_ui_core_needs_rerender(ui, widget->childs[i])) return true;
-  }
-  return false;
+  memset(ui->dirty_widgets, 0, ui->num_dirty * sizeof(lf_widget_t*));
+  ui->num_dirty = 0;
 }
 
-lf_container_t 
-lf_ui_core_get_max_render_area(
-    lf_ui_state_t* ui,
-    lf_widget_t* widget) {
-  vec2s min_pos = widget->container.pos;
-  vec2s max_size = widget->container.size;
-  if(!widget->needs_rerender) {
-    min_pos = (vec2s){.x = ui->win->width, .y = ui->win->height};
-    max_size = (vec2s){.x =  0, .y = 0};
-  }
-  for (uint32_t i = 0; i < widget->num_childs; i++) {
-    lf_widget_t* child = widget->childs[i];  
-    if(!child->needs_rerender) continue;
+void 
+lf_ui_core_rerender(lf_ui_state_t* ui) {
+  ui->root->needs_rerender = true;
+}
 
-    lf_container_t child_max = lf_ui_core_get_max_render_area(ui, child);
-
-    if(child_max.pos.x < min_pos.x ||
-       child_max.pos.y < min_pos.y) {
-      min_pos = child_max.pos;
-    }
-
-    if(lf_container_area(child_max) > 
-      lf_container_area(LF_SCALE_CONTAINER(max_size.x, max_size.y))) {
-      max_size = child_max.size;
-    }
-  }
-  return (lf_container_t){
-    .pos = min_pos,
-    .size = max_size
-  };
-} 
+void 
+lf_ui_core_make_dirty(lf_ui_state_t* ui, lf_widget_t* widget) {
+  if(ui->num_dirty + 1 > MAX_DIRTY_WIDGETS) return;
+  ui->dirty_widgets[ui->num_dirty++] = widget;
+  widget->needs_rerender = true;
+}
 
 void 
 lf_ui_core_begin_render(
@@ -308,5 +302,6 @@ lf_ui_core_terminate(lf_ui_state_t* ui) {
   rn_terminate((RnState*)ui->render_state);
 #endif
   
+  free(ui->dirty_widgets);
   free(ui);
 }

@@ -4,6 +4,11 @@
 #include <stdint.h>
 
 #define LF_NO_COLOR ((lf_color_t){0,0,0,0})
+#define LF_BLACK ((lf_color_t){0,0,0,255})
+#define LF_WHITE ((lf_color_t){0,0,0,255})
+#define LF_RED ((lf_color_t){255,0,0,255})
+#define LF_GREEN ((lf_color_t){0,255,0,255})
+#define LF_BLUE ((lf_color_t){0,0,255,255})
 
 typedef struct {
   uint8_t r, g, b, a;

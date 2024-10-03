@@ -48,6 +48,7 @@ lf_widget_render(lf_ui_state_t* ui,  lf_widget_t* widget) {
   if(widget->render) {
     widget->render(ui, widget);
     widget->rendered = true;
+    widget->needs_rerender = false;
   }    
   
   for(uint32_t i = 0; i < widget->num_childs; i++) {
@@ -176,22 +177,13 @@ void lf_widget_reshape(
   lf_ui_state_t* ui, 
   lf_widget_t* widget) {
   lf_widget_shape(ui, widget);
-
   lf_widget_t* parent = widget->parent;
-  lf_widget_t* last_parent = NULL;
   while(parent != NULL) {
     if(parent->shape) {
       lf_widget_shape(ui, parent);
     }
-    if(!parent->parent)
-      last_parent = parent;
-
     parent = parent->parent;
   }
-  widget->needs_rerender = true;
-  if(!last_parent) return;
-  if(last_parent->render && last_parent->parent != NULL)
-    last_parent->needs_rerender = true;
 }
 
 void lf_widget_set_padding(
@@ -199,8 +191,20 @@ void lf_widget_set_padding(
     lf_widget_t* widget,
     float padding) {
 
+  if(
+    widget->props.padding_top == padding && 
+    widget->props.padding_bottom == padding && 
+    widget->props.padding_left == padding && 
+    widget->props.padding_right == padding) return;
+
   for(lf_widget_property_t prop = WidgetPropertyPaddingLeft; prop <= WidgetPropertyPaddingBottom; prop++) {
     lf_set_widget_property(widget, prop, (void*)&padding);
   }
   lf_widget_reshape(ui, widget);
+  lf_ui_core_rerender(ui);
+}
+
+void 
+lf_widget_rerender(lf_widget_t* widget) {
+  widget->needs_rerender = true;
 }

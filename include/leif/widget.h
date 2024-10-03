@@ -92,3 +92,5 @@ void lf_widget_set_padding(
     lf_ui_state_t* ui,
     lf_widget_t* widget,
     float padding);
+
+void lf_widget_rerender(lf_widget_t* widget);

@@ -14,6 +14,8 @@ typedef struct {
   void* font;
 
   lf_button_on_click_func_t on_click;
+
+  lf_color_t text_color;
 } lf_button_t;
 
 lf_button_t* lf_button_create(
