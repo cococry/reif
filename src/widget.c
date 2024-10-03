@@ -1,109 +1,94 @@
 #include "../include/leif/widget.h"
 #include "../include/leif/ui_core.h"
-
+#include "../include/leif/widgets/div.h"
 #include <string.h>
+#include <time.h>
 
 #define INIT_CHILD_CAP 4
 
-lf_widget_t* 
-lf_widget_create_from_parent(
-    lf_widget_t* parent, 
-    lf_container_t container) {
 
-  lf_widget_t* widget = malloc(sizeof(*widget));
-  if(!widget) {
-    fprintf(stderr,
-            "leif: failed to create widget from parent (memory allocation failed).\n");
-    return NULL;
-  }
+static void widget_resize_children(lf_widget_t* widget, uint32_t new_cap);
 
-  if(parent) {
-    widget->container = (lf_container_t){
-      .pos = (vec2s){
-        .x = parent->container.pos.x + container.pos.x,
-        .y = parent->container.pos.y + container.pos.y,
-      },
-      .size = container.size
-    };
-  } else {
-    widget->container = container;
-  }
-
-  widget->childs = malloc(sizeof(lf_widget_t*) * INIT_CHILD_CAP);
-  widget->cap_childs = INIT_CHILD_CAP;
-  widget->num_childs = 0;
-
-  widget->parent = parent;
-  widget->visible = true;
-
-  if(parent) {
-    if(lf_widget_add_child(parent, widget) != 0) {
-      fprintf(stderr, 
-              "leif: failed to add child (container) to parent widget.\n");
-      return NULL;
-    }
-  }
-
-  return widget;
+void 
+widget_resize_children(lf_widget_t* widget, uint32_t new_cap) {
+    widget->childs = (lf_widget_t**)realloc(widget->childs, new_cap * sizeof(lf_widget_t*));
+    widget->cap_childs = new_cap;
 }
 
-lf_widget_t*
-lf_widget_container_create(
-  lf_widget_t* parent,
-  lf_container_t container, 
-  lf_color_t color) {
+lf_widget_t* 
+lf_widget_create(
+  lf_widget_type_t type,
+  lf_container_t fallback_container,
+  lf_widget_props_t props,
+  lf_widget_render_cb render,
+  lf_widget_handle_event_cb handle_event,
+  lf_widget_shape_cb shape) {
+  lf_widget_t* widget = (lf_widget_t*)malloc(sizeof(lf_widget_t));
 
-  lf_widget_t* widget = lf_widget_create_from_parent(parent, container);
-  if(!widget) {
-    return NULL;
-  }
+  widget->parent = NULL;
+  widget->childs = NULL;
+  widget->cap_childs = 0;
+  widget->num_childs = 0;
+  widget->visible = true;
+  widget->needs_rerender = true;
+  widget->rendered = false;
 
-  widget->props = (lf_widget_props_t){
-    .color = color
-  };
-  widget->render = lf_render_container; 
-  widget->handle_event = NULL; 
+  widget->type = type;
+  widget->container = fallback_container;
+  widget->props = props;
+  widget->render = render;
+  widget->handle_event = handle_event;
+  widget->shape = shape;
 
   return widget;
 }
 
 void
 lf_widget_render(lf_ui_state_t* ui,  lf_widget_t* widget) {
-  if(widget->render)
+  if(widget->render) {
     widget->render(ui, widget);
+    widget->rendered = true;
+  }    
   
   for(uint32_t i = 0; i < widget->num_childs; i++) {
-    lf_widget_t* child = widget->childs[i];
-    if(child->render)
-      lf_widget_render(ui, child);
+    lf_widget_render(ui, widget->childs[i]);
   }
 }
 
-void
+void lf_widget_shape(
+    lf_ui_state_t* ui,
+    lf_widget_t* widget) {
+  if(widget->shape) {
+    widget->shape(ui, widget);
+  }    
+  
+  for(uint32_t i = 0; i < widget->num_childs; i++) {
+    lf_widget_shape(ui, widget->childs[i]);
+  }
+}
+
+bool
 lf_widget_handle_event(lf_ui_state_t* ui, lf_widget_t* widget, lf_event_t event) {
   if(widget->handle_event)
     widget->handle_event(ui, widget, event);
   
   for(uint32_t i = 0; i < widget->num_childs; i++) {
-    lf_widget_t* child = widget->childs[i];
-    if(child->handle_event)
-      lf_widget_handle_event(ui, child, event);
+    if(lf_widget_handle_event(ui, widget->childs[i], event)) break;
   }
+
+  return widget->handle_event;
 }
 
 int32_t
 lf_widget_add_child(lf_widget_t* parent, lf_widget_t* child) {
   if(!parent || !child) return 1;
 
-  if(parent->num_childs == parent->cap_childs) {
-    parent->cap_childs *= 2;
-    parent->childs = realloc(parent->childs, sizeof(lf_widget_t*) * parent->cap_childs);
-    if(!parent->childs) {
-      return 1;
-    }
+  if(parent->num_childs >= parent->cap_childs) {
+    uint32_t new_cap = parent->cap_childs == 0 ? 2 : parent->cap_childs * 2;
+    widget_resize_children(parent, new_cap);
   }
   parent->childs[parent->num_childs++] = child;
-
+  child->parent = parent;
   return 0;
 }
 
@@ -132,11 +117,7 @@ lf_widget_destroy(lf_widget_t* widget) {
     }
     widget->parent->num_childs--;
   }
-  memset(widget, 0, sizeof(*widget));
-
   free(widget->childs);
-  free(widget);
-  widget = NULL;
 
   return 0;
 }
@@ -144,7 +125,7 @@ lf_widget_destroy(lf_widget_t* widget) {
 float 
 lf_widget_width(lf_widget_t* widget) {
   return widget->container.size.x + 
-  widget->props.padding_left       +
+  widget->props.padding_left      +
   widget->props.padding_right;
 }
 
@@ -153,4 +134,73 @@ lf_widget_height(lf_widget_t* widget) {
   return widget->container.size.y + 
   widget->props.padding_top       +
   widget->props.padding_bottom;
+}
+
+void 
+lf_set_widget_property(
+  lf_widget_t* widget, 
+  lf_widget_property_t prop, 
+  void* data) {
+
+  switch(prop) {
+    case WidgetPropertyColor:
+      widget->props.color = *(lf_color_t*)data;
+      break;
+    case WidgetPropertyBorderColor:
+      widget->props.border_color = *(lf_color_t*)data;
+      break;
+    case WidgetPropertyPaddingLeft:
+      widget->props.padding_left = *(float*)data;
+      break;
+    case WidgetPropertyPaddingRight:
+      widget->props.padding_right = *(float*)data;
+      break;
+    case WidgetPropertyPaddingTop:
+      widget->props.padding_top = *(float*)data;
+      break;
+    case WidgetPropertyPaddingBottom:
+      widget->props.padding_bottom = *(float*)data;
+      break;
+    case WidgetPropertyCornerRadius:
+      widget->props.corner_radius = *(float*)data;
+      break;
+    case WidgetPropertyBorderWidth:
+      widget->props.border_width = *(float*)data;
+      break;
+    default:
+      break;
+  }
+}
+
+void lf_widget_reshape(
+  lf_ui_state_t* ui, 
+  lf_widget_t* widget) {
+  lf_widget_shape(ui, widget);
+
+  lf_widget_t* parent = widget->parent;
+  lf_widget_t* last_parent = NULL;
+  while(parent != NULL) {
+    if(parent->shape) {
+      lf_widget_shape(ui, parent);
+    }
+    if(!parent->parent)
+      last_parent = parent;
+
+    parent = parent->parent;
+  }
+  widget->needs_rerender = true;
+  if(!last_parent) return;
+  if(last_parent->render && last_parent->parent != NULL)
+    last_parent->needs_rerender = true;
+}
+
+void lf_widget_set_padding(
+    lf_ui_state_t* ui,
+    lf_widget_t* widget,
+    float padding) {
+
+  for(lf_widget_property_t prop = WidgetPropertyPaddingLeft; prop <= WidgetPropertyPaddingBottom; prop++) {
+    lf_set_widget_property(widget, prop, (void*)&padding);
+  }
+  lf_widget_reshape(ui, widget);
 }

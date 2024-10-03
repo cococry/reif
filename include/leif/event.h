@@ -9,7 +9,8 @@ typedef enum {
   WinEventKeyPress,
   WinEventKeyRelease,
   WinEventMouseMove,
-  WinEventMousePress
+  WinEventMousePress,
+  WinEventMouseRelease
 } lf_event_type_t;
 
 typedef struct {

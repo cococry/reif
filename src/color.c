@@ -17,3 +17,13 @@ lf_color_to_hex(lf_color_t color) {
   ((uint32_t)color.b << 8)  | 
   ((uint32_t)color.a << 0);
 }
+
+
+vec4s 
+lf_color_to_zto(lf_color_t color) {
+  return (vec4s){
+    .r = color.r / 255.0f, 
+    .g = color.g / 255.0f, 
+    .b = color.b / 255.0f, 
+    .a = color.a / 255.0f};
+}

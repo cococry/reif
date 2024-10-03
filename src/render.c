@@ -1,6 +1,4 @@
 #include "../include/leif/render.h"
-#include "../include/leif/widget.h"
-#include "../include/leif/ui_core.h"
 
 #ifdef LF_RUNARA
 #include <runara/runara.h>
@@ -24,8 +22,8 @@ lf_rn_render_rect(
 
   rn_rect_render_ex(
     (RnState*)render_state, pos,
-    size, 
-    _lf_color_to_rn(color), 
+    size, 0.0f,
+    _lf_color_to_rn(color),
     _lf_color_to_rn(border_color),
     border_width, corner_radius);
 }
@@ -33,7 +31,7 @@ lf_rn_render_rect(
 lf_text_dimension_t lf_rn_render_text(
   void* render_state,
   const char* text,
-  void* font,
+  lf_font_t* font,
   vec2s pos,
   lf_color_t color) {
 
@@ -53,7 +51,7 @@ lf_text_dimension_t lf_rn_render_text(
 lf_text_dimension_t lf_rn_render_get_text_dimension(
   void* render_state,
   const char* text,
-  void* font) {
+  lf_font_t* font) {
 
   RnTextProps props = rn_text_props(
     (RnState*)render_state, 
@@ -78,15 +76,10 @@ lf_rn_render_clear_color_area(
   lf_color_t color, 
   lf_container_t area, 
   uint32_t render_height) {
-
-  glEnable(GL_SCISSOR_TEST);
-
   int32_t y_upper_left = render_height - (area.pos.y + area.size.y);
-
+  glEnable(GL_SCISSOR_TEST);
   glScissor(area.pos.x, y_upper_left, area.size.x, area.size.y);
-  
   lf_rn_render_clear_color(color);
-    
   glDisable(GL_SCISSOR_TEST);
 }
 
@@ -111,16 +104,31 @@ lf_rn_render_resize_display(
   rn_resize_display((RnState*)render_state, width, height);
 }
 
-#endif 
+lf_font_t*
+lf_rn_render_font_create(
+    void* render_state, 
+    const char* filepath, 
+    uint32_t size) {
 
-void 
-lf_render_container(lf_ui_state_t* ui, lf_widget_t* widget) {
-  if(!ui->render_rect) {
-    fprintf(stderr, "leif: no rectangle rendering function given.\n");
-    return;
-  }
-  ui->render_rect(ui->render_state, 
-                  widget->container.pos, 
-                  widget->container.size, 
-                  widget->props.color, LF_NO_COLOR, 0.0f, 0.0f);
+  return (lf_font_t*)rn_load_font((RnState*)render_state, filepath, size);
 }
+
+void
+lf_rn_render_font_destroy(
+    void* render_state, 
+    lf_font_t* font) {
+
+  rn_free_font((RnState*)render_state, (RnFont*)font);
+}
+
+const char*
+lf_rn_render_font_file_from_name(const char* name) {
+  return rn_font_file_from_name(name);
+}
+
+uint32_t 
+lf_rn_render_font_get_size(lf_font_t* font) {
+  return ((RnFont*)font)->size;
+}
+
+#endif 

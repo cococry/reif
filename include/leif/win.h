@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cglm/types-struct.h>
 #ifdef LF_X11
 #include "platform/win_x11.h"
 #else
@@ -8,11 +9,11 @@
 
 #include "event.h"
 
-int32_t lf_windowing_init();
+int32_t lf_windowing_init(void);
 
-int32_t lf_windowing_terminate();
+int32_t lf_windowing_terminate(void);
 
-Display* lf_win_get_display();
+Display* lf_win_get_display(void);
 
 lf_window_t* lf_win_create(uint32_t width, uint32_t height);
 
@@ -27,3 +28,5 @@ lf_event_t lf_win_next_event(lf_window_t* win);
 void lf_win_destroy(lf_window_t* win);
 
 uint32_t lf_win_get_keycode(KeySym keysym);
+
+vec2s lf_win_cursor_pos(lf_window_t* win);

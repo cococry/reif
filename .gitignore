@@ -1,0 +1,3 @@
+*.json
+lib/
+tests/bin

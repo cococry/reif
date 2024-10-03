@@ -20,12 +20,12 @@ typedef void (*lf_render_rect_func_t)(
 
 typedef lf_text_dimension_t (*lf_render_text_func_t)(
       void*, const char*,
-      void*,
+      lf_font_t*, 
       vec2s, lf_color_t);
 
 typedef lf_text_dimension_t (*lf_render_get_text_dimension_func_t)(
       void*,
-      const char*, void*); 
+      const char*, lf_font_t*); 
 
 typedef void (*lf_render_clear_color_func_t)(lf_color_t); 
 
@@ -37,6 +37,17 @@ typedef void (*lf_render_end_func_t)(void*);
 
 typedef void (*lf_render_resize_display_func_t)(
     void*, uint32_t, uint32_t);
+
+typedef lf_font_t* (*lf_render_font_create)(
+    void*, const char*, uint32_t);
+
+typedef void (*lf_render_font_destroy)(
+    void*, lf_font_t*);
+
+typedef const char* (*lf_render_font_file_from_name)(
+    const char*);
+
+typedef uint32_t (*lf_render_font_get_size)(lf_font_t* font);
 
 #ifdef LF_RUNARA
 
@@ -52,14 +63,14 @@ void lf_rn_render_rect(
 lf_text_dimension_t lf_rn_render_text(
       void* render_state,
       const char* text,
-      void* font,
+      lf_font_t* font,
       vec2s pos,
       lf_color_t color);
 
 lf_text_dimension_t lf_rn_render_get_text_dimension(
       void* render_state,
       const char* text,
-      void* font); 
+      lf_font_t* font); 
 
 void lf_rn_render_clear_color(
     lf_color_t color);
@@ -80,6 +91,19 @@ void lf_rn_render_resize_display(
     uint32_t width,
     uint32_t height
     );
+
+lf_font_t* lf_rn_render_font_create(
+    void* render_state, 
+    const char* filepath, 
+    uint32_t size);
+
+void lf_rn_render_font_destroy(
+    void* render_state, 
+    lf_font_t* font);
+
+const char* lf_rn_render_font_file_from_name(const char* name); 
+
+uint32_t lf_rn_render_font_get_size(lf_font_t* font); 
 
 #endif 
 

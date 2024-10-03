@@ -1,3 +1,4 @@
+#include <X11/X.h>
 #ifdef LF_X11
 #include "../../include/leif/win.h"
 
@@ -18,10 +19,10 @@ typedef struct {
 
 static state_t s;
 
-static int32_t create_gl_context();
+static int32_t create_gl_context(void);
 
 int32_t
-create_gl_context() {
+create_gl_context(void) {
   int screen = DefaultScreen(s.dsp);
 
   // Choose the appropriate visual
@@ -43,7 +44,7 @@ create_gl_context() {
 }
 
 int32_t
-lf_windowing_init() {
+lf_windowing_init(void) {
   s.dsp = XOpenDisplay(NULL);
 
   if(!s.dsp) {
@@ -72,7 +73,7 @@ lf_windowing_init() {
 }
 
 int32_t
-lf_windowing_terminate() {
+lf_windowing_terminate(void) {
   if(XCloseDisplay(s.dsp) != 0) {
     fprintf(stderr, "txt: closing X display failed.");
     return 1;
@@ -81,7 +82,7 @@ lf_windowing_terminate() {
   return 0;
 }
 
-Display* win_get_display() {
+Display* win_get_display(void) {
   return s.dsp;
 }
 
@@ -104,8 +105,7 @@ lf_win_create(uint32_t width, uint32_t height) {
                KeyPressMask | 
                KeyReleaseMask |
                ButtonPressMask | 
-               ButtonReleaseMask |
-               PointerMotionMask); 
+               ButtonReleaseMask); 
 
   XSetWMProtocols(s.dsp, win->win, &s.wm_delete_win, 1);
 
@@ -207,8 +207,8 @@ lf_win_next_event(lf_window_t* win) {
     return ev;
   }
   
-  if(xev.type == ButtonPress) {
-    ev.type = WinEventMousePress;
+  if(xev.type == ButtonPress || xev.type == ButtonRelease) {
+    ev.type = (xev.type == ButtonRelease) ? WinEventMouseRelease : WinEventMousePress;
     ev.button = xev.xbutton.button;
     ev.x = xev.xbutton.x;
     ev.y = xev.xbutton.y;
@@ -237,6 +237,21 @@ lf_win_destroy(lf_window_t* win) {
 uint32_t 
 lf_win_get_keycode(KeySym keysym) {
   return XKeysymToKeycode(s.dsp, keysym); 
+}
+
+vec2s 
+lf_win_cursor_pos(lf_window_t* win) {
+  int root_x, root_y;           
+  int win_x, win_y; 
+  unsigned int mask;
+  Window window_returned;
+  Window child_window_returned;
+
+  XQueryPointer(s.dsp, win->win, &window_returned, &child_window_returned,
+                &root_x, &root_y, &win_x, &win_y, &mask);
+
+  vec2s cursor_pos = {.x = (float)win_x, .y = (float)win_y};
+  return cursor_pos;
 }
 #else
 #error "Invalid windowing system specified (valid windowing systems: LF_X11)"
