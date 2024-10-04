@@ -98,6 +98,7 @@ lf_ui_core_init(lf_window_t* win) {
     NULL, NULL, NULL);
  
   state->root->props.color = state->theme->background_color;
+  state->root->layout_type = LayoutVertical;
 
   return state;
 }
@@ -107,6 +108,7 @@ lf_ui_core_default_theme(void) {
   lf_theme_t* theme = malloc(sizeof(*theme));
 
   const uint32_t global_padding = 10;
+  const uint32_t global_margin = 10;
 
 
   theme->div_props = (lf_widget_props_t){
@@ -115,6 +117,10 @@ lf_ui_core_default_theme(void) {
     .padding_right = global_padding,
     .padding_top = global_padding,
     .padding_bottom = global_padding,
+    .margin_left = 0,
+    .margin_right = 0,
+    .margin_top = 0,
+    .margin_bottom = 0,
     .corner_radius = 0.0, 
     .border_width = 3.0,
     .border_color = lf_color_from_hex(0),
@@ -126,6 +132,10 @@ lf_ui_core_default_theme(void) {
     .padding_right = global_padding,
     .padding_top = global_padding,
     .padding_bottom = global_padding,
+    .margin_left = global_margin,
+    .margin_right = global_margin,
+    .margin_top = global_margin,
+    .margin_bottom = global_margin,
     .corner_radius = 3.0, 
     .border_width = 0.0,
   };
@@ -194,6 +204,7 @@ lf_ui_core_init_ex(
     NULL, NULL, NULL);
 
   state->root->props.color = state->theme->background_color;
+  state->root->layout_type = LayoutVertical;
 
   return state;
 }
@@ -208,23 +219,18 @@ lf_ui_core_next_event(lf_ui_state_t* ui) {
   }
 
   if(ev.type == WinEventExpose) {
-    ///Make the root widget rerender if the window size changed 
-    if(ui->root->container.size.x != ev.width || 
-      ui->root->container.size.y != ev.height) {
-      ui->root->needs_rerender = true;
-    }
-
+    ui->root->needs_rerender = true;
+    ui->root->container = LF_SCALE_CONTAINER(ev.width, ev.height);
     // Begin a rendering context 
     lf_ui_core_begin_render(
       ui, ev.width, ev.height,
       ui->root->container);
 
     // Rerender the root widget if needs rerender
-    if(ui->root->needs_rerender) {
-      lf_widget_shape(ui, ui->root);
-      lf_widget_render(ui, ui->root);
-      ui->root->needs_rerender = false;
-    }
+    lf_widget_shape(ui, ui->root);
+    lf_widget_render(ui, ui->root);
+    ui->root->needs_rerender = false;
+
     // End the rendering context
     lf_ui_core_end_render(ui);
   }
@@ -233,12 +239,14 @@ lf_ui_core_next_event(lf_ui_state_t* ui) {
 
   // Check if there is some widget to be rerendered
   if(ui->root->needs_rerender && ev.type != WinEventExpose) {
+    lf_widget_shape(ui, ui->root);
     render_widget_and_submit(ui, ui->root);
-      ui->root->needs_rerender = false;
+    ui->root->needs_rerender = false;
   } else if(ev.type != WinEventExpose) {
     if(ui->num_dirty < MAX_DIRTY_WIDGETS && ui->num_dirty != 0) { 
       lf_ui_core_rerender_dirty(ui);
-    } else {
+    } else if(ui->num_dirty != 0){
+      lf_widget_shape(ui, ui->root);
       render_widget_and_submit(ui, ui->root);
       ui->root->needs_rerender = false;
     }

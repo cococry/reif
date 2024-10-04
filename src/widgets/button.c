@@ -1,6 +1,7 @@
 #include "../include/leif/widgets/button.h"
 #include "../include/leif/ui_core.h"
 #include <leif/event.h>
+#include <leif/layout.h>
 #include <leif/render.h>
 #include <leif/util.h>
 #include <string.h>
@@ -22,6 +23,10 @@ _button_render(
   if(!widget) return;
 
   lf_button_t* button = (lf_button_t*)widget;
+  if(!lf_container_intersets_container(
+    widget->container, ui->root->container)) {
+    return;
+  }
 
   ui->render_rect(
     ui->render_state, 
@@ -51,6 +56,11 @@ _button_handle_event(
   lf_event_t event) {
   (void)ui;
   if(event.type != WinEventMouseRelease) return;
+  if(event.button != 1) return;
+  if(!lf_container_intersets_container(
+    widget->container, ui->root->container)) {
+    return;
+  }
 
   vec2s mouse = (vec2s){
     .x = (float)event.x, 
@@ -88,6 +98,7 @@ lf_button_create(
   button->label = NULL;
   button->font = ui->font_p;
   button->text_color = ui->theme->text_color;
+  button->base.layout_type = LayoutNone;
 
   lf_widget_add_child(parent, (lf_widget_t*)button);
 
@@ -99,10 +110,24 @@ lf_button_create_with_label(
   lf_ui_state_t* ui,
   lf_widget_t* parent,
   const char* label) {
+  return lf_button_create_with_label_ex(
+    ui,
+    parent,
+    label,
+    ui->font_p);
+}
+
+
+lf_button_t* 
+lf_button_create_with_label_ex(
+    lf_ui_state_t* ui,
+    lf_widget_t* parent,
+    const char* label,
+    lf_font_t font) {
 
   lf_button_t* button = (lf_button_t*)malloc(sizeof(lf_button_t));
   button->label = strdup(label);
-  button->font = ui->font_p;
+  button->font = font; 
   button->text_color = ui->theme->text_color;
 
   lf_text_dimension_t text_dimension = ui->render_get_text_dimension(
@@ -122,11 +147,12 @@ lf_button_create_with_label(
     _button_handle_event,
     NULL
   );
+  button->base.layout_type = LayoutNone;
   
   lf_widget_add_child(parent, (lf_widget_t*)button);
 
   return button;
- }
+}
 
 void lf_button_set_font(
     lf_ui_state_t* ui, 
@@ -144,7 +170,4 @@ void lf_button_set_font(
   );
   button->base.container.size.x = text_dimension.width;
   button->base.container.size.y = text_dimension.height;
-  
-  lf_widget_reshape(ui, &button->base);
-  lf_ui_core_rerender(ui);
 }

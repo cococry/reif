@@ -27,6 +27,12 @@ lf_button_t* lf_button_create_with_label(
     lf_widget_t* parent,
     const char* label);
 
+lf_button_t* lf_button_create_with_label_ex(
+    lf_ui_state_t* ui,
+    lf_widget_t* parent,
+    const char* label,
+    lf_font_t font);
+
 void lf_button_set_font(
     lf_ui_state_t* ui, 
     lf_button_t* button,

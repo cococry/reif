@@ -1,11 +1,9 @@
 #include "../include/leif/widget.h"
 #include "../include/leif/ui_core.h"
-#include "../include/leif/widgets/div.h"
 #include <string.h>
 #include <time.h>
 
 #define INIT_CHILD_CAP 4
-
 
 static void widget_resize_children(lf_widget_t* widget, uint32_t new_cap);
 
@@ -68,16 +66,14 @@ void lf_widget_shape(
   }
 }
 
-bool
+void
 lf_widget_handle_event(lf_ui_state_t* ui, lf_widget_t* widget, lf_event_t event) {
   if(widget->handle_event)
     widget->handle_event(ui, widget, event);
   
   for(uint32_t i = 0; i < widget->num_childs; i++) {
-    if(lf_widget_handle_event(ui, widget->childs[i], event)) break;
+    lf_widget_handle_event(ui, widget->childs[i], event);
   }
-
-  return widget->handle_event;
 }
 
 int32_t
@@ -190,7 +186,6 @@ void lf_widget_set_padding(
     lf_ui_state_t* ui,
     lf_widget_t* widget,
     float padding) {
-
   if(
     widget->props.padding_top == padding && 
     widget->props.padding_bottom == padding && 
@@ -200,11 +195,16 @@ void lf_widget_set_padding(
   for(lf_widget_property_t prop = WidgetPropertyPaddingLeft; prop <= WidgetPropertyPaddingBottom; prop++) {
     lf_set_widget_property(widget, prop, (void*)&padding);
   }
-  lf_widget_reshape(ui, widget);
   lf_ui_core_rerender(ui);
 }
 
 void 
 lf_widget_rerender(lf_widget_t* widget) {
   widget->needs_rerender = true;
+}
+
+void 
+lf_widget_change_layout(lf_ui_state_t* ui, lf_widget_t* widget, lf_layout_type_t layout) {
+  widget->layout_type = layout;
+  lf_ui_core_rerender(ui);
 }

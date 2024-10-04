@@ -4,7 +4,7 @@
 
 #include "event.h"
 #include "util.h"
-#include "color.h"
+#include "layout.h"
 
 typedef enum {
   WidgetTypeUndefined = 0,
@@ -46,6 +46,7 @@ struct lf_widget_t {
   bool visible, needs_rerender, rendered;
 
   lf_widget_type_t type;
+  lf_layout_type_t layout_type;
 };
 
 lf_widget_t* lf_widget_create(
@@ -64,7 +65,7 @@ void lf_widget_render(
     lf_ui_state_t* ui, 
     lf_widget_t* widget);
 
-bool lf_widget_handle_event(
+void lf_widget_handle_event(
     lf_ui_state_t* ui,
     lf_widget_t* widget,
     lf_event_t event);
@@ -94,3 +95,5 @@ void lf_widget_set_padding(
     float padding);
 
 void lf_widget_rerender(lf_widget_t* widget);
+
+void lf_widget_change_layout(lf_ui_state_t* ui, lf_widget_t* widget, lf_layout_type_t layout);

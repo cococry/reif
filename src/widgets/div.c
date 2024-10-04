@@ -1,5 +1,6 @@
 #include "../include/leif/widgets/div.h"
 #include "../include/leif/util.h"
+#include "../include/leif/layout.h"
 
 static void _div_render(lf_ui_state_t* ui, lf_widget_t* widget);
 
@@ -24,21 +25,12 @@ _div_shape(lf_ui_state_t* ui, lf_widget_t* widget) {
 
   lf_div_t* div = (lf_div_t*)widget;
 
-  if(div->layout == LayoutVetical) {
-    float y_before = widget->container.pos.y + widget->props.padding_top;
-    float y_ptr = y_before;
-    for(uint32_t i = 0; i < widget->num_childs; i++) {
-      lf_widget_t* child = widget->childs[i];
-
-      child->container.pos.x = widget->container.pos.x + widget->props.padding_left;
-      child->container.pos.y = y_ptr;
-
-      y_ptr += lf_widget_height(child);
-    }
-
-    widget->container.size.y = y_ptr - y_before;
+  if(div->base.layout_type == LayoutVertical) {
+    lf_layout_vertical(widget);
   }
-
+  if(div->base.layout_type == LayoutHorizontal) {
+    lf_layout_horizontal(widget);
+  }
 }
 
 lf_div_t* 
@@ -60,7 +52,7 @@ lf_div_create(
 
   lf_widget_add_child(parent, (lf_widget_t*)div);
 
-  div->layout = LayoutVetical;
+  div->base.layout_type = LayoutVertical;
 
   return div;
 }
@@ -73,12 +65,3 @@ lf_div_destroy(lf_div_t* div) {
 
   free(div);
 }
-
-void lf_div_set_layout(
-    lf_div_t* div, 
-    lf_div_layout_type_t layout) {
-
-  if(!div) return;
-  div->layout = layout;
-}
-

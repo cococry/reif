@@ -40,6 +40,8 @@ typedef struct {
   float padding_left, padding_right,
         padding_top, padding_bottom;
 
+  float margin_left, margin_right, 
+        margin_top, margin_bottom;
 
   float corner_radius, border_width;
 
@@ -47,6 +49,8 @@ typedef struct {
 } lf_widget_props_t;
 
 bool lf_point_intersets_container(vec2s point, lf_container_t container);
+
+bool lf_container_intersets_container(lf_container_t a, lf_container_t b);
 
 float lf_container_area(lf_container_t container);
 

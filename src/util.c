@@ -9,6 +9,16 @@ lf_point_intersets_container(vec2s point, lf_container_t container) {
             point.y <= container.pos.y + container.size.y);
  }
 
+bool 
+lf_container_intersets_container(lf_container_t a, lf_container_t b) {
+    if (a.pos.x + a.size.x <= b.pos.x ||  
+        b.pos.x + b.size.x <= a.pos.x || 
+        a.pos.y + a.size.y <= b.pos.y ||
+        b.pos.y + b.size.y <= a.pos.y) {  
+        return false;
+    }
+    return true;
+}
 float 
 lf_container_area(lf_container_t container) {
   return container.size.x * container.size.y;
