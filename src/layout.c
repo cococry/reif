@@ -1,22 +1,27 @@
 #include "../include/leif/layout.h"
 #include "../include/leif/widget.h"
+#include "../include/leif/util.h"
 
 
-void 
+void
 lf_layout_vertical(lf_widget_t* widget) {
-  float y_before = widget->container.pos.y + widget->props.padding_top;
-  float y_ptr = y_before;
+  if(widget->parent)
+    widget->container.size.x = widget->parent->container.size.x;
+
+  float y_before = widget->container.pos.y;
+
+  float y_ptr = y_before + widget->props.padding_top;
   for(uint32_t i = 0; i < widget->num_childs; i++) {
     lf_widget_t* child = widget->childs[i];
 
-    child->container.pos.x = widget->container.pos.x + widget->props.padding_left + 
-      child->props.margin_left;
-    child->container.pos.y = y_ptr + child->props.margin_top;
+    child->container.pos.x = widget->container.pos.x + widget->props.padding_left + child->props.margin_left;
+    child->container.pos.y = y_ptr + child->props.margin_top; 
 
-    y_ptr += lf_widget_height(child) + child->props.margin_bottom;
+    y_ptr += lf_widget_height(child) + child->props.margin_bottom + child->props.margin_top; 
   }
 
-  widget->container.size.y = y_ptr - y_before;
+  float height = y_ptr - y_before - widget->props.padding_top;
+  widget->container.size.y = height; 
 }
 
 void 

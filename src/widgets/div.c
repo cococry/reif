@@ -20,17 +20,7 @@ _div_shape(lf_ui_state_t* ui, lf_widget_t* widget) {
   (void)ui;
   if(!widget) return;
   if(widget->type != WidgetTypeDiv) return;
-
-  widget->container = widget->parent->container;
-
-  lf_div_t* div = (lf_div_t*)widget;
-
-  if(div->base.layout_type == LayoutVertical) {
-    lf_layout_vertical(widget);
-  }
-  if(div->base.layout_type == LayoutHorizontal) {
-    lf_layout_horizontal(widget);
-  }
+  lf_widget_apply_layout(widget);
 }
 
 lf_div_t* 
@@ -42,9 +32,7 @@ lf_div_create(
 
   div->base = *lf_widget_create(
     WidgetTypeDiv,
-    LF_SCALE_CONTAINER(
-      parent->container.size.x,
-      parent->container.size.y), 
+    LF_SCALE_CONTAINER(parent->container.size.x,0),
     ui->theme->div_props,
     _div_render,
     NULL,

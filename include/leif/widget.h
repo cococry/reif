@@ -8,6 +8,7 @@
 
 typedef enum {
   WidgetTypeUndefined = 0,
+  WidgetTypeRoot,
   WidgetTypeDiv,
   WidgetTypeButton,
 } lf_widget_type_t;
@@ -80,20 +81,12 @@ float lf_widget_height(lf_widget_t* widget);
 
 int32_t lf_widget_destroy(lf_widget_t* widget);
 
-void lf_widget_set_property(
-    lf_widget_t* widget, 
-    lf_widget_property_t prop, 
-    void* data);
-
-void lf_widget_reshape(
-    lf_ui_state_t* ui, 
-    lf_widget_t* widget);
-
 void lf_widget_set_padding(
-    lf_ui_state_t* ui,
     lf_widget_t* widget,
     float padding);
 
 void lf_widget_rerender(lf_widget_t* widget);
 
 void lf_widget_change_layout(lf_ui_state_t* ui, lf_widget_t* widget, lf_layout_type_t layout);
+
+void lf_widget_apply_layout(lf_widget_t* widget);

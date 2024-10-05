@@ -1,5 +1,6 @@
 #include "../include/leif/widget.h"
 #include "../include/leif/ui_core.h"
+#include "../include/leif/layout.h"
 #include <string.h>
 #include <time.h>
 
@@ -57,13 +58,12 @@ lf_widget_render(lf_ui_state_t* ui,  lf_widget_t* widget) {
 void lf_widget_shape(
     lf_ui_state_t* ui,
     lf_widget_t* widget) {
+  for(uint32_t i = widget->num_childs; i > 0; i--) {
+    lf_widget_shape(ui, widget->childs[i - 1]);
+  }
   if(widget->shape) {
     widget->shape(ui, widget);
   }    
-  
-  for(uint32_t i = 0; i < widget->num_childs; i++) {
-    lf_widget_shape(ui, widget->childs[i]);
-  }
 }
 
 void
@@ -133,57 +133,7 @@ lf_widget_height(lf_widget_t* widget) {
   widget->props.padding_bottom;
 }
 
-void 
-lf_set_widget_property(
-  lf_widget_t* widget, 
-  lf_widget_property_t prop, 
-  void* data) {
-
-  switch(prop) {
-    case WidgetPropertyColor:
-      widget->props.color = *(lf_color_t*)data;
-      break;
-    case WidgetPropertyBorderColor:
-      widget->props.border_color = *(lf_color_t*)data;
-      break;
-    case WidgetPropertyPaddingLeft:
-      widget->props.padding_left = *(float*)data;
-      break;
-    case WidgetPropertyPaddingRight:
-      widget->props.padding_right = *(float*)data;
-      break;
-    case WidgetPropertyPaddingTop:
-      widget->props.padding_top = *(float*)data;
-      break;
-    case WidgetPropertyPaddingBottom:
-      widget->props.padding_bottom = *(float*)data;
-      break;
-    case WidgetPropertyCornerRadius:
-      widget->props.corner_radius = *(float*)data;
-      break;
-    case WidgetPropertyBorderWidth:
-      widget->props.border_width = *(float*)data;
-      break;
-    default:
-      break;
-  }
-}
-
-void lf_widget_reshape(
-  lf_ui_state_t* ui, 
-  lf_widget_t* widget) {
-  lf_widget_shape(ui, widget);
-  lf_widget_t* parent = widget->parent;
-  while(parent != NULL) {
-    if(parent->shape) {
-      lf_widget_shape(ui, parent);
-    }
-    parent = parent->parent;
-  }
-}
-
 void lf_widget_set_padding(
-    lf_ui_state_t* ui,
     lf_widget_t* widget,
     float padding) {
   if(
@@ -192,10 +142,10 @@ void lf_widget_set_padding(
     widget->props.padding_left == padding && 
     widget->props.padding_right == padding) return;
 
-  for(lf_widget_property_t prop = WidgetPropertyPaddingLeft; prop <= WidgetPropertyPaddingBottom; prop++) {
-    lf_set_widget_property(widget, prop, (void*)&padding);
-  }
-  lf_ui_core_rerender(ui);
+  widget->props.padding_top = padding;
+  widget->props.padding_bottom = padding;
+  widget->props.padding_left = padding; 
+  widget->props.padding_right = padding;
 }
 
 void 
@@ -207,4 +157,14 @@ void
 lf_widget_change_layout(lf_ui_state_t* ui, lf_widget_t* widget, lf_layout_type_t layout) {
   widget->layout_type = layout;
   lf_ui_core_rerender(ui);
+}
+
+void 
+lf_widget_apply_layout(lf_widget_t* widget) {
+  if(widget->layout_type == LayoutVertical) {
+    lf_layout_vertical(widget);
+  }
+  if(widget->layout_type == LayoutHorizontal) {
+    lf_layout_horizontal(widget);
+  }
 }

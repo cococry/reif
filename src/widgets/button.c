@@ -6,7 +6,6 @@
 #include <leif/util.h>
 #include <string.h>
 
-
 static void _button_render(
   lf_ui_state_t* ui,
   lf_widget_t* widget);
@@ -31,7 +30,7 @@ _button_render(
   ui->render_rect(
     ui->render_state, 
     widget->container.pos, 
-      LF_WIDGET_SIZE_V2(widget),
+    LF_WIDGET_SIZE_V2(widget),
     widget->props.color, widget->props.border_color,
     widget->props.border_width, widget->props.corner_radius);
 
@@ -98,8 +97,9 @@ lf_button_create(
   button->label = NULL;
   button->font = ui->font_p;
   button->text_color = ui->theme->text_color;
-  button->base.layout_type = LayoutNone;
+  button->on_click = NULL;
 
+  button->base.layout_type = LayoutNone;
   lf_widget_add_child(parent, (lf_widget_t*)button);
 
   return button;
@@ -128,6 +128,7 @@ lf_button_create_with_label_ex(
   lf_button_t* button = (lf_button_t*)malloc(sizeof(lf_button_t));
   button->label = strdup(label);
   button->font = font; 
+  button->on_click = NULL;
   button->text_color = ui->theme->text_color;
 
   lf_text_dimension_t text_dimension = ui->render_get_text_dimension(

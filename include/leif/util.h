@@ -8,6 +8,9 @@
 
 typedef struct lf_ui_state_t lf_ui_state_t;
 
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
+#define MIN(a, b) (a) < (b) ? (a) : (b)
+
 #define LF_SCALE_CONTAINER(width, height) ((lf_container_t){  \
   .pos = (vec2s){.x = 0, .y = 0},                             \
   .size = (vec2s){.x = (width), .y = (height)}}) 
@@ -21,19 +24,6 @@ typedef struct {
 } lf_container_t;
 
 typedef void* lf_font_t;
-
-typedef enum {
-  WidgetPropertyColor = 0,
-
-  WidgetPropertyPaddingLeft,
-  WidgetPropertyPaddingRight,
-  WidgetPropertyPaddingTop,
-  WidgetPropertyPaddingBottom,
-
-  WidgetPropertyCornerRadius,
-  WidgetPropertyBorderWidth,
-  WidgetPropertyBorderColor,
-} lf_widget_property_t;
 
 typedef struct {
   lf_color_t color;
