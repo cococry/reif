@@ -119,8 +119,8 @@ lf_theme_t*
 lf_ui_core_default_theme(void) {
   lf_theme_t* theme = malloc(sizeof(*theme));
 
-  const uint32_t global_padding = 0;
-  const uint32_t global_margin = 0;
+  const uint32_t global_padding = 10;
+  const uint32_t global_margin = 5;
 
 
   theme->div_props = (lf_widget_props_t){
@@ -133,23 +133,24 @@ lf_ui_core_default_theme(void) {
     .margin_right = 0,
     .margin_top = 0,
     .margin_bottom = 0,
-    .corner_radius = 0.0, 
-    .border_width = 0.0,
-    .border_color = lf_color_from_hex(0),
+    .corner_radius = 0.0f, 
+    .border_width = 0.0f, 
+    .border_color = LF_NO_COLOR, 
   };
 
   theme->button_props = (lf_widget_props_t){
     .color = lf_color_from_hex(0xffffff),
-    .padding_left = global_padding,
-    .padding_right = global_padding,
+    .padding_left = global_padding * 2,
+    .padding_right = global_padding * 2,
     .padding_top = global_padding,
     .padding_bottom = global_padding,
     .margin_left = global_margin,
     .margin_right = global_margin,
     .margin_top = global_margin,
     .margin_bottom = global_margin,
-    .corner_radius = 0.0, 
-    .border_width = 0.0,
+    .corner_radius = 3.0f, 
+    .border_width = 0.0f, 
+    .border_color = LF_NO_COLOR,
   };
 
   theme->text_color = lf_color_from_hex(0x333333);
@@ -234,10 +235,10 @@ lf_ui_core_next_event(lf_ui_state_t* ui) {
       lf_container_t clear_area = LF_SCALE_CONTAINER(
         ev.width,
         ev.height); 
+    ui->root->container = clear_area;
     lf_widget_shape(ui, ui->root);
     render_widget_and_submit(ui, ui->root, clear_area);
     ui->root->needs_rerender = false;
-    printf("EXPOSE: %i, %i\n", ev.width, ev.height);
   }
 
   lf_widget_handle_event(ui, ui->root, ev);
@@ -276,7 +277,8 @@ void lf_ui_core_rerender_dirty(lf_ui_state_t* ui) {
 
 void 
 lf_ui_core_rerender(lf_ui_state_t* ui) {
-  lf_widget_shape(ui, ui->root); 
+  if(ui->root->rendered)
+    lf_widget_shape(ui, ui->root); 
   ui->root->needs_rerender = true;
 }
 

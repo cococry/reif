@@ -27,3 +27,13 @@ lf_color_to_zto(lf_color_t color) {
     .b = color.b / 255.0f, 
     .a = color.a / 255.0f};
 }
+
+bool 
+lf_color_equal(lf_color_t a, lf_color_t b) {
+  return (
+    a.r == b.r &&
+    a.g == b.g &&
+    a.b == b.b &&
+    a.a == b.a 
+  );
+}

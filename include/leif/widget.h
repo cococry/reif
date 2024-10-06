@@ -82,8 +82,34 @@ float lf_widget_height(lf_widget_t* widget);
 int32_t lf_widget_destroy(lf_widget_t* widget);
 
 void lf_widget_set_padding(
+    lf_ui_state_t* ui,
     lf_widget_t* widget,
     float padding);
+
+void lf_widget_set_margin(
+    lf_ui_state_t* ui,
+    lf_widget_t* widget,
+    float margin);
+
+void lf_widget_set_color(
+    lf_ui_state_t* ui,
+    lf_widget_t* widget,
+    lf_color_t color);
+
+void lf_widget_set_border_color(
+    lf_ui_state_t* ui,
+    lf_widget_t* widget,
+    lf_color_t color);
+
+void lf_widget_set_border_width(
+    lf_ui_state_t* ui,
+    lf_widget_t* widget,
+    float border_width);
+
+void lf_widget_set_corner_radius(
+    lf_ui_state_t* ui,
+    lf_widget_t* widget,
+    float corner_radius);
 
 void lf_widget_rerender(lf_widget_t* widget);
 

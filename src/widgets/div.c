@@ -11,8 +11,8 @@ _div_render(lf_ui_state_t* ui, lf_widget_t* widget) {
   ui->render_rect(
     ui->render_state, div->base.container.pos,
     LF_WIDGET_SIZE_V2(widget),
-    widget->props.color, LF_NO_COLOR,
-    0.0f, 0.0f);
+    widget->props.color, widget->props.border_color, 
+    widget->props.border_width, 0.0f);
 }
 
 void 

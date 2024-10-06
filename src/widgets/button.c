@@ -171,4 +171,5 @@ void lf_button_set_font(
   );
   button->base.container.size.x = text_dimension.width;
   button->base.container.size.y = text_dimension.height;
+  lf_ui_core_rerender(ui);
 }

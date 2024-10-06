@@ -134,8 +134,9 @@ lf_widget_height(lf_widget_t* widget) {
 }
 
 void lf_widget_set_padding(
-    lf_widget_t* widget,
-    float padding) {
+  lf_ui_state_t* ui,
+  lf_widget_t* widget,
+  float padding) {
   if(
     widget->props.padding_top == padding && 
     widget->props.padding_bottom == padding && 
@@ -146,7 +147,54 @@ void lf_widget_set_padding(
   widget->props.padding_bottom = padding;
   widget->props.padding_left = padding; 
   widget->props.padding_right = padding;
+
+  lf_ui_core_rerender(ui);
 }
+
+void lf_widget_set_margin(
+    lf_ui_state_t* ui,
+    lf_widget_t* widget,
+    float margin) {
+  if(
+    widget->props.margin_top == margin && 
+    widget->props.margin_bottom == margin && 
+    widget->props.margin_left == margin && 
+    widget->props.margin_right == margin) return;
+
+  widget->props.margin_top = margin;
+  widget->props.margin_bottom = margin;
+  widget->props.margin_left = margin; 
+  widget->props.margin_right = margin;
+
+  lf_ui_core_rerender(ui);
+}
+
+void lf_widget_set_color(
+    lf_ui_state_t* ui,
+    lf_widget_t* widget,
+    lf_color_t color) {
+  if(
+    widget->props.color.r == color.r &&
+    widget->props.color.g == color.g &&
+    widget->props.color.b == color.b &&
+    widget->props.color.a == color.a &&
+  )
+}
+
+void lf_widget_set_border_color(
+    lf_ui_state_t* ui,
+    lf_widget_t* widget,
+    lf_color_t color);
+
+void lf_widget_set_border_width(
+    lf_ui_state_t* ui,
+    lf_widget_t* widget,
+    float border_width);
+
+void lf_widget_set_corner_radius(
+    lf_ui_state_t* ui,
+    lf_widget_t* widget,
+    float corner_radius);
 
 void 
 lf_widget_rerender(lf_widget_t* widget) {
