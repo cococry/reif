@@ -22,6 +22,8 @@ struct lf_ui_state_t {
   lf_widget_t** dirty_widgets;
   uint32_t num_dirty;
 
+  bool root_needs_render;
+
   lf_render_rect_func_t render_rect;
   lf_render_text_func_t render_text;
   lf_render_get_text_dimension_func_t render_get_text_dimension;
@@ -46,7 +48,14 @@ struct lf_ui_state_t {
   lf_font_t* font_p;
 
   lf_theme_t* theme;
+
+  bool running;
 };
+
+lf_window_t* lf_ui_core_create_window(
+    uint32_t width, 
+    uint32_t height, 
+    const char* title);
 
 lf_ui_state_t* lf_ui_core_init(lf_window_t* win);
 
@@ -72,7 +81,7 @@ lf_ui_state_t* lf_ui_core_init_ex(
 
 bool lf_ui_core_next_event(lf_ui_state_t* ui);
 
-void lf_ui_core_rerender(lf_ui_state_t* ui);
+void lf_ui_core_submit(lf_ui_state_t* ui);
 
 void lf_ui_core_make_dirty(lf_ui_state_t* ui, lf_widget_t* widget);
 
@@ -80,6 +89,7 @@ void lf_ui_core_rerender_dirty(lf_ui_state_t* ui);
 
 void lf_ui_core_begin_render(
     lf_ui_state_t* ui, 
+    lf_color_t clear_color,
     uint32_t render_width,
     uint32_t render_height,
     lf_container_t render_area);

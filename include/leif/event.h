@@ -5,7 +5,7 @@
 typedef enum {
   WinEventNone = 0,
   WinEventClose,
-  WinEventExpose,
+  WinEventRefresh,
   WinEventKeyPress,
   WinEventKeyRelease,
   WinEventMouseMove,

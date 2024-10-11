@@ -42,9 +42,7 @@ struct lf_widget_t {
   lf_widget_handle_event_cb handle_event;
   lf_widget_shape_cb shape;
   
-  void* data;
-
-  bool visible, needs_rerender, rendered;
+  bool visible; 
 
   lf_widget_type_t type;
   lf_layout_type_t layout_type;
@@ -79,15 +77,13 @@ float lf_widget_width(lf_widget_t* widget);
 
 float lf_widget_height(lf_widget_t* widget);
 
-int32_t lf_widget_destroy(lf_widget_t* widget);
+int32_t lf_widget_remove(lf_widget_t* widget);
 
 void lf_widget_set_padding(
-    lf_ui_state_t* ui,
     lf_widget_t* widget,
     float padding);
 
 void lf_widget_set_margin(
-    lf_ui_state_t* ui,
     lf_widget_t* widget,
     float margin);
 
@@ -111,8 +107,6 @@ void lf_widget_set_corner_radius(
     lf_widget_t* widget,
     float corner_radius);
 
-void lf_widget_rerender(lf_widget_t* widget);
-
-void lf_widget_change_layout(lf_ui_state_t* ui, lf_widget_t* widget, lf_layout_type_t layout);
+void lf_widget_set_layout(lf_widget_t* widget, lf_layout_type_t layout);
 
 void lf_widget_apply_layout(lf_widget_t* widget);

@@ -1,21 +1,28 @@
 #pragma once
 
+#include "event.h"
 #include <cglm/types-struct.h>
-#ifdef LF_X11
-#include "platform/win_x11.h"
+#ifdef LF_GLFW 
+#include "platform/win_glfw.h"
 #else
-#error "Invalid windowing system specified (valid windowing systems: LF_X11)"
+#error "Invalid windowing system specified (valid windowing systems: LF_GLFW)"
 #endif
 
-#include "event.h"
+typedef struct lf_ui_state_t lf_ui_state_t;
 
 int32_t lf_windowing_init(void);
 
 int32_t lf_windowing_terminate(void);
 
-Display* lf_win_get_display(void);
+void lf_windowing_set_ui_state(lf_ui_state_t* state);
 
-lf_window_t* lf_win_create(uint32_t width, uint32_t height);
+lf_event_type_t lf_windowing_get_current_event(void);
+
+void lf_windowing_next_event(void);
+
+void* lf_win_get_display(void);
+
+lf_window_t* lf_win_create(uint32_t width, uint32_t height, const char* title);
 
 void lf_win_set_title(lf_window_t* win, const char* title);
 
@@ -23,10 +30,17 @@ int32_t lf_win_make_gl_context(lf_window_t* win);
 
 void lf_win_swap_buffers(lf_window_t* win);
 
-lf_event_t lf_win_next_event(lf_window_t* win);
-
 void lf_win_destroy(lf_window_t* win);
 
-uint32_t lf_win_get_keycode(KeySym keysym);
-
 vec2s lf_win_cursor_pos(lf_window_t* win);
+
+void lf_win_set_close_cb(lf_window_t* win, lf_win_close_func close_cb);
+
+void lf_win_set_refresh_cb(lf_window_t* win, lf_win_refresh_func refresh_cb);
+
+void lf_win_set_mouse_press_cb(lf_window_t* win, lf_win_mouse_press_func mouse_press_cb);
+
+void lf_win_set_mouse_release_cb(lf_window_t* win, lf_win_mouse_release_func mouse_release_cb);
+
+vec2s lf_win_get_size(lf_window_t* win);
+

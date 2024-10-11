@@ -3,11 +3,15 @@
 #include "../include/leif/render.h"
 #include "../include/leif/util.h"
 
+#ifdef LF_X11
 #include <GL/gl.h>
+#elif defined(LF_GLFW)
+#include <GLFW/glfw3.h>
+#endif
 #include <cglm/types-struct.h>
 #include <time.h>
 
-#define RENDER_OVERDRAW_FACTOR 8
+#define OVERDRAW_CORNER_RADIUS 2 
 #define MAX_DIRTY_WIDGETS 10
 
 static void init_fonts(lf_ui_state_t* ui);
@@ -18,7 +22,27 @@ static void render_widget_and_submit(
   lf_container_t clear_area);
 
 static void root_shape(lf_ui_state_t* ui, lf_widget_t* widget);
+static void win_close_callback(lf_ui_state_t* ui, void* window);
+static void win_refresh_callback(lf_ui_state_t* ui, void* window);
 
+void 
+win_close_callback(lf_ui_state_t* ui, void* window) {
+  (void)window;
+  ui->running = false;
+}
+
+void 
+win_refresh_callback(lf_ui_state_t* ui, void* window) {
+  vec2s win_size = lf_win_get_size((lf_window_t*)window);
+  lf_container_t clear_area = LF_SCALE_CONTAINER(
+    win_size.x,
+    win_size.y); 
+  ui->root->container = clear_area;
+  lf_widget_shape(ui, ui->root);
+  render_widget_and_submit(ui, ui->root, clear_area);
+  ui->root_needs_render = false;
+
+}
 void 
 init_fonts(lf_ui_state_t* ui) {
   const char* fontfile = ui->render_font_file_from_name("Inter");
@@ -34,16 +58,19 @@ init_fonts(lf_ui_state_t* ui) {
 
 void 
 render_widget_and_submit(lf_ui_state_t* ui, lf_widget_t* widget, lf_container_t clear_area) {
+  float overdraw = (widget->props.corner_radius != 0) ? OVERDRAW_CORNER_RADIUS : 0;
+  vec2s win_size = lf_win_get_size(ui->win);
   lf_ui_core_begin_render(
-    ui, 
-    ui->win->width, ui->win->height, 
+    ui,
+    ui->root->props.color,
+    win_size.x, win_size.y,
     (lf_container_t){
       .pos = (vec2s){
-        .x = clear_area.pos.x - widget->props.corner_radius,
-        .y = clear_area.pos.y - widget->props.corner_radius},
+        .x = clear_area.pos.x - overdraw,
+        .y = clear_area.pos.y - overdraw},
       .size = (vec2s){
-        .x = clear_area.size.x + RENDER_OVERDRAW_FACTOR, 
-        .y = clear_area.size.y + RENDER_OVERDRAW_FACTOR, 
+        .x = clear_area.size.x + widget->props.padding_left + widget->props.padding_right + overdraw * 2,
+        .y = clear_area.size.y + widget->props.padding_top + widget->props.padding_bottom + overdraw * 2, 
       }}); 
   lf_widget_render(ui, widget);
   lf_ui_core_end_render(ui);
@@ -64,6 +91,20 @@ root_shape(lf_ui_state_t* ui, lf_widget_t* widget) {
 #include <GL/glx.h>
 #endif
 
+lf_window_t*
+lf_ui_core_create_window(
+    uint32_t width, 
+    uint32_t height, 
+    const char* title) {
+  lf_window_t* win = lf_win_create(width, height, title);
+
+  lf_win_set_close_cb(win, win_close_callback);
+  lf_win_set_refresh_cb(win, win_refresh_callback);
+
+  lf_win_make_gl_context(win);
+
+  return win;
+}
 lf_ui_state_t*
 lf_ui_core_init(lf_window_t* win) {
   lf_ui_state_t* state = malloc(sizeof(*state));
@@ -74,6 +115,10 @@ lf_ui_core_init(lf_window_t* win) {
   state->render_state = rn_init(
     win->width, win->height,
     (RnGLLoader)glXGetProcAddressARB);
+#elif defined LF_GLFW
+  state->render_state = rn_init(
+    lf_win_get_size(win).x, lf_win_get_size(win).y,
+    (RnGLLoader)glfwGetProcAddress);
 #else 
 #error 
 #error "Invalid windowing system specified (valid windowing systems: LF_X11)"
@@ -103,14 +148,19 @@ lf_ui_core_init(lf_window_t* win) {
   state->dirty_widgets = malloc(sizeof(lf_widget_t*) * MAX_DIRTY_WIDGETS);
   state->num_dirty = 0;
 
+
   state->root = lf_widget_create(
     WidgetTypeRoot,
-    LF_SCALE_CONTAINER(win->width, win->height),
+    LF_SCALE_CONTAINER(lf_win_get_size(win).x, lf_win_get_size(win).y),
     (lf_widget_props_t){0},
     NULL, NULL, root_shape);
+
+  lf_windowing_set_ui_state(state);
  
   state->root->props.color = state->theme->background_color;
   state->root->layout_type = LayoutVertical;
+  
+  state->running = true;
 
   return state;
 }
@@ -148,12 +198,12 @@ lf_ui_core_default_theme(void) {
     .margin_right = global_margin,
     .margin_top = global_margin,
     .margin_bottom = global_margin,
-    .corner_radius = 3.0f, 
-    .border_width = 0.0f, 
-    .border_color = LF_NO_COLOR,
+    .corner_radius = 0.0f, 
+    .border_width = 1.0f, 
+    .border_color = LF_BLACK,
   };
 
-  theme->text_color = lf_color_from_hex(0x333333);
+  theme->text_color = lf_color_from_hex(0x222222);
   theme->background_color = lf_color_from_hex(0xeeeeee);
 
   return theme;
@@ -212,12 +262,14 @@ lf_ui_core_init_ex(
 
   state->root = lf_widget_create(
     WidgetTypeRoot,
-    LF_SCALE_CONTAINER(win->win, win->height),
+    LF_SCALE_CONTAINER((float)lf_win_get_size(win).x, lf_win_get_size(win).y),
     (lf_widget_props_t){0},
     NULL, NULL, root_shape);
 
   state->root->props.color = state->theme->background_color;
   state->root->layout_type = LayoutVertical;
+
+  state->running = true;
 
   return state;
 }
@@ -225,43 +277,21 @@ lf_ui_core_init_ex(
 
 bool
 lf_ui_core_next_event(lf_ui_state_t* ui) {
-  lf_event_t ev = lf_win_next_event(ui->win);
+  lf_windowing_next_event();
+  lf_event_type_t ev = lf_windowing_get_current_event();
+  vec2s win_size = lf_win_get_size(ui->win);
 
-  if(ev.type == WinEventClose) {
-    return false;
-  }
-
-  if(ev.type == WinEventExpose) {
-      lf_container_t clear_area = LF_SCALE_CONTAINER(
-        ev.width,
-        ev.height); 
+  // Check if there is some widget to be rerendered
+  if((ui->root_needs_render || ui->num_dirty > MAX_DIRTY_WIDGETS) && ev != WinEventRefresh) { 
+    lf_container_t clear_area = LF_SCALE_CONTAINER(
+      win_size.x,
+      win_size.y);
     ui->root->container = clear_area;
     lf_widget_shape(ui, ui->root);
     render_widget_and_submit(ui, ui->root, clear_area);
-    ui->root->needs_rerender = false;
-  }
-
-  lf_widget_handle_event(ui, ui->root, ev);
-
-  // Check if there is some widget to be rerendered
-  if(ui->root->needs_rerender && ev.type != WinEventExpose) {
-      lf_container_t clear_area = LF_SCALE_CONTAINER(
-        ui->win->width,
-        ui->win->height); 
-    lf_widget_shape(ui, ui->root);
-    render_widget_and_submit(ui, ui->root, clear_area);
-    ui->root->needs_rerender = false;
-  } else if(ev.type != WinEventExpose) {
-    if(ui->num_dirty < MAX_DIRTY_WIDGETS && ui->num_dirty != 0) { 
-      lf_ui_core_rerender_dirty(ui);
-    } else if(ui->num_dirty != 0){
-      lf_container_t clear_area = LF_SCALE_CONTAINER(
-        ui->win->width,
-        ui->win->height); 
-      lf_widget_shape(ui, ui->root);
-      render_widget_and_submit(ui, ui->root, clear_area);
-      ui->root->needs_rerender = false;
-    }
+    ui->root_needs_render = false;
+  } else if(ev != WinEventRefresh && ui->num_dirty < MAX_DIRTY_WIDGETS && ui->num_dirty != 0) {
+    lf_ui_core_rerender_dirty(ui);
   }
   return true;
 }
@@ -276,26 +306,25 @@ void lf_ui_core_rerender_dirty(lf_ui_state_t* ui) {
 }
 
 void 
-lf_ui_core_rerender(lf_ui_state_t* ui) {
-  if(ui->root->rendered)
-    lf_widget_shape(ui, ui->root); 
-  ui->root->needs_rerender = true;
+lf_ui_core_submit(lf_ui_state_t* ui) {
+  lf_widget_shape(ui, ui->root);
+  ui->root_needs_render = true;
 }
 
 void 
 lf_ui_core_make_dirty(lf_ui_state_t* ui, lf_widget_t* widget) {
   if(ui->num_dirty + 1 > MAX_DIRTY_WIDGETS) return;
   ui->dirty_widgets[ui->num_dirty++] = widget;
-  widget->needs_rerender = true;
 }
 
 void 
 lf_ui_core_begin_render(
-    lf_ui_state_t* ui, 
-    uint32_t render_width,
-    uint32_t render_height,
+  lf_ui_state_t* ui,
+  lf_color_t clear_color,
+  uint32_t render_width,
+  uint32_t render_height,
   lf_container_t render_area) {
-
+  (void)clear_color;
   ui->root->container = LF_SCALE_CONTAINER(render_width, render_height);
 
   ui->render_clear_color_area(ui->root->props.color, render_area, render_height);
@@ -306,6 +335,12 @@ lf_ui_core_begin_render(
 }
 
 void lf_ui_core_end_render(lf_ui_state_t* ui) {
+#ifdef LF_RUNARA 
+  rn_unset_cull_end_x(
+    (RnState*)ui->render_state);
+  rn_unset_cull_end_y(
+    (RnState*)ui->render_state);
+#endif
   ui->render_end(ui->render_state);
   lf_win_swap_buffers(ui->win);
 }
@@ -314,7 +349,7 @@ void
 lf_ui_core_terminate(lf_ui_state_t* ui) {
   if(!ui) return;
 
-  lf_widget_destroy(ui->root);
+  lf_widget_remove(ui->root);
 
   lf_win_destroy(ui->win);
 
