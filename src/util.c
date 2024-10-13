@@ -1,5 +1,6 @@
 #include "../include/leif/util.h"
 #include "../include/leif/ui_core.h"
+#include <runara/runara.h>
 
 bool
 lf_point_intersets_container(vec2s point, lf_container_t container) {
@@ -31,4 +32,14 @@ lf_load_font(lf_ui_state_t* ui, const char* filepath, uint32_t size) {
 lf_font_t 
 lf_load_font_from_name(lf_ui_state_t* ui, const char* font_name, uint32_t size) {
   return ui->render_font_create(ui->render_state, ui->render_font_file_from_name(font_name), size);
+}
+
+void 
+lf_font_resize(lf_ui_state_t* ui, lf_font_t font, uint32_t size) {
+  rn_set_font_size(ui->render_state, font, size);
+}
+
+uint32_t 
+lf_font_get_size(lf_ui_state_t* ui, lf_font_t font) {
+  return ui->render_font_get_size(font);
 }

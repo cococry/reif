@@ -63,6 +63,7 @@ void
 lf_div_set_fixed_height(
     lf_div_t* div,
     float height) {
+  height -= div->base.props.padding_top + div->base.props.padding_bottom;
   if(div->fixed_height == height) return;
 
   div->fixed_height = height;

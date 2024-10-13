@@ -3,13 +3,15 @@
 #include "../include/leif/render.h"
 #include "../include/leif/util.h"
 
-#ifdef LF_X11
-#include <GL/gl.h>
-#elif defined(LF_GLFW)
-#include <GLFW/glfw3.h>
-#endif
 #include <cglm/types-struct.h>
 #include <time.h>
+
+#ifdef LF_GLFW
+#include <GLFW/glfw3.h>
+#endif
+#ifdef LF_RUNARA
+#include <runara/runara.h>
+#endif
 
 #define OVERDRAW_CORNER_RADIUS 2 
 #define MAX_DIRTY_WIDGETS 10
@@ -22,8 +24,9 @@ static void render_widget_and_submit(
   lf_container_t clear_area);
 
 static void root_shape(lf_ui_state_t* ui, lf_widget_t* widget);
+static void root_resize(lf_ui_state_t* ui, lf_widget_t* widget, lf_event_t ev);
 static void win_close_callback(lf_ui_state_t* ui, void* window);
-static void win_refresh_callback(lf_ui_state_t* ui, void* window);
+static void win_refresh_callback(lf_ui_state_t* ui, void* window, uint32_t w, uint32_t h);
 
 void 
 win_close_callback(lf_ui_state_t* ui, void* window) {
@@ -32,11 +35,10 @@ win_close_callback(lf_ui_state_t* ui, void* window) {
 }
 
 void 
-win_refresh_callback(lf_ui_state_t* ui, void* window) {
-  vec2s win_size = lf_win_get_size((lf_window_t*)window);
+win_refresh_callback(lf_ui_state_t* ui, void* window, uint32_t w, uint32_t h) {
+  (void)window;
   lf_container_t clear_area = LF_SCALE_CONTAINER(
-    win_size.x,
-    win_size.y); 
+    (float)w, (float)h); 
   ui->root->container = clear_area;
   lf_widget_shape(ui, ui->root);
   render_widget_and_submit(ui, ui->root, clear_area);
@@ -83,13 +85,11 @@ root_shape(lf_ui_state_t* ui, lf_widget_t* widget) {
   lf_widget_apply_layout(ui->root);
 }
 
-#ifdef LF_RUNARA
-#include <runara/runara.h>
-#endif
-
-#ifdef LF_X11
-#include <GL/glx.h>
-#endif
+void 
+root_resize(lf_ui_state_t* ui, lf_widget_t* widget, lf_event_t ev) {
+  if(widget != ui->root) return;
+  ui->render_resize_display(ui->render_state, ev.width, ev.height);
+}
 
 lf_window_t*
 lf_ui_core_create_window(
@@ -153,7 +153,9 @@ lf_ui_core_init(lf_window_t* win) {
     WidgetTypeRoot,
     LF_SCALE_CONTAINER(lf_win_get_size(win).x, lf_win_get_size(win).y),
     (lf_widget_props_t){0},
-    NULL, NULL, root_shape);
+    NULL, root_resize, root_shape);
+  
+  lf_widget_listen_for(state->root, WinEventResize);
 
   lf_windowing_set_ui_state(state);
  
@@ -264,7 +266,9 @@ lf_ui_core_init_ex(
     WidgetTypeRoot,
     LF_SCALE_CONTAINER((float)lf_win_get_size(win).x, lf_win_get_size(win).y),
     (lf_widget_props_t){0},
-    NULL, NULL, root_shape);
+    NULL, root_resize, root_shape);
+  
+  lf_widget_listen_for(state->root, WinEventResize);
 
   state->root->props.color = state->theme->background_color;
   state->root->layout_type = LayoutVertical;
@@ -328,8 +332,6 @@ lf_ui_core_begin_render(
   ui->root->container = LF_SCALE_CONTAINER(render_width, render_height);
 
   ui->render_clear_color_area(ui->root->props.color, render_area, render_height);
-
-  ui->render_resize_display(ui->render_state, render_width, render_height);
 
   ui->render_begin(ui->render_state);
 }

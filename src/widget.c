@@ -40,6 +40,7 @@ lf_widget_create(
   widget->render = render;
   widget->handle_event = handle_event;
   widget->shape = shape;
+  widget->listening_for = 0;
 
   return widget;
 }
@@ -47,7 +48,6 @@ lf_widget_create(
 void
 lf_widget_render(lf_ui_state_t* ui,  lf_widget_t* widget) {
   if(widget->render) {
-    // Set rendering culling box
 #ifdef LF_RUNARA
   rn_set_cull_end_x(
     (RnState*)ui->render_state, 
@@ -63,7 +63,10 @@ lf_widget_render(lf_ui_state_t* ui,  lf_widget_t* widget) {
     widget->parent->container.pos.y + widget->parent->props.border_width); 
 
 #endif
-
+    if(!lf_container_intersets_container(
+      LF_WIDGET_CONTAINER(widget), ui->root->container)) {
+      return;
+    }
 
     widget->render(ui, widget);
   }    
@@ -87,8 +90,9 @@ void lf_widget_shape(
 
 void
 lf_widget_handle_event(lf_ui_state_t* ui, lf_widget_t* widget, lf_event_t event) {
-  if(widget->handle_event)
+  if(widget->handle_event && lf_widget_is_listening(widget, event.type)) {
     widget->handle_event(ui, widget, event);
+  }
   
   for(uint32_t i = 0; i < widget->num_childs; i++) {
     lf_widget_handle_event(ui, widget->childs[i], event);
@@ -235,4 +239,25 @@ lf_widget_apply_layout(lf_widget_t* widget) {
   if(widget->layout_type == LayoutHorizontal) {
     lf_layout_horizontal(widget);
   }
+}
+
+void 
+lf_widget_listen_for(lf_widget_t* widget, uint32_t events) {
+  widget->listening_for |= events;
+}
+
+void 
+lf_widget_unlisten(lf_widget_t* widget, uint32_t events) {
+  widget->listening_for &= ~events;
+}
+
+bool 
+lf_widget_is_listening(lf_widget_t* widget, uint32_t events) {
+  return (widget->listening_for & events) != 0;
+}
+
+void 
+lf_widget_set_listener(lf_widget_t* widget, lf_widget_handle_event_cb cb, uint32_t events) {
+  widget->handle_event = cb;
+  lf_widget_listen_for(widget, events);
 }

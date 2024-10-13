@@ -6,6 +6,10 @@
 #include <leif/util.h>
 #include <string.h>
 
+#ifdef LF_RUNARA
+#include <runara/runara.h>
+#endif
+
 static void _button_render(
   lf_ui_state_t* ui,
   lf_widget_t* widget);
@@ -22,11 +26,7 @@ _button_render(
   if(!widget) return;
 
   lf_button_t* button = (lf_button_t*)widget;
-  if(!lf_container_intersets_container(
-    widget->container, ui->root->container)) {
-    return;
-  }
-
+ 
   ui->render_rect(
     ui->render_state, 
     widget->container.pos, 
@@ -54,8 +54,7 @@ _button_handle_event(
   lf_widget_t* widget, 
   lf_event_t event) {
   (void)ui;
-  if(event.type != WinEventMouseRelease) return;
-  if(event.button != 1) return;
+  if(event.button != LeftMouse) return;
   if(!lf_container_intersets_container(
     widget->container, ui->root->container)) {
     return;
@@ -98,6 +97,7 @@ lf_button_create(
   button->font = ui->font_p;
   button->text_color = ui->theme->text_color;
   button->on_click = NULL;
+  button->_changed_font_size = false;
 
   button->base.layout_type = LayoutNone;
   lf_widget_add_child(parent, (lf_widget_t*)button);
@@ -130,6 +130,7 @@ lf_button_create_with_label_ex(
   button->font = font; 
   button->on_click = NULL;
   button->text_color = ui->theme->text_color;
+  button->_changed_font_size = false;
 
   lf_text_dimension_t text_dimension = ui->render_get_text_dimension(
     ui->render_state,
@@ -149,6 +150,8 @@ lf_button_create_with_label_ex(
     NULL
   );
   button->base.layout_type = LayoutNone;
+
+  lf_widget_listen_for(&button->base, WinEventMouseRelease);
   
   lf_widget_add_child(parent, (lf_widget_t*)button);
 
@@ -159,10 +162,6 @@ void lf_button_set_font(
     lf_ui_state_t* ui, 
     lf_button_t* button,
     void* font) {
-
-  if(button->font == font) {
-    return;
-  }
   button->font = font;
   lf_text_dimension_t text_dimension = ui->render_get_text_dimension(
     ui->render_state,
@@ -171,4 +170,20 @@ void lf_button_set_font(
   );
   button->base.container.size.x = text_dimension.width;
   button->base.container.size.y = text_dimension.height;
+}
+
+
+void 
+lf_button_set_font_size(
+    lf_ui_state_t* ui, 
+    lf_button_t* button,
+    uint32_t size) {
+#ifdef LF_RUNARA
+  if(!button->_changed_font_size) {
+    button->font = lf_load_font(ui, ((RnFont*)button->font)->filepath, size);
+  } else {
+    lf_font_resize(ui, button->font, size);
+  }
+  lf_button_set_font(ui, button, button->font);
+#endif
 }

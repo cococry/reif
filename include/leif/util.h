@@ -19,6 +19,10 @@ typedef struct lf_ui_state_t lf_ui_state_t;
     .x = lf_widget_width((widget)),                           \
     .y = lf_widget_height(widget)})                           \
 
+#define LF_WIDGET_CONTAINER(widget) ((lf_container_t){        \
+    .pos = (widget)->container.pos,                           \
+    .size = LF_WIDGET_SIZE_V2((widget))})                     \
+
 typedef struct {
   vec2s pos, size;
 } lf_container_t;
@@ -47,3 +51,7 @@ float lf_container_area(lf_container_t container);
 lf_font_t lf_load_font(lf_ui_state_t* ui, const char* filepath, uint32_t size);
 
 lf_font_t lf_load_font_from_name(lf_ui_state_t* ui, const char* font_name, uint32_t size);
+
+void lf_font_resize(lf_ui_state_t* ui, lf_font_t font, uint32_t size);
+
+uint32_t lf_font_get_size(lf_ui_state_t* ui, lf_font_t font);

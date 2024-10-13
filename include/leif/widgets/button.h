@@ -16,6 +16,8 @@ typedef struct {
   lf_button_on_click_func_t on_click;
 
   lf_color_t text_color;
+
+  bool _changed_font_size;
 } lf_button_t;
 
 lf_button_t* lf_button_create(
@@ -37,3 +39,8 @@ void lf_button_set_font(
     lf_ui_state_t* ui, 
     lf_button_t* button,
     void* font);
+
+void lf_button_set_font_size(
+    lf_ui_state_t* ui, 
+    lf_button_t* button,
+    uint32_t size);

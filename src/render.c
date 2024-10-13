@@ -31,7 +31,7 @@ lf_rn_render_rect(
 lf_text_dimension_t lf_rn_render_text(
   void* render_state,
   const char* text,
-  lf_font_t* font,
+  lf_font_t font,
   vec2s pos,
   lf_color_t color) {
 
@@ -51,7 +51,7 @@ lf_text_dimension_t lf_rn_render_text(
 lf_text_dimension_t lf_rn_render_get_text_dimension(
   void* render_state,
   const char* text,
-  lf_font_t* font) {
+  lf_font_t font) {
 
   RnTextProps props = rn_text_props(
     (RnState*)render_state, 
@@ -104,19 +104,19 @@ lf_rn_render_resize_display(
   rn_resize_display((RnState*)render_state, width, height);
 }
 
-lf_font_t*
+lf_font_t
 lf_rn_render_font_create(
     void* render_state, 
     const char* filepath, 
     uint32_t size) {
 
-  return (lf_font_t*)rn_load_font((RnState*)render_state, filepath, size);
+  return (lf_font_t)rn_load_font((RnState*)render_state, filepath, size);
 }
 
 void
 lf_rn_render_font_destroy(
     void* render_state, 
-    lf_font_t* font) {
+    lf_font_t font) {
 
   rn_free_font((RnState*)render_state, (RnFont*)font);
 }
@@ -127,7 +127,7 @@ lf_rn_render_font_file_from_name(const char* name) {
 }
 
 uint32_t 
-lf_rn_render_font_get_size(lf_font_t* font) {
+lf_rn_render_font_get_size(lf_font_t font) {
   return ((RnFont*)font)->size;
 }
 

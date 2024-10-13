@@ -46,6 +46,8 @@ struct lf_widget_t {
 
   lf_widget_type_t type;
   lf_layout_type_t layout_type;
+
+  uint32_t listening_for;
 };
 
 lf_widget_t* lf_widget_create(
@@ -110,3 +112,11 @@ void lf_widget_set_corner_radius(
 void lf_widget_set_layout(lf_widget_t* widget, lf_layout_type_t layout);
 
 void lf_widget_apply_layout(lf_widget_t* widget);
+
+void lf_widget_listen_for(lf_widget_t* widget, uint32_t events);
+
+void lf_widget_unlisten(lf_widget_t* widget, uint32_t events);
+
+bool lf_widget_is_listening(lf_widget_t* widget, uint32_t events);
+
+void lf_widget_set_listener(lf_widget_t* widget, lf_widget_handle_event_cb cb, uint32_t events);

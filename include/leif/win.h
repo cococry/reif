@@ -10,6 +10,33 @@
 
 typedef struct lf_ui_state_t lf_ui_state_t;
 
+typedef void (*lf_win_close_func)(
+    lf_ui_state_t*,
+    void* 
+    );
+typedef void (*lf_win_refresh_func)(
+    lf_ui_state_t*,
+    void*,
+    uint32_t, uint32_t
+    );
+typedef void (*lf_win_resize_func)(
+    lf_ui_state_t*,
+    void*,
+    uint32_t, uint32_t
+    );
+
+typedef void (*lf_win_mouse_press_func)(
+    lf_ui_state_t*,
+    void*,
+    int32_t
+    );
+typedef void (*lf_win_mouse_release_func)(
+    lf_ui_state_t*,
+    void*,
+    int32_t
+    );
+
+
 int32_t lf_windowing_init(void);
 
 int32_t lf_windowing_terminate(void);
@@ -37,6 +64,8 @@ vec2s lf_win_cursor_pos(lf_window_t* win);
 void lf_win_set_close_cb(lf_window_t* win, lf_win_close_func close_cb);
 
 void lf_win_set_refresh_cb(lf_window_t* win, lf_win_refresh_func refresh_cb);
+
+void lf_win_set_resize_cb(lf_window_t* win, lf_win_resize_func resize_cb);
 
 void lf_win_set_mouse_press_cb(lf_window_t* win, lf_win_mouse_press_func mouse_press_cb);
 
