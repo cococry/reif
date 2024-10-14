@@ -270,4 +270,27 @@ lf_win_get_size(lf_window_t* win) {
     .y = (float)height,
   };
 }
+
+int32_t 
+lf_win_get_refresh_rate(lf_window_t* win) {
+    int window_x, window_y;
+    glfwGetWindowPos(win, &window_x, &window_y);
+
+    int monitor_count;
+    GLFWmonitor** monitors = glfwGetMonitors(&monitor_count);
+    // Iterate through monitors to find the one the window is on
+    for (int i = 0; i < monitor_count; i++) {
+        int monitor_x, monitor_y;
+        const GLFWvidmode* mode = glfwGetVideoMode(monitors[i]);
+
+        glfwGetMonitorPos(monitors[i], &monitor_x, &monitor_y);
+
+        if (window_x >= monitor_x && window_x < monitor_x + mode->width &&
+            window_y >= monitor_y && window_y < monitor_y + mode->height) {
+            return mode->refreshRate; 
+        }
+    }
+
+    return -1;
+}
 #endif

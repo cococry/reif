@@ -50,6 +50,8 @@ struct lf_ui_state_t {
   lf_theme_t* theme;
 
   bool running;
+
+  uint32_t refresh_rate;
 };
 
 lf_window_t* lf_ui_core_create_window(

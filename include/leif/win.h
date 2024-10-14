@@ -73,3 +73,4 @@ void lf_win_set_mouse_release_cb(lf_window_t* win, lf_win_mouse_release_func mou
 
 vec2s lf_win_get_size(lf_window_t* win);
 
+int32_t lf_win_get_refresh_rate(lf_window_t* win);

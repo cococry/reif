@@ -5,6 +5,7 @@
 
 #include <cglm/types-struct.h>
 #include <time.h>
+#include <unistd.h>
 
 #ifdef LF_GLFW
 #include <GLFW/glfw3.h>
@@ -139,6 +140,7 @@ lf_ui_core_init(lf_window_t* win) {
 #endif
 
   state->win = win;
+  state->refresh_rate = lf_win_get_refresh_rate(win);
 
   state->theme = lf_ui_core_default_theme();
 
@@ -239,6 +241,7 @@ lf_ui_core_init_ex(
   lf_ui_state_t* state = malloc(sizeof(*state));
 
   state->win = win;
+  state->refresh_rate = lf_win_get_refresh_rate(win);
 
   state->render_state = render_state;
   state->render_rect                = render_rect;
@@ -282,10 +285,10 @@ bool
 lf_ui_core_next_event(lf_ui_state_t* ui) {
   lf_windowing_next_event();
   lf_event_type_t ev = lf_windowing_get_current_event();
-  vec2s win_size = lf_win_get_size(ui->win);
 
   // Check if there is some widget to be rerendered
   if((ui->root_needs_render || ui->num_dirty > MAX_DIRTY_WIDGETS) && ev != WinEventRefresh) { 
+  vec2s win_size = lf_win_get_size(ui->win);
     lf_container_t clear_area = LF_SCALE_CONTAINER(
       win_size.x,
       win_size.y);
@@ -296,6 +299,10 @@ lf_ui_core_next_event(lf_ui_state_t* ui) {
   } else if(ev != WinEventRefresh && ui->num_dirty < MAX_DIRTY_WIDGETS && ui->num_dirty != 0) {
     lf_ui_core_rerender_dirty(ui);
   }
+
+  // Sleep to reduce CPU usage
+  usleep(1000000 / ui->refresh_rate); 
+
   return true;
 }
 
