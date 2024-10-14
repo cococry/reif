@@ -36,6 +36,7 @@ int main(void) {
   if(lf_windowing_init() != 0) return EXIT_FAILURE;
 
   lf_window_t* win = lf_ui_core_create_window(800, 600, "hello leif");
+  
   lf_ui_state_t* ui = lf_ui_core_init(win);
 
   lf_div_t* div = lf_div_create(ui, ui->root);
@@ -46,8 +47,7 @@ int main(void) {
 
   lf_div_set_flag(div, DivAdjustCenterHorizontal | DivAdjustCenterVertical);
 
-  big_font = lf_load_font_from_name(ui, "Inter", 36);
-  for(uint32_t i = 0; i < 5; i++) {
+  for(uint32_t i = 0; i < 1; i++) {
     lf_button_t* button = lf_button_create_with_label(ui, &div->base, "Get in touch");
     button->base.props.border_width = 0;
     button->base.props.color = lf_color_from_hex(0x000814);

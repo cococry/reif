@@ -143,7 +143,7 @@ lf_windowing_get_current_event(void) {
 
 void 
 lf_windowing_next_event(void) {
-  glfwWaitEvents();
+  glfwPollEvents();
 }
 
 void*
@@ -169,11 +169,12 @@ lf_win_create(uint32_t width, uint32_t height, const char* title) {
     glfwSetMouseButtonCallback(win, glfw_mouse_button_callback);
     glfwSetWindowCloseCallback(win, glfw_close_callback);
     glfwSetWindowRefreshCallback(win, glfw_refresh_callback); 
-    glfwSetFramebufferSizeCallback(win, glfw_resize_callback); 
+    glfwSetFramebufferSizeCallback(win, glfw_resize_callback);
   }
   else {
     fprintf(stderr, "warning: reached maximum amount of windows to define callbacks for.\n");
   }
+  glfwSwapInterval(true);
 
   return win;
 }
@@ -197,6 +198,7 @@ lf_win_swap_buffers(lf_window_t* win) {
 void 
 lf_win_destroy(lf_window_t* win) {
   glfwDestroyWindow(win);
+  glfwPostEmptyEvent();
 }
 
 vec2s 

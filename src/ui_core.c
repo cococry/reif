@@ -43,11 +43,10 @@ win_refresh_callback(lf_ui_state_t* ui, void* window, uint32_t w, uint32_t h) {
   lf_widget_shape(ui, ui->root);
   render_widget_and_submit(ui, ui->root, clear_area);
   ui->root_needs_render = false;
-
 }
 void 
 init_fonts(lf_ui_state_t* ui) {
-  const char* fontfile = ui->render_font_file_from_name("Inter");
+  const char* fontfile = ui->render_font_file_from_name("Inter");;
 
   ui->font_h1 = ui->render_font_create(ui->render_state, fontfile, 36);
   ui->font_h2 = ui->render_font_create(ui->render_state, fontfile, 24);
