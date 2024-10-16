@@ -1,6 +1,7 @@
 #include "../include/leif/widget.h"
 #include "../include/leif/ui_core.h"
 #include "../include/leif/layout.h"
+#include <math.h>
 #include <string.h>
 #include <time.h>
 
@@ -11,13 +12,60 @@
 #define INIT_CHILD_CAP 4
 
 static void widget_resize_children(lf_widget_t* widget, uint32_t new_cap);
+static void widget_animate(lf_ui_state_t* ui, lf_widget_t* widget);
+static uint32_t count_anims(lf_widget_animation_node_t* head);
 
 void 
 widget_resize_children(lf_widget_t* widget, uint32_t new_cap) {
-    widget->childs = (lf_widget_t**)realloc(widget->childs, new_cap * sizeof(lf_widget_t*));
-    widget->cap_childs = new_cap;
+  widget->childs = (lf_widget_t**)realloc(widget->childs, new_cap * sizeof(lf_widget_t*));
+  widget->cap_childs = new_cap;
 }
 
+void 
+widget_animate(lf_ui_state_t* ui, lf_widget_t* widget) {
+  lf_widget_animation_node_t* prev = NULL;
+  lf_widget_animation_node_t* node = widget->anims;
+
+  while (node != NULL) {
+    lf_widget_animation_t* anim = &node->base;
+
+    if (anim->active) {
+      anim->elapsed_time += ui->delta_time;
+      float t = anim->elapsed_time / anim->duration;
+      if (t >= 1.0f) {
+        t = 1.0f;
+        anim->active = 0;  
+      }
+      float eased_t = anim->easing(t);
+      *anim->target = anim->start_value + (anim->end_value - anim->start_value) * eased_t;
+      if (!anim->active) {
+        if (prev) {
+          prev->next = node->next;
+        } else {
+          widget->anims = node->next;
+        }
+        lf_widget_animation_node_t* to_remove = node;
+        node = node->next;
+        free(to_remove);
+        continue;
+      }
+    }
+    prev = node;
+    node = node->next;
+  }
+ }
+
+uint32_t 
+count_anims(lf_widget_animation_node_t* head) {
+  int count = 0;
+  lf_widget_animation_node_t* current = head;
+  while (current != NULL) {
+    count++;
+    current = current->next;
+  }
+
+  return count;
+}
 lf_widget_t* 
 lf_widget_create(
   lf_widget_type_t type,
@@ -40,7 +88,10 @@ lf_widget_create(
   widget->render = render;
   widget->handle_event = handle_event;
   widget->shape = shape;
+  widget->animate = widget_animate;
   widget->listening_for = 0;
+
+  widget->anims = NULL; 
 
   return widget;
 }
@@ -49,18 +100,18 @@ void
 lf_widget_render(lf_ui_state_t* ui,  lf_widget_t* widget) {
   if(widget->render) {
 #ifdef LF_RUNARA
-  rn_set_cull_end_x(
-    (RnState*)ui->render_state, 
-    widget->parent->container.pos.x + lf_widget_width(widget->parent) - 
-    widget->parent->props.border_width); 
-  rn_set_cull_end_y(
-    (RnState*)ui->render_state, 
-    widget->parent->container.pos.y + lf_widget_height(widget->parent) - 
-    widget->props.border_width); 
-  rn_set_cull_start_x(ui->render_state,
-    widget->parent->container.pos.x + widget->parent->props.border_width); 
-  rn_set_cull_start_y(ui->render_state,
-    widget->parent->container.pos.y + widget->parent->props.border_width); 
+    rn_set_cull_end_x(
+      (RnState*)ui->render_state, 
+      widget->parent->container.pos.x + lf_widget_width(widget->parent) - 
+      widget->parent->props.border_width); 
+    rn_set_cull_end_y(
+      (RnState*)ui->render_state, 
+      widget->parent->container.pos.y + lf_widget_height(widget->parent) - 
+      widget->props.border_width); 
+    rn_set_cull_start_x(ui->render_state,
+                        widget->parent->container.pos.x + widget->parent->props.border_width); 
+    rn_set_cull_start_y(ui->render_state,
+                        widget->parent->container.pos.y + widget->parent->props.border_width); 
 
 #endif
     if(!lf_container_intersets_container(
@@ -70,15 +121,15 @@ lf_widget_render(lf_ui_state_t* ui,  lf_widget_t* widget) {
 
     widget->render(ui, widget);
   }    
-  
+
   for(uint32_t i = 0; i < widget->num_childs; i++) {
     lf_widget_render(ui, widget->childs[i]);
   }
 }
 
 void lf_widget_shape(
-    lf_ui_state_t* ui,
-    lf_widget_t* widget) {
+  lf_ui_state_t* ui,
+  lf_widget_t* widget) {
   if (widget->shape != NULL) {
     widget->shape(ui, widget);
   }
@@ -88,12 +139,31 @@ void lf_widget_shape(
   }
 }
 
+bool lf_widget_animate(
+  lf_ui_state_t* ui,
+  lf_widget_t* widget) {
+  bool animated = false;
+
+  bool has_animation = count_anims(widget->anims) != 0 && 
+    widget->animate;
+  if (has_animation) {
+    widget->animate(ui, widget);
+    animated = true;  
+  } 
+  for (uint32_t i = 0; i < widget->num_childs; i++) {
+    if (lf_widget_animate(ui, widget->childs[i])) {
+      animated = true;  
+    }
+  }
+  return animated;
+}
+
 void
 lf_widget_handle_event(lf_ui_state_t* ui, lf_widget_t* widget, lf_event_t event) {
   if(widget->handle_event && lf_widget_is_listening(widget, event.type)) {
     widget->handle_event(ui, widget, event);
   }
-  
+
   for(uint32_t i = 0; i < widget->num_childs; i++) {
     lf_widget_handle_event(ui, widget->childs[i], event);
   }
@@ -172,8 +242,8 @@ void lf_widget_set_padding(
 }
 
 void lf_widget_set_margin(
-    lf_widget_t* widget,
-    float margin) {
+  lf_widget_t* widget,
+  float margin) {
   if(
     widget->props.margin_top == margin && 
     widget->props.margin_bottom == margin && 
@@ -187,9 +257,9 @@ void lf_widget_set_margin(
 }
 
 void lf_widget_set_color(
-    lf_ui_state_t* ui,
-    lf_widget_t* widget,
-    lf_color_t color) {
+  lf_ui_state_t* ui,
+  lf_widget_t* widget,
+  lf_color_t color) {
   if(lf_color_equal(widget->props.color, color)) return;
 
   widget->props.color = color;
@@ -197,9 +267,9 @@ void lf_widget_set_color(
 }
 
 void lf_widget_set_border_color(
-    lf_ui_state_t* ui,
-    lf_widget_t* widget,
-    lf_color_t color) {
+  lf_ui_state_t* ui,
+  lf_widget_t* widget,
+  lf_color_t color) {
   if(lf_color_equal(widget->props.border_color, color)) return;
 
   widget->props.border_color = color;
@@ -207,9 +277,9 @@ void lf_widget_set_border_color(
 }
 
 void lf_widget_set_border_width(
-    lf_ui_state_t* ui,
-    lf_widget_t* widget,
-    float border_width) {
+  lf_ui_state_t* ui,
+  lf_widget_t* widget,
+  float border_width) {
   if(widget->props.border_width == border_width) return;
 
   widget->props.border_width = border_width;
@@ -217,9 +287,9 @@ void lf_widget_set_border_width(
 }
 
 void lf_widget_set_corner_radius(
-    lf_ui_state_t* ui,
-    lf_widget_t* widget,
-    float corner_radius) {
+  lf_ui_state_t* ui,
+  lf_widget_t* widget,
+  float corner_radius) {
   if(widget->props.corner_radius == corner_radius) return;
 
   widget->props.corner_radius = corner_radius;
@@ -260,4 +330,42 @@ void
 lf_widget_set_listener(lf_widget_t* widget, lf_widget_handle_event_cb cb, uint32_t events) {
   widget->handle_event = cb;
   lf_widget_listen_for(widget, events);
+}
+
+void lf_widget_add_animation(
+  lf_widget_t* widget,
+  float *target, 
+  float start_value, 
+  float end_value, 
+  float duration, 
+  lf_animation_func_t easing) {
+  lf_widget_interrupt_animation(widget, target);
+  float remaining_distance = fabsf(end_value - (*target));
+  if (remaining_distance <= 0.0f) return;
+
+  float full_distance = fabsf(end_value - start_value);
+  float remaining_time = MAX(duration, duration * (remaining_distance / full_distance)); 
+
+  lf_widget_animation_node_t* node = malloc(sizeof(*node));
+  node->base.target = target;
+  node->base.start_value = *target;
+  node->base.end_value = end_value;
+  node->base.duration = remaining_time;
+  node->base.elapsed_time = 0.0f;
+  node->base.easing = easing;
+  node->base.active = 1;
+  node->next = widget->anims;
+  widget->anims = node;  
+}
+
+void lf_widget_interrupt_animation(
+    lf_widget_t* widget,
+    float *target) {
+  lf_widget_animation_node_t* node = widget->anims;
+  while(node != NULL) {
+    if(node->base.target == target) {
+      node->base.active = 0;
+    }
+    node = node->next;
+  }
 }

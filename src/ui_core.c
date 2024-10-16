@@ -27,7 +27,6 @@ static void render_widget_and_submit(
 static void root_shape(lf_ui_state_t* ui, lf_widget_t* widget);
 static void root_resize(lf_ui_state_t* ui, lf_widget_t* widget, lf_event_t ev);
 static void win_close_callback(lf_ui_state_t* ui, void* window);
-static void win_refresh_callback(lf_ui_state_t* ui, void* window, uint32_t w, uint32_t h);
 
 void 
 win_close_callback(lf_ui_state_t* ui, void* window) {
@@ -35,16 +34,6 @@ win_close_callback(lf_ui_state_t* ui, void* window) {
   ui->running = false;
 }
 
-void 
-win_refresh_callback(lf_ui_state_t* ui, void* window, uint32_t w, uint32_t h) {
-  (void)window;
-  lf_container_t clear_area = LF_SCALE_CONTAINER(
-    (float)w, (float)h); 
-  ui->root->container = clear_area;
-  lf_widget_shape(ui, ui->root);
-  render_widget_and_submit(ui, ui->root, clear_area);
-  ui->root_needs_render = false;
-}
 void 
 init_fonts(lf_ui_state_t* ui) {
   const char* fontfile = ui->render_font_file_from_name("Inter");;
@@ -89,6 +78,7 @@ void
 root_resize(lf_ui_state_t* ui, lf_widget_t* widget, lf_event_t ev) {
   if(widget != ui->root) return;
   ui->render_resize_display(ui->render_state, ev.width, ev.height);
+  ui->root_needs_render = true;
 }
 
 lf_window_t*
@@ -99,7 +89,6 @@ lf_ui_core_create_window(
   lf_window_t* win = lf_win_create(width, height, title);
 
   lf_win_set_close_cb(win, win_close_callback);
-  lf_win_set_refresh_cb(win, win_refresh_callback);
 
   lf_win_make_gl_context(win);
 
@@ -141,6 +130,7 @@ lf_ui_core_init(lf_window_t* win) {
 
   state->win = win;
   state->refresh_rate = lf_win_get_refresh_rate(win);
+  state->_frame_duration = 1.0f / state->refresh_rate;
 
   state->theme = lf_ui_core_default_theme();
 
@@ -242,6 +232,7 @@ lf_ui_core_init_ex(
 
   state->win = win;
   state->refresh_rate = lf_win_get_refresh_rate(win);
+  state->_frame_duration = 1.0f / state->refresh_rate;
 
   state->render_state = render_state;
   state->render_rect                = render_rect;
@@ -269,7 +260,9 @@ lf_ui_core_init_ex(
     LF_SCALE_CONTAINER((float)lf_win_get_size(win).x, lf_win_get_size(win).y),
     (lf_widget_props_t){0},
     NULL, root_resize, root_shape);
-  
+
+  state->root->type = WidgetTypeRoot;
+
   lf_widget_listen_for(state->root, WinEventResize);
 
   state->root->props.color = state->theme->background_color;
@@ -281,13 +274,21 @@ lf_ui_core_init_ex(
 }
 
 
-bool
+void
 lf_ui_core_next_event(lf_ui_state_t* ui) {
   lf_windowing_next_event();
-  lf_event_type_t ev = lf_windowing_get_current_event();
 
+  float cur_time = glfwGetTime();
+  ui->delta_time = cur_time - ui->_last_time;
+  ui->_last_time = cur_time;
+
+  if(lf_widget_animate(ui, ui->root)) {
+    lf_ui_core_submit(ui);
+  }
+
+  bool rendered = false;
   // Check if there is some widget to be rerendered
-  if((ui->root_needs_render || ui->num_dirty > MAX_DIRTY_WIDGETS) && ev != WinEventRefresh) { 
+  if((ui->root_needs_render || ui->num_dirty > MAX_DIRTY_WIDGETS)) { 
   vec2s win_size = lf_win_get_size(ui->win);
     lf_container_t clear_area = LF_SCALE_CONTAINER(
       win_size.x,
@@ -296,14 +297,16 @@ lf_ui_core_next_event(lf_ui_state_t* ui) {
     lf_widget_shape(ui, ui->root);
     render_widget_and_submit(ui, ui->root, clear_area);
     ui->root_needs_render = false;
-  } else if(ev != WinEventRefresh && ui->num_dirty < MAX_DIRTY_WIDGETS && ui->num_dirty != 0) {
+    lf_win_swap_buffers(ui->win);
+    rendered = true;
+  } else if(ui->num_dirty < MAX_DIRTY_WIDGETS && ui->num_dirty != 0) {
     lf_ui_core_rerender_dirty(ui);
+    lf_win_swap_buffers(ui->win);
+    rendered = true;
   }
-
-  // Sleep to reduce CPU usage
-  usleep(1000000 / ui->refresh_rate); 
-
-  return true;
+ 
+  if(!rendered)
+    usleep((ui->_frame_duration) * 1000000);
 }
 
 
@@ -350,7 +353,6 @@ void lf_ui_core_end_render(lf_ui_state_t* ui) {
     (RnState*)ui->render_state);
 #endif
   ui->render_end(ui->render_state);
-  lf_win_swap_buffers(ui->win);
 }
 
 void 

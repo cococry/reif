@@ -52,6 +52,9 @@ struct lf_ui_state_t {
   bool running;
 
   uint32_t refresh_rate;
+  float _frame_duration;
+
+  float delta_time, _last_time;
 };
 
 lf_window_t* lf_ui_core_create_window(
@@ -81,7 +84,7 @@ lf_ui_state_t* lf_ui_core_init_ex(
     lf_render_font_file_from_name render_font_file_from_name,
     lf_render_font_get_size render_font_get_size);
 
-bool lf_ui_core_next_event(lf_ui_state_t* ui);
+void lf_ui_core_next_event(lf_ui_state_t* ui);
 
 void lf_ui_core_submit(lf_ui_state_t* ui);
 

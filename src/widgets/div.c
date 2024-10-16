@@ -1,6 +1,6 @@
-#include "../include/leif/widgets/div.h"
-#include "../include/leif/util.h"
-#include "../include/leif/layout.h"
+#include "../../include/leif/widgets/div.h"
+#include "../../include/leif/util.h"
+#include "../../include/leif/layout.h"
 
 static void _div_render(lf_ui_state_t* ui, lf_widget_t* widget);
 static void _div_shape(lf_ui_state_t* ui, lf_widget_t* widget);

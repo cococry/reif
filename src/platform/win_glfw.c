@@ -17,6 +17,7 @@ typedef struct {
   lf_win_refresh_func ev_refresh_cb;
   lf_win_resize_func ev_resize_cb;
   lf_win_close_func ev_close_cb;
+  lf_win_mouse_move_func ev_move_cb;
   GLFWwindow* win;
 } window_callbacks_t; 
 
@@ -31,15 +32,15 @@ static void glfw_mouse_button_callback(
   int32_t action, 
   int32_t mods); 
 
-static void glfw_refresh_callback(
-  GLFWwindow* window);
-
 static void glfw_resize_callback(
   GLFWwindow* window,
   int32_t w, int32_t h);
 
 static void glfw_close_callback(
   GLFWwindow* window);
+
+static void glfw_mouse_move_callback(
+  GLFWwindow* window, double xpos, double ypos);
 
 void 
 glfw_mouse_button_callback(
@@ -75,22 +76,9 @@ glfw_mouse_button_callback(
 
 }
 
-void 
-glfw_refresh_callback(GLFWwindow* window) {
-  lf_event_t ev;
-  ev.type = WinEventRefresh;
-  int32_t width, height;
-  glfwGetWindowSize(window, &width, &height);
-  ev.width = width; ev.height = height; 
-  current_event = WinEventRefresh;
-  lf_widget_handle_event(ui, ui->root, ev);
-  for(uint32_t i = 0; i < n_windows; i++) {
-      if(window_callbacks[i].win == window && window_callbacks[i].ev_refresh_cb)
-        window_callbacks[i].ev_refresh_cb(ui, window, ev.width, ev.height);
-  }
-}
 
-static void glfw_resize_callback(
+void 
+glfw_resize_callback(
   GLFWwindow* window,
   int32_t w, int32_t h) {
   lf_event_t ev;
@@ -113,6 +101,22 @@ glfw_close_callback(GLFWwindow* window) {
   lf_event_t ev;
   ev.type = WinEventClose; 
   current_event = WinEventClose;
+  lf_widget_handle_event(ui, ui->root, ev);
+}
+
+void 
+glfw_mouse_move_callback(
+  GLFWwindow* window, double xpos, double ypos) {
+  for(uint32_t i = 0; i < n_windows; i++) {
+      if(window_callbacks[i].win == window && window_callbacks[i].ev_move_cb)
+        window_callbacks[i].ev_move_cb(ui, window, (uint16_t)xpos, (uint16_t)ypos);
+  }
+
+  lf_event_t ev;
+  ev.x = (uint16_t)xpos;
+  ev.y = (uint16_t)ypos;
+  ev.type = WinEventMouseMove;
+  current_event = WinEventMouseMove; 
   lf_widget_handle_event(ui, ui->root, ev);
 }
 
@@ -168,13 +172,14 @@ lf_win_create(uint32_t width, uint32_t height, const char* title) {
     ++n_windows;
     glfwSetMouseButtonCallback(win, glfw_mouse_button_callback);
     glfwSetWindowCloseCallback(win, glfw_close_callback);
-    glfwSetWindowRefreshCallback(win, glfw_refresh_callback); 
     glfwSetFramebufferSizeCallback(win, glfw_resize_callback);
+    glfwSetCursorPosCallback(win, glfw_mouse_move_callback);
   }
   else {
     fprintf(stderr, "warning: reached maximum amount of windows to define callbacks for.\n");
   }
-  glfwSwapInterval(true);
+
+  glfwSwapInterval(1);
 
   return win;
 }
@@ -261,6 +266,15 @@ lf_win_set_mouse_release_cb(lf_window_t* win, lf_win_mouse_release_func mouse_re
   }
 }
 
+void 
+lf_win_set_mouse_move_cb(lf_window_t* win, lf_win_mouse_move_func mouse_move_cb) {
+ for (uint32_t i = 0; i < n_windows; ++i) {
+    if (window_callbacks[i].win == win) {
+      window_callbacks[i].ev_move_cb = mouse_move_cb;
+      break;
+    }
+  }
+}
 vec2s 
 lf_win_get_size(lf_window_t* win) {
   int32_t width, height;

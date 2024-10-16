@@ -3,9 +3,10 @@
 #include "../widget.h"
 #include "../ui_core.h"
 
-typedef void (*lf_button_on_click_func_t)(
+typedef void (*lf_button_func_t)(
     lf_ui_state_t* ui,
     lf_widget_t* widget); 
+
 
 typedef struct {
   lf_widget_t base;
@@ -13,11 +14,13 @@ typedef struct {
   char* label;
   void* font;
 
-  lf_button_on_click_func_t on_click;
+  lf_button_func_t on_click;
+  lf_button_func_t on_enter, on_leave;
 
   lf_color_t text_color;
 
   bool _changed_font_size;
+  bool _hovered;
 } lf_button_t;
 
 lf_button_t* lf_button_create(

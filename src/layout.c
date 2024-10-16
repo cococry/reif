@@ -58,7 +58,7 @@ lf_layout_horizontal(lf_widget_t* widget) {
   }
 
   vec2s child_size = widget->container.size;
-  if(widget->type == WidgetTypeDiv && 
+  if((widget->type == WidgetTypeDiv) && 
     (lf_div_has_flag((lf_div_t*)widget, DivAdjustCenterHorizontal) ||
     lf_div_has_flag((lf_div_t*)widget, DivAdjustCenterVertical))
   ) {

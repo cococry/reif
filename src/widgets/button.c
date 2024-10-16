@@ -1,9 +1,9 @@
-#include "../include/leif/widgets/button.h"
-#include "../include/leif/ui_core.h"
-#include <leif/event.h>
-#include <leif/layout.h>
-#include <leif/render.h>
-#include <leif/util.h>
+#include "../../include/leif/widgets/button.h"
+#include "../../include/leif/ui_core.h"
+#include "../../include/leif/event.h"
+#include "../../include/leif/layout.h"
+#include "../../include/leif/render.h"
+#include "../../include/leif/util.h"
 #include <string.h>
 
 #ifdef LF_RUNARA
@@ -69,12 +69,24 @@ _button_handle_event(
     .size = LF_WIDGET_SIZE_V2(widget)
   };
 
-  if(!lf_point_intersets_container(mouse, container)) return;
-  if(event.type == WinEventMouseRelease) {
-    lf_button_t* button = (lf_button_t*)widget;
-    if(button->on_click) {
-      button->on_click(ui, widget);
+  lf_button_t* button = (lf_button_t*)widget;
+  if(!lf_point_intersets_container(mouse, container)) {
+    if(button->_hovered && button->on_leave) {
+      button->on_leave(ui, widget);
     }
+    button->_hovered = false;
+    return;
+  }
+
+
+  if(event.type == WinEventMouseRelease && 
+    button->on_click) {
+      button->on_click(ui, widget);
+  }
+  else if(event.type == WinEventMouseMove &&
+    button->on_enter && !button->_hovered) {
+    button->on_enter(ui, widget);
+    button->_hovered = true;
   }
 }
   
@@ -97,7 +109,10 @@ lf_button_create(
   button->font = ui->font_p;
   button->text_color = ui->theme->text_color;
   button->on_click = NULL;
+  button->on_enter = NULL;
+  button->on_leave = NULL;
   button->_changed_font_size = false;
+  button->_hovered = false;
 
   button->base.layout_type = LayoutNone;
   lf_widget_add_child(parent, (lf_widget_t*)button);
@@ -129,8 +144,12 @@ lf_button_create_with_label_ex(
   button->label = strdup(label);
   button->font = font; 
   button->on_click = NULL;
+  button->on_enter = NULL;
+  button->on_leave = NULL;
   button->text_color = ui->theme->text_color;
   button->_changed_font_size = false;
+  button->_hovered = false;
+
 
   lf_text_dimension_t text_dimension = ui->render_get_text_dimension(
     ui->render_state,
@@ -151,7 +170,8 @@ lf_button_create_with_label_ex(
   );
   button->base.layout_type = LayoutNone;
 
-  lf_widget_listen_for(&button->base, WinEventMouseRelease);
+  lf_widget_listen_for(&button->base, 
+                       WinEventMouseRelease | WinEventMouseMove);
   
   lf_widget_add_child(parent, (lf_widget_t*)button);
 
