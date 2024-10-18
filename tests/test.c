@@ -95,7 +95,7 @@ int main(void) {
 
   lf_div_set_flag(div, DivAdjustCenterVertical | DivAdjustCenterHorizontal);
 
-  for(uint32_t i = 0; i < 5; i++) {
+  for(uint32_t i = 0; i < 1; i++) {
     lf_button_t* btn = lf_button_create_with_label(ui, &div->base, "Click Me");
     btn->on_enter = on_button_enter;
     btn->on_leave = on_button_leave;

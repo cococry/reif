@@ -305,8 +305,10 @@ lf_ui_core_next_event(lf_ui_state_t* ui) {
     rendered = true;
   }
  
-  if(!rendered)
+  if(!rendered) {
     usleep((ui->_frame_duration) * 1000000);
+    printf("Sleeping: %f\n", ui->_frame_duration);
+  }
 }
 
 
@@ -338,6 +340,7 @@ lf_ui_core_begin_render(
   uint32_t render_height,
   lf_container_t render_area) {
   (void)clear_color;
+  printf("Rendering: %f\n", ui->delta_time);
   ui->root->container = LF_SCALE_CONTAINER(render_width, render_height);
 
   ui->render_clear_color_area(ui->root->props.color, render_area, render_height);

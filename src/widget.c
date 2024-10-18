@@ -144,7 +144,8 @@ bool lf_widget_animate(
   lf_widget_t* widget) {
   bool animated = false;
 
-  bool has_animation = count_anims(widget->anims) != 0 && 
+  uint32_t n_anims = count_anims(widget->anims);
+  bool has_animation = n_anims != 0 && 
     widget->animate;
   if (has_animation) {
     widget->animate(ui, widget);
