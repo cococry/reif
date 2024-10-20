@@ -28,7 +28,7 @@ float ease_in_out_quad(float t) {
     return t < 0.5 ? 2 * t * t : 1 - pow(-2 * t + 2, 2) / 2;
 }
 
-#define ANIM_TIME 0.4f 
+#define ANIM_TIME 0.3
 #define ANIM_BEGIN 30.0f
 #define ANIM_END 45.0f
 #define EASING ease_in_quad 
@@ -36,23 +36,17 @@ float ease_in_out_quad(float t) {
 lf_font_t big_font, small_font;
 float corner_radius_buttons = 0.0f;
 
+
 void on_button_enter(lf_ui_state_t* ui, lf_widget_t* widget) {
   (void)ui;
   float start_val = ANIM_BEGIN; 
   float end_val = ANIM_END;
   float anim_time = ANIM_TIME;
-  lf_animation_func_t easing = EASING;
+  lf_animation_func_t easing = ease_out_quad;
   lf_widget_add_animation(widget, &widget->props.padding_top, start_val, end_val, anim_time, easing);
   lf_widget_add_animation(widget, &widget->props.padding_bottom, start_val, end_val, anim_time, easing);
   lf_widget_add_animation(widget, &widget->props.padding_left, start_val, end_val, anim_time, easing);
   lf_widget_add_animation(widget, &widget->props.padding_right, start_val, end_val, anim_time, easing);
- 
-  printf("%f\n", widget->props.padding_top);
-  float corner_radius = (widget->container.size.y + ANIM_END * 2) / 2.0f;
-  printf("From %f to %f\n", 
-         corner_radius_buttons, corner_radius);
-  lf_widget_add_animation(widget, &widget->props.corner_radius, corner_radius_buttons, 
-                          corner_radius, anim_time, easing);
 }
 
 void on_button_leave(lf_ui_state_t* ui, lf_widget_t* widget) {
@@ -61,16 +55,11 @@ void on_button_leave(lf_ui_state_t* ui, lf_widget_t* widget) {
   float start_val = ANIM_END; 
   float end_val = ANIM_BEGIN;
   float anim_time = ANIM_TIME;
-  lf_animation_func_t easing = EASING;
+  lf_animation_func_t easing = ease_in_quad;
   lf_widget_add_animation(widget, &widget->props.padding_top, start_val, end_val, anim_time, easing);
   lf_widget_add_animation(widget, &widget->props.padding_bottom, start_val, end_val, anim_time, easing);
   lf_widget_add_animation(widget, &widget->props.padding_left, start_val, end_val, anim_time, easing);
   lf_widget_add_animation(widget, &widget->props.padding_right, start_val, end_val, anim_time, easing);
-  
-
-  float corner_radius = (widget->container.size.y + ANIM_END * 2) / 2.0f;
-  lf_widget_add_animation(widget, &widget->props.corner_radius,
-                           corner_radius, corner_radius_buttons, anim_time, easing);
 }
 
 void on_resize(lf_ui_state_t* ui, lf_widget_t* widget, lf_event_t ev) {
@@ -95,15 +84,26 @@ int main(void) {
 
   lf_div_set_flag(div, DivAdjustCenterVertical | DivAdjustCenterHorizontal);
 
-  for(uint32_t i = 0; i < 1; i++) {
-    lf_button_t* btn = lf_button_create_with_label(ui, &div->base, "Click Me");
+  const char* buttons[] = {
+    "Single Player",
+    "Multiplayer",
+    "Settings",
+    "Credits"
+  };
+
+  lf_font_t* font = lf_load_font(
+    ui, "/usr/share/fonts/TTF/JetBrainsMonoNerdFont-Bold.ttf", 24
+  );
+  for(uint32_t i = 0; i < 4; i++) {
+    lf_button_t* btn = lf_button_create_with_label(ui, &div->base, buttons[i]);
     btn->on_enter = on_button_enter;
     btn->on_leave = on_button_leave;
     btn->base.props.color = lf_color_from_hex(0x111111);
     btn->base.props.border_width = 0.0f;
     lf_widget_set_padding(&btn->base, ANIM_BEGIN);
     lf_button_set_font_size(ui, btn, 30);
-    btn->base.props.corner_radius = (lf_widget_height(&btn->base)) / 2.0f;
+    lf_button_set_font(ui, btn, font);
+    btn->base.props.corner_radius = 10; 
     corner_radius_buttons = btn->base.props.corner_radius;
     btn->text_color = LF_WHITE;
   }

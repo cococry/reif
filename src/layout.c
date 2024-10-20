@@ -57,37 +57,27 @@ lf_layout_horizontal(lf_widget_t* widget) {
     ((widget->parent->props.padding_right * 2)); 
   }
 
-  vec2s child_size = widget->container.size;
+  float child_w = widget->container.size.x;
   if((widget->type == WidgetTypeDiv) && 
-    (lf_div_has_flag((lf_div_t*)widget, DivAdjustCenterHorizontal) ||
-    lf_div_has_flag((lf_div_t*)widget, DivAdjustCenterVertical))
+    (lf_div_has_flag((lf_div_t*)widget, DivAdjustCenterHorizontal))
   ) {
     bool horizontal = (lf_div_has_flag((lf_div_t*)widget, DivAdjustCenterHorizontal));
-    bool vertical = (lf_div_has_flag((lf_div_t*)widget, DivAdjustCenterVertical));
     if(horizontal)
-      child_size.x = 0.0f;
-    if(vertical)
-      child_size.y = 0.0f;
-
+      child_w = 0.0f;
     for(uint32_t i = 0; i < widget->num_childs; i++) {
       lf_widget_t* child = widget->childs[i];
       if(horizontal) {
         float effictive_width = lf_widget_width(child) + 
           child->props.margin_left + child->props.margin_right;
-        child_size.x += effictive_width;
+        child_w += effictive_width;
       } 
-      if(vertical) {
-        float effictive_height = lf_widget_height(child) + 
-          child->props.margin_top + child->props.margin_bottom;
-        if(child_size.y < effictive_height)
-          child_size.y = effictive_height;
-      }
     }
+    child_w += widget->props.padding_left + widget->props.padding_right;
   }
 
   vec2s offset = (vec2s){
-    .x = ((widget->container.size.x - child_size.x) / 2.0f),
-    .y = ((widget->container.size.y - child_size.y) / 2.0f)
+    .x = ((widget->container.size.x - child_w) / 2.0f),
+    .y = 0, 
   };
 
   float x_before = widget->container.pos.x + offset.x;
@@ -97,12 +87,15 @@ lf_layout_horizontal(lf_widget_t* widget) {
   for(uint32_t i = 0; i < widget->num_childs; i++) {
     lf_widget_t* child = widget->childs[i];
 
+    float effictive_height = lf_widget_height(child) + 
+      child->props.margin_top + child->props.margin_bottom;
+
+    offset.y = ((widget->container.size.y - effictive_height) / 2.0f);
+
     child->container.pos.y = widget->container.pos.y + offset.y + 
       widget->props.padding_top + child->props.margin_top;
     child->container.pos.x = x_ptr + child->props.margin_left; 
 
-    float effictive_height = lf_widget_height(child) + 
-      child->props.margin_top + child->props.margin_bottom;
     if(effictive_height > highest_widget)
       highest_widget = effictive_height; 
 

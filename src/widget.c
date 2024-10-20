@@ -1,7 +1,7 @@
 #include "../include/leif/widget.h"
 #include "../include/leif/ui_core.h"
 #include "../include/leif/layout.h"
-#include <math.h>
+#include "../include/leif/animation.h"
 #include <string.h>
 #include <time.h>
 
@@ -13,7 +13,7 @@
 
 static void widget_resize_children(lf_widget_t* widget, uint32_t new_cap);
 static void widget_animate(lf_ui_state_t* ui, lf_widget_t* widget);
-static uint32_t count_anims(lf_widget_animation_node_t* head);
+static uint32_t count_anims(lf_animation_t* head);
 
 void 
 widget_resize_children(lf_widget_t* widget, uint32_t new_cap) {
@@ -23,42 +23,41 @@ widget_resize_children(lf_widget_t* widget, uint32_t new_cap) {
 
 void 
 widget_animate(lf_ui_state_t* ui, lf_widget_t* widget) {
-  lf_widget_animation_node_t* prev = NULL;
-  lf_widget_animation_node_t* node = widget->anims;
+  lf_animation_t* prev = NULL;
+  lf_animation_t* anim = widget->anims;
 
-  while (node != NULL) {
-    lf_widget_animation_t* anim = &node->base;
-
+  while (anim) {
     if (anim->active) {
-      anim->elapsed_time += ui->delta_time;
-      float t = anim->elapsed_time / anim->duration;
-      if (t >= 1.0f) {
-        t = 1.0f;
-        anim->active = 0;  
-      }
-      float eased_t = anim->easing(t);
-      *anim->target = anim->start_value + (anim->end_value - anim->start_value) * eased_t;
-      if (!anim->active) {
-        if (prev) {
-          prev->next = node->next;
-        } else {
-          widget->anims = node->next;
-        }
-        lf_widget_animation_node_t* to_remove = node;
-        node = node->next;
-        free(to_remove);
-        continue;
-      }
+    lf_animation_update(anim, ui->delta_time);
     }
-    prev = node;
-    node = node->next;
+    if (!anim->active) {
+      if (prev) {
+        prev->next = anim->next;
+      } else {
+        widget->anims = anim->next;
+      }
+      lf_animation_t* to_remove = anim;
+      anim = anim->next;
+      if(to_remove->keyframes) {
+        free(to_remove->keyframes);
+        to_remove->keyframes = NULL;
+      }
+      if(to_remove) {
+        free(to_remove);
+        to_remove = NULL;
+      }
+      
+      continue;
+    }
+    prev = anim;
+    anim = anim->next;
   }
  }
 
 uint32_t 
-count_anims(lf_widget_animation_node_t* head) {
+count_anims(lf_animation_t* head) {
   int count = 0;
-  lf_widget_animation_node_t* current = head;
+  lf_animation_t* current = head;
   while (current != NULL) {
     count++;
     current = current->next;
@@ -88,7 +87,6 @@ lf_widget_create(
   widget->render = render;
   widget->handle_event = handle_event;
   widget->shape = shape;
-  widget->animate = widget_animate;
   widget->listening_for = 0;
 
   widget->anims = NULL; 
@@ -145,10 +143,9 @@ bool lf_widget_animate(
   bool animated = false;
 
   uint32_t n_anims = count_anims(widget->anims);
-  bool has_animation = n_anims != 0 && 
-    widget->animate;
-  if (has_animation) {
-    widget->animate(ui, widget);
+  if (n_anims != 0) {
+    widget_animate(ui, widget); 
+    lf_ui_core_make_dirty(ui, widget);;
     animated = true;  
   } 
   for (uint32_t i = 0; i < widget->num_childs; i++) {
@@ -333,40 +330,90 @@ lf_widget_set_listener(lf_widget_t* widget, lf_widget_handle_event_cb cb, uint32
   lf_widget_listen_for(widget, events);
 }
 
-void lf_widget_add_animation(
+lf_animation_t* lf_widget_add_animation(
   lf_widget_t* widget,
   float *target, 
   float start_value, 
   float end_value, 
-  float duration, 
-  lf_animation_func_t easing) {
+  float duration,
+  lf_animation_func_t func) {
   lf_widget_interrupt_animation(widget, target);
-  float remaining_distance = fabsf(end_value - (*target));
-  if (remaining_distance <= 0.0f) return;
+  return lf_animation_create(
+    &widget->anims,
+    target, (lf_animation_keyframe_t[]){
+      (lf_animation_keyframe_t){
+        .start = start_value,
+        .end = end_value, 
+        .duration = duration,
+        .easing = func
+      }
+    }, 1, false
+  );
+}
 
-  float full_distance = fabsf(end_value - start_value);
-  float remaining_time = MAX(duration, duration * (remaining_distance / full_distance)); 
+lf_animation_t* lf_widget_add_animation_looped(
+    lf_widget_t* widget,
+    float *target, 
+    float start_value, 
+    float end_value, 
+    float duration,
+    lf_animation_func_t func) {
+  lf_widget_interrupt_animation(widget, target);
+  return lf_animation_create(
+    &widget->anims,
+    target, (lf_animation_keyframe_t[]){
+      (lf_animation_keyframe_t){
+        .start = start_value,
+        .end = end_value, 
+        .duration = duration,
+        .easing = func
+      }
+    }, 1, true 
+  );
+}
 
-  lf_widget_animation_node_t* node = malloc(sizeof(*node));
-  node->base.target = target;
-  node->base.start_value = *target;
-  node->base.end_value = end_value;
-  node->base.duration = remaining_time;
-  node->base.elapsed_time = 0.0f;
-  node->base.easing = easing;
-  node->base.active = 1;
-  node->next = widget->anims;
-  widget->anims = node;  
+
+lf_animation_t* lf_widget_add_keyframe_animation(
+    lf_widget_t* widget,
+    float *target,
+    lf_animation_keyframe_t* keyframes,
+    uint32_t n_keyframes) {
+  lf_widget_interrupt_animation(widget, target);
+  return lf_animation_create(
+    &widget->anims,
+    target,
+    keyframes,
+    n_keyframes,
+    false
+  );
+}
+
+lf_animation_t* lf_widget_add_keyframe_animation_looped(
+    lf_widget_t* widget,
+    float *target,
+    lf_animation_keyframe_t* keyframes,
+    uint32_t n_keyframes) {
+  lf_widget_interrupt_animation(widget, target);
+  return lf_animation_create(
+    &widget->anims,
+    target,
+    keyframes,
+    n_keyframes,
+    true 
+  );
 }
 
 void lf_widget_interrupt_animation(
     lf_widget_t* widget,
     float *target) {
-  lf_widget_animation_node_t* node = widget->anims;
-  while(node != NULL) {
-    if(node->base.target == target) {
-      node->base.active = 0;
-    }
-    node = node->next;
+  lf_animation_interrupt(widget->anims, target);
+}
+
+void lf_widget_interrupt_all_animations(
+    lf_widget_t* widget) {
+  lf_animation_t* anim = widget->anims;
+  while(anim) {
+    anim->active = false;
+    anim = anim->next;
   }
 }

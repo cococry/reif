@@ -5,8 +5,7 @@
 #include "event.h"
 #include "util.h"
 #include "layout.h"
-
-typedef float (*lf_animation_func_t)(float t);
+#include "animation.h"
 
 typedef enum {
   WidgetTypeUndefined = 0,
@@ -14,21 +13,6 @@ typedef enum {
   WidgetTypeDiv,
   WidgetTypeButton,
 } lf_widget_type_t;
-
-typedef struct {
-  float* target;          
-  float start_value;      
-  float end_value;        
-  float duration;        
-  float elapsed_time;     
-  lf_animation_func_t easing;  
-  int active; 
-} lf_widget_animation_t;
-
-typedef struct lf_widget_animation_node_t {
-    lf_widget_animation_t base;
-    struct lf_widget_animation_node_t* next;
-} lf_widget_animation_node_t;
 
 typedef struct lf_widget_t lf_widget_t;
 typedef struct lf_ui_state_t lf_ui_state_t;
@@ -46,10 +30,6 @@ typedef void (*lf_widget_shape_cb)(
       lf_ui_state_t* ui,
       lf_widget_t* widget);
 
-typedef void (*lf_widget_animate_cb)(
-      lf_ui_state_t* ui,
-      lf_widget_t* widget);
-
 struct lf_widget_t {
   lf_widget_t* parent;
   lf_widget_t** childs;
@@ -62,7 +42,6 @@ struct lf_widget_t {
   lf_widget_render_cb render;
   lf_widget_handle_event_cb handle_event;
   lf_widget_shape_cb shape;
-  lf_widget_animate_cb animate;
   
   bool visible; 
 
@@ -71,7 +50,7 @@ struct lf_widget_t {
 
   uint32_t listening_for;
 
-  lf_widget_animation_node_t* anims;
+  lf_animation_t* anims;
 };
 
 lf_widget_t* lf_widget_create(
@@ -152,14 +131,37 @@ void lf_widget_set_listener(
     lf_widget_handle_event_cb cb, 
     uint32_t events);
 
-void lf_widget_add_animation(
+lf_animation_t* lf_widget_add_animation(
     lf_widget_t* widget,
     float *target, 
     float start_value, 
     float end_value, 
-    float duration, 
-    lf_animation_func_t easing);
+    float duration,
+    lf_animation_func_t func);
+
+lf_animation_t* lf_widget_add_animation_looped(
+    lf_widget_t* widget,
+    float *target, 
+    float start_value, 
+    float end_value, 
+    float duration,
+    lf_animation_func_t func);
+
+lf_animation_t* lf_widget_add_keyframe_animation(
+    lf_widget_t* widget,
+    float *target,
+    lf_animation_keyframe_t* keyframes,
+    uint32_t n_keyframes);
+
+lf_animation_t* lf_widget_add_keyframe_animation_looped(
+    lf_widget_t* widget,
+    float *target,
+    lf_animation_keyframe_t* keyframes,
+    uint32_t n_keyframes);
 
 void lf_widget_interrupt_animation(
     lf_widget_t* widget,
     float *target);
+
+void lf_widget_interrupt_all_animations(
+    lf_widget_t* widget);
