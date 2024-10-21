@@ -32,7 +32,7 @@ lf_animation_create(
   uint32_t n_keyframes,
   bool looping
 ) {
-
+  if(!head) return NULL;
   lf_animation_t* anim = malloc(sizeof(*anim));
   anim->target = target;
   if(n_keyframes == 1) {
@@ -67,6 +67,7 @@ lf_animation_create(
 
 void 
 lf_animation_update(lf_animation_t* anim, float dt) {
+  if(!anim) return;
   anim->elapsed_time += dt; 
 
   if(anim->elapsed_time >= anim->keyframes[anim->i_keyframes].duration) {
@@ -94,6 +95,7 @@ lf_animation_update(lf_animation_t* anim, float dt) {
 
 void 
 lf_animation_interrupt(lf_animation_t* head, float* target) {
+  if(!head || !target) return;
   lf_animation_t* anim = head;
   while(anim) {
     if(anim->target == target) {

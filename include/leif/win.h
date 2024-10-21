@@ -16,8 +16,7 @@ typedef void (*lf_win_close_func)(
     );
 typedef void (*lf_win_refresh_func)(
     lf_ui_state_t*,
-    void*,
-    uint32_t, uint32_t
+    void*
     );
 typedef void (*lf_win_resize_func)(
     lf_ui_state_t*,
@@ -42,12 +41,11 @@ typedef void (*lf_win_mouse_move_func)(
     uint16_t x, uint16_t y
     );
 
-
-
-
 int32_t lf_windowing_init(void);
 
 int32_t lf_windowing_terminate(void);
+
+void lf_windowing_update(void);
 
 void lf_windowing_set_ui_state(lf_ui_state_t* state);
 

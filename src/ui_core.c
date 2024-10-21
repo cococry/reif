@@ -26,7 +26,6 @@ static void render_widget_and_submit(
   lf_container_t clear_area);
 
 static void root_shape(lf_ui_state_t* ui, lf_widget_t* widget);
-static void root_resize(lf_ui_state_t* ui, lf_widget_t* widget, lf_event_t ev);
 static void win_close_callback(lf_ui_state_t* ui, void* window);
 
 void 
@@ -73,13 +72,6 @@ root_shape(lf_ui_state_t* ui, lf_widget_t* widget) {
   if(!widget) return;
   if(widget->type != WidgetTypeRoot) return;
   lf_widget_apply_layout(ui->root);
-}
-
-void 
-root_resize(lf_ui_state_t* ui, lf_widget_t* widget, lf_event_t ev) {
-  if(widget != ui->root) return;
-  ui->render_resize_display(ui->render_state, ev.width, ev.height);
-  ui->root_needs_render = true;
 }
 
 lf_window_t*
@@ -145,9 +137,7 @@ lf_ui_core_init(lf_window_t* win) {
     WidgetTypeRoot,
     LF_SCALE_CONTAINER(lf_win_get_size(win).x, lf_win_get_size(win).y),
     (lf_widget_props_t){0},
-    NULL, root_resize, root_shape);
-  
-  lf_widget_listen_for(state->root, WinEventResize);
+    NULL, NULL, root_shape);
 
   lf_windowing_set_ui_state(state);
  
@@ -260,11 +250,9 @@ lf_ui_core_init_ex(
     WidgetTypeRoot,
     LF_SCALE_CONTAINER((float)lf_win_get_size(win).x, lf_win_get_size(win).y),
     (lf_widget_props_t){0},
-    NULL, root_resize, root_shape);
+    NULL, NULL, root_shape);
 
   state->root->type = WidgetTypeRoot;
-
-  lf_widget_listen_for(state->root, WinEventResize);
 
   state->root->props.color = state->theme->background_color;
   state->root->layout_type = LayoutVertical;
@@ -278,6 +266,12 @@ lf_ui_core_init_ex(
 void
 lf_ui_core_next_event(lf_ui_state_t* ui) {
   lf_windowing_next_event();
+  lf_event_type_t ev = lf_windowing_get_current_event();
+  if(ev == WinEventRefresh || ev == WinEventResize) {
+    vec2s win_size = lf_win_get_size(ui->win);
+    ui->render_resize_display(ui->render_state, win_size.x, win_size.y);
+    ui->root_needs_render = true;
+  }
 
   float cur_time = glfwGetTime();
   ui->delta_time = cur_time - ui->_last_time;
@@ -308,8 +302,9 @@ lf_ui_core_next_event(lf_ui_state_t* ui) {
  
   if(!rendered) {
     usleep((ui->_frame_duration) * 1000000);
-  } else {
-  }
+  } 
+
+  lf_windowing_update();
 }
 
 

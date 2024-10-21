@@ -34,7 +34,6 @@ float ease_in_out_quad(float t) {
 #define EASING ease_in_quad 
 
 lf_font_t big_font, small_font;
-float corner_radius_buttons = 0.0f;
 
 
 void on_button_enter(lf_ui_state_t* ui, lf_widget_t* widget) {
@@ -80,9 +79,9 @@ int main(void) {
   div->base.props.color = LF_WHITE;
   lf_div_set_fixed_height(div, lf_win_get_size(ui->win).y);
   lf_widget_set_listener(&div->base, on_resize, WinEventResize);
-  lf_widget_set_layout(&div->base, LayoutHorizontal);
+  lf_widget_set_layout(&div->base, LayoutVertical);
 
-  lf_div_set_flag(div, DivAdjustCenterVertical | DivAdjustCenterHorizontal);
+  lf_div_set_flag(div, DivAdjustCenterHorizontal | DivAdjustCenterVertical);
 
   const char* buttons[] = {
     "Single Player",
@@ -104,8 +103,8 @@ int main(void) {
     lf_button_set_font_size(ui, btn, 30);
     lf_button_set_font(ui, btn, font);
     btn->base.props.corner_radius = 10; 
-    corner_radius_buttons = btn->base.props.corner_radius;
     btn->text_color = LF_WHITE;
+    lf_button_set_fixed_width(btn, 200);
   }
 
   lf_ui_core_submit(ui);

@@ -145,7 +145,6 @@ bool lf_widget_animate(
   uint32_t n_anims = count_anims(widget->anims);
   if (n_anims != 0) {
     widget_animate(ui, widget); 
-    lf_ui_core_make_dirty(ui, widget);;
     animated = true;  
   } 
   for (uint32_t i = 0; i < widget->num_childs; i++) {

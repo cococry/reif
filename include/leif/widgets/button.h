@@ -5,8 +5,7 @@
 
 typedef void (*lf_button_func_t)(
     lf_ui_state_t* ui,
-    lf_widget_t* widget); 
-
+    lf_widget_t* widget);
 
 typedef struct {
   lf_widget_t base;
@@ -21,6 +20,13 @@ typedef struct {
 
   bool _changed_font_size;
   bool _hovered;
+
+  bool _fixed_width;
+  bool _fixed_height;
+
+  bool centered_text;
+
+  lf_text_dimension_t _text_dimension;
 } lf_button_t;
 
 lf_button_t* lf_button_create(
@@ -47,3 +53,13 @@ void lf_button_set_font_size(
     lf_ui_state_t* ui, 
     lf_button_t* button,
     uint32_t size);
+
+void lf_button_set_fixed_width(
+    lf_button_t* button,
+    float width
+    );
+
+void lf_button_set_fixed_height(
+    lf_button_t* button,
+    float height 
+    );

@@ -93,6 +93,19 @@ glfw_resize_callback(
 }
 
 void 
+glfw_refresh_callback(
+  GLFWwindow* window) {
+  lf_event_t ev;
+  ev.type = WinEventRefresh; 
+  current_event = WinEventRefresh;
+  lf_widget_handle_event(ui, ui->root, ev);
+  for(uint32_t i = 0; i < n_windows; i++) {
+      if(window_callbacks[i].win == window && window_callbacks[i].ev_resize_cb)
+        window_callbacks[i].ev_refresh_cb(ui, window);
+  }
+}
+
+void 
 glfw_close_callback(GLFWwindow* window) {
   for(uint32_t i = 0; i < n_windows; i++) {
       if(window_callbacks[i].win == window && window_callbacks[i].ev_close_cb)
@@ -135,6 +148,11 @@ lf_windowing_terminate(void) {
   return 0;
 }
 
+void
+lf_windowing_update(void) {
+  current_event = WinEventNone;
+}
+
 void 
 lf_windowing_set_ui_state(lf_ui_state_t* state) {
   ui = state;
@@ -173,6 +191,7 @@ lf_win_create(uint32_t width, uint32_t height, const char* title) {
     glfwSetMouseButtonCallback(win, glfw_mouse_button_callback);
     glfwSetWindowCloseCallback(win, glfw_close_callback);
     glfwSetFramebufferSizeCallback(win, glfw_resize_callback);
+    glfwSetWindowRefreshCallback(win, glfw_refresh_callback);
     glfwSetCursorPosCallback(win, glfw_mouse_move_callback);
   }
   else {
@@ -292,7 +311,6 @@ lf_win_get_refresh_rate(lf_window_t* win) {
 
     int monitor_count;
     GLFWmonitor** monitors = glfwGetMonitors(&monitor_count);
-    // Iterate through monitors to find the one the window is on
     for (int i = 0; i < monitor_count; i++) {
         int monitor_x, monitor_y;
         const GLFWvidmode* mode = glfwGetVideoMode(monitors[i]);
