@@ -79,21 +79,20 @@ int main(void) {
   div->base.props.color = LF_WHITE;
   lf_div_set_fixed_height(div, lf_win_get_size(ui->win).y);
   lf_widget_set_listener(&div->base, on_resize, WinEventResize);
-  lf_widget_set_layout(&div->base, LayoutVertical);
+  lf_widget_set_layout(&div->base, LayoutHorizontal);
 
-  lf_div_set_flag(div, DivAdjustCenterHorizontal | DivAdjustCenterVertical);
+  lf_alignment_flag_set(&div->flags, AlignCenterVertical | AlignCenterHorizontal);
 
   const char* buttons[] = {
-    "Single Player",
-    "Multiplayer",
-    "Settings",
-    "Credits"
+    " Shutdown",
+    " Reboot",
+    " Hold",
   };
 
   lf_font_t* font = lf_load_font(
     ui, "/usr/share/fonts/TTF/JetBrainsMonoNerdFont-Bold.ttf", 24
   );
-  for(uint32_t i = 0; i < 4; i++) {
+  for(uint32_t i = 0; i < 3; i++) {
     lf_button_t* btn = lf_button_create_with_label(ui, &div->base, buttons[i]);
     btn->on_enter = on_button_enter;
     btn->on_leave = on_button_leave;
@@ -104,7 +103,9 @@ int main(void) {
     lf_button_set_font(ui, btn, font);
     btn->base.props.corner_radius = 10; 
     btn->text_color = LF_WHITE;
+    lf_button_set_fixed_height(btn, 30);
     lf_button_set_fixed_width(btn, 200);
+    lf_alignment_flag_set(&btn->flags, AlignCenterVertical);
   }
 
   lf_ui_core_submit(ui);

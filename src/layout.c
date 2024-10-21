@@ -13,7 +13,7 @@ vec2s
 size_of_childs(lf_widget_t* widget) {
   float child_w = widget->container.size.x;
   if((widget->type == WidgetTypeDiv) && 
-    (lf_div_has_flag((lf_div_t*)widget, DivAdjustCenterHorizontal))
+    (lf_alignment_flag_exists(&((lf_div_t*)widget)->flags, AlignCenterHorizontal))
   ) {
     child_w = 0.0f;
     for(uint32_t i = 0; i < widget->num_childs; i++) {
@@ -25,7 +25,7 @@ size_of_childs(lf_widget_t* widget) {
 
   float child_h = widget->container.size.y;
   if((widget->type == WidgetTypeDiv) && 
-    (lf_div_has_flag((lf_div_t*)widget, DivAdjustCenterVertical))
+    (lf_alignment_flag_exists(&((lf_div_t*)widget)->flags, AlignCenterVertical))
   ) {
     child_h = 0.0f;
     for(uint32_t i = 0; i < widget->num_childs; i++) {
@@ -94,7 +94,7 @@ lf_layout_vertical(lf_widget_t* widget) {
 
     vec2s effictive = effective_widget_size(child);
 
-    if(widget->type == WidgetTypeDiv && lf_div_has_flag(((lf_div_t*)widget), DivAdjustCenterHorizontal))
+    if(widget->type == WidgetTypeDiv && lf_alignment_flag_exists(&((lf_div_t*)widget)->flags, AlignCenterHorizontal))
       offset.x = ((widget->container.size.x - effictive.x) / 2.0f) - (widget->props.padding_left);
 
     child->container.pos.x = widget->container.pos.x + offset.x + widget->props.padding_left + child->props.margin_left;
@@ -128,7 +128,7 @@ lf_layout_horizontal(lf_widget_t* widget) {
 
     vec2s effictive = effective_widget_size(child);
 
-    if(widget->type == WidgetTypeDiv && lf_div_has_flag(((lf_div_t*)widget), DivAdjustCenterVertical))
+    if(widget->type == WidgetTypeDiv && lf_alignment_flag_exists(&((lf_div_t*)widget)->flags, AlignCenterVertical))
       offset.y = ((widget->container.size.y - effictive.y) / 2.0f);
 
     child->container.pos.y = widget->container.pos.y + offset.y + widget->props.padding_top + child->props.margin_top;
@@ -147,4 +147,22 @@ lf_layout_horizontal(lf_widget_t* widget) {
 void 
 lf_layout_center(lf_widget_t* widget) {
   (void)widget;
+}
+
+void lf_alignment_flag_set(
+    uint32_t* flags, 
+    lf_alignment_flag_t flag) {
+  *flags |= flag;
+}
+
+void lf_alignment_flag_unset(
+    uint32_t* flags,
+    lf_alignment_flag_t flag) {
+  *flags &= ~flag;
+}
+
+bool lf_alignment_flag_exists(
+    uint32_t* flags,
+    lf_alignment_flag_t flag) {
+  return (*flags & flag) != 0;
 }

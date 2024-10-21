@@ -41,9 +41,9 @@ _button_render(
       .y =  widget->container.pos.y + widget->props.padding_top 
     };
 
-    if(button->_fixed_width && button->centered_text)
+    if(button->_fixed_height && lf_alignment_flag_exists(&button->flags, AlignCenterHorizontal))
       text_pos.x = widget->container.pos.x + (lf_widget_width(widget) - button->_text_dimension.width) / 2.0f;
-    if(button->_fixed_height && button->centered_text)
+    if(button->_fixed_height && lf_alignment_flag_exists(&button->flags, AlignCenterVertical))
       text_pos.y = widget->container.pos.y + (lf_widget_height(widget) - button->_text_dimension.height) / 2.0f;
 
     ui->render_text(
@@ -122,7 +122,7 @@ lf_button_create(
   button->_changed_font_size = false;
   button->_hovered = false;
   button->_text_dimension = (lf_text_dimension_t){.width = 0, .height = 0};
-  button->centered_text = false;
+  button->flags = 0;
 
   button->base.layout_type = LayoutNone;
   lf_widget_add_child(parent, (lf_widget_t*)button);
@@ -162,7 +162,7 @@ lf_button_create_with_label_ex(
 
   button->_fixed_width = false;
   button->_fixed_height = false;
-  button->centered_text = false;
+  button->flags = 0;
 
   lf_text_dimension_t text_dimension = ui->render_get_text_dimension(
     ui->render_state,

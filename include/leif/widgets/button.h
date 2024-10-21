@@ -24,7 +24,7 @@ typedef struct {
   bool _fixed_width;
   bool _fixed_height;
 
-  bool centered_text;
+  uint32_t flags;
 
   lf_text_dimension_t _text_dimension;
 } lf_button_t;

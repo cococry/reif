@@ -70,24 +70,3 @@ lf_div_set_fixed_height(
   div->base.container.size.y = height;
 }
 
-void lf_div_set_flag(
-    lf_div_t* div, 
-    lf_div_flag_t flag
-    ) {
-
-  div->flags |= flag;
-}
-
-void lf_div_unset_flag(
-    lf_div_t* div, 
-    lf_div_flag_t flag
-    ) {
-  div->flags &= ~flag;
-}
-
-bool lf_div_has_flag(
-    lf_div_t* div,
-    lf_div_flag_t flag
-    ) {
-  return (div->flags & flag) != 0;
-}
