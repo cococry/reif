@@ -306,6 +306,9 @@ lf_widget_apply_layout(lf_widget_t* widget) {
   if(widget->layout_type == LayoutHorizontal) {
     lf_layout_horizontal(widget);
   }
+  if(widget->layout_type == LayoutGrid) {
+    lf_layout_grid(widget);
+  }
 }
 
 void 

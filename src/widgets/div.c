@@ -42,8 +42,9 @@ lf_div_create(
   lf_widget_add_child(parent, (lf_widget_t*)div);
 
   div->base.layout_type = LayoutVertical;
-  div->fixed_width = -1.0f;
-  div->fixed_height = -1.0f;
+  div->_fixed_width = -1.0f;
+  div->_fixed_height = -1.0f;
+  div->_column_count = -1;
   div->flags = 0;
 
   return div;
@@ -53,9 +54,9 @@ void
 lf_div_set_fixed_width(
     lf_div_t* div,
     float width) {
-  if(div->fixed_width == width) return;
+  if(div->_fixed_width == width) return;
 
-  div->fixed_width = width;
+  div->_fixed_width = width;
   div->base.container.size.x = width;
 }
 
@@ -64,9 +65,14 @@ lf_div_set_fixed_height(
     lf_div_t* div,
     float height) {
   height -= div->base.props.padding_top + div->base.props.padding_bottom;
-  if(div->fixed_height == height) return;
+  if(div->_fixed_height == height) return;
 
-  div->fixed_height = height;
+  div->_fixed_height = height;
   div->base.container.size.y = height;
 }
 
+void lf_div_set_column_count(
+    lf_div_t* div,
+    uint32_t column_count) {
+  div->_column_count = (int32_t)column_count;
+}

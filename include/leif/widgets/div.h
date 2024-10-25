@@ -5,10 +5,10 @@
 
 typedef struct {
   lf_widget_t base;
-
-  float fixed_width, fixed_height;
-
   uint32_t flags;
+
+  float _fixed_width, _fixed_height;
+  int32_t _column_count;
 } lf_div_t;
 
 lf_div_t* lf_div_create(
@@ -23,3 +23,6 @@ void lf_div_set_fixed_height(
     lf_div_t* div,
     float height);
 
+void lf_div_set_column_count(
+    lf_div_t* div,
+    uint32_t column_count);

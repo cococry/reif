@@ -8,7 +8,7 @@ typedef enum {
   LayoutNone = 0,
   LayoutVertical = 0,
   LayoutHorizontal,
-  LayoutCenter
+  LayoutGrid
 } lf_layout_type_t;
 
 typedef enum {
@@ -20,7 +20,7 @@ void lf_layout_vertical(lf_widget_t* widget);
 
 void lf_layout_horizontal(lf_widget_t* widget);
 
-void lf_layout_center(lf_widget_t* widget);
+void lf_layout_grid(lf_widget_t* widget);
 
 void lf_alignment_flag_set(
     uint32_t* flags, 

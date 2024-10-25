@@ -33,7 +33,10 @@ lf_animation_create(
   bool looping
 ) {
   if(!head) return NULL;
+  if(!target) return NULL;
   lf_animation_t* anim = malloc(sizeof(*anim));
+  if(!anim) return NULL;
+
   anim->target = target;
   if(n_keyframes == 1) {
     lf_animation_keyframe_t keyframe = keyframe_create(keyframes[0], target);  
@@ -62,16 +65,20 @@ lf_animation_create(
   anim->next = *head;
   *head = anim;
 
+  printf("Added animation.\n");
   return anim;
 }
 
 void 
 lf_animation_update(lf_animation_t* anim, float dt) {
-  if(!anim) return;
-  anim->elapsed_time += dt; 
+  if(!anim || !anim->keyframes || anim->n_keyframes <= 0) return;
 
-  if(anim->elapsed_time >= anim->keyframes[anim->i_keyframes].duration) {
-    if(anim->i_keyframes + 1 <= anim->n_keyframes - 1) {
+  anim->elapsed_time += dt;
+
+  if(anim->i_keyframes < anim->n_keyframes && 
+    anim->elapsed_time >= anim->keyframes[anim->i_keyframes].duration) {
+
+    if(anim->i_keyframes + 1 < anim->n_keyframes) {
       anim->i_keyframes++;
       anim->elapsed_time = 0.0f;
     }
@@ -82,7 +89,11 @@ lf_animation_update(lf_animation_t* anim, float dt) {
       }
     }
   }
+
   lf_animation_keyframe_t kf = anim->keyframes[anim->i_keyframes];
+
+  if(kf.duration <= 0.0f) return;
+  if(!kf.easing) return;
 
   float t = anim->elapsed_time / kf.duration;
   if (t >= 1.0f) {

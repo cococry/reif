@@ -26,6 +26,7 @@ static void render_widget_and_submit(
   lf_container_t clear_area);
 
 static void root_shape(lf_ui_state_t* ui, lf_widget_t* widget);
+static void root_resize(lf_ui_state_t* ui, lf_widget_t* widget, lf_event_t ev);
 static void win_close_callback(lf_ui_state_t* ui, void* window);
 
 void 
@@ -72,6 +73,13 @@ root_shape(lf_ui_state_t* ui, lf_widget_t* widget) {
   if(!widget) return;
   if(widget->type != WidgetTypeRoot) return;
   lf_widget_apply_layout(ui->root);
+}
+
+void 
+root_resize(lf_ui_state_t* ui, lf_widget_t* widget, lf_event_t ev) {
+  (void)widget;
+  ui->render_resize_display(ui->render_state, ev.width, ev.height);
+  ui->root_needs_render = true;
 }
 
 lf_window_t*
@@ -137,7 +145,9 @@ lf_ui_core_init(lf_window_t* win) {
     WidgetTypeRoot,
     LF_SCALE_CONTAINER(lf_win_get_size(win).x, lf_win_get_size(win).y),
     (lf_widget_props_t){0},
-    NULL, NULL, root_shape);
+    NULL, root_resize, root_shape);
+
+  lf_widget_set_listener(state->root, root_resize, WinEventResize);
 
   lf_windowing_set_ui_state(state);
  
@@ -173,21 +183,21 @@ lf_ui_core_default_theme(void) {
   };
 
   theme->button_props = (lf_widget_props_t){
-    .color = lf_color_from_hex(0xffffff),
-    .padding_left = global_padding * 2,
-    .padding_right = global_padding * 2,
+    .color = lf_color_from_hex(0x111111),
+    .padding_left = global_padding,
+    .padding_right = global_padding,
     .padding_top = global_padding,
     .padding_bottom = global_padding,
     .margin_left = global_margin,
     .margin_right = global_margin,
     .margin_top = global_margin,
     .margin_bottom = global_margin,
-    .corner_radius = 0.0f, 
-    .border_width = 1.0f, 
-    .border_color = LF_BLACK,
+    .corner_radius = 5.0f, 
+    .border_width = 0.0f, 
+    .border_color = LF_NO_COLOR,
   };
 
-  theme->text_color = lf_color_from_hex(0x222222);
+  theme->text_color = lf_color_from_hex(0xffffff);
   theme->background_color = lf_color_from_hex(0xeeeeee);
 
   return theme;
@@ -250,7 +260,9 @@ lf_ui_core_init_ex(
     WidgetTypeRoot,
     LF_SCALE_CONTAINER((float)lf_win_get_size(win).x, lf_win_get_size(win).y),
     (lf_widget_props_t){0},
-    NULL, NULL, root_shape);
+    NULL, root_resize, root_shape);
+
+  lf_widget_set_listener(state->root, root_resize, WinEventResize);
 
   state->root->type = WidgetTypeRoot;
 
@@ -267,7 +279,7 @@ void
 lf_ui_core_next_event(lf_ui_state_t* ui) {
   lf_windowing_next_event();
   lf_event_type_t ev = lf_windowing_get_current_event();
-  if(ev == WinEventRefresh || ev == WinEventResize) {
+  if(ev == WinEventRefresh) {
     vec2s win_size = lf_win_get_size(ui->win);
     ui->render_resize_display(ui->render_state, win_size.x, win_size.y);
     ui->root_needs_render = true;
