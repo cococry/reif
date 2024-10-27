@@ -67,7 +67,7 @@ void on_button_leave(lf_ui_state_t* ui, lf_widget_t* widget) {
 
 void on_button_click(lf_ui_state_t* ui, lf_widget_t* widget) {
   (void)widget;
-  lf_widget_set_layout(widget->parent, widget->parent->layout_type == LayoutVertical ?  LayoutHorizontal : LayoutVertical);
+  lf_widget_set_layout(widget->parent, widget->parent->layout_type == LayoutGrid ?  LayoutHorizontal : LayoutGrid);
   lf_widget_interrupt_all_animations(widget);
   lf_ui_core_submit(ui);
 }
@@ -85,9 +85,12 @@ int main(void) {
   lf_window_t* win = lf_ui_core_create_window(1280, 720, "hello leif");
   
   lf_ui_state_t* ui = lf_ui_core_init(win);
-  ui->root->props.color = lf_color_from_hex(0x111111);
+  ui->root->props.color = lf_color_from_hex(0x00ff00);
 
   lf_div_t* div = lf_div_create(ui, ui->root);
+  lf_widget_set_padding(&div->base, 0);
+  lf_widget_set_margin(&div->base, 0);
+  div->base.props.color = lf_color_from_hex(0xff0000);
 
   lf_widget_set_layout(&div->base, LayoutGrid);
 
@@ -96,12 +99,13 @@ int main(void) {
 
   for(uint32_t i = 0; i < 3*3; i++) {
     char buf[64];
-    sprintf(buf, "hello, world: %i", i * 100);
+    sprintf(buf, "Привет, мир: %i", i * 100);
     lf_button_t* btn = lf_button_create_with_label(ui, &div->base, buf);
     btn->on_enter = on_button_enter;
     btn->on_leave = on_button_leave;
-    lf_button_set_font_size(ui, btn, 36);
+    btn->on_click = on_button_click;
     lf_widget_set_padding(&btn->base, ANIM_BEGIN);
+    lf_widget_set_margin(&btn->base, 20);
     btn->base.props.corner_radius = 20;
   }
 

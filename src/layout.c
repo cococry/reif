@@ -158,7 +158,6 @@ lf_layout_grid(lf_widget_t* widget) {
   uint32_t row_i = 0;
   uint32_t n_rows = (int32_t)(widget->num_childs / ((lf_div_t*)widget)->_column_count);
 
-
   float row_heights[n_rows];
   memset(row_heights, 0, sizeof(row_heights));
 
@@ -171,7 +170,6 @@ lf_layout_grid(lf_widget_t* widget) {
     if(widget_h > row_heights[row_i])
       row_heights[row_i] = widget_h; 
   }
-
   
   vec2s offset = (vec2s){
     .x = ((widget->container.size.x - size_of_childs(widget).x) / 2.0f),
@@ -184,18 +182,28 @@ lf_layout_grid(lf_widget_t* widget) {
   float x_ptr = x_before + widget->props.padding_left;
   float y_ptr = y_before + widget->props.padding_top;
 
+  float child_w = lf_widget_width(widget) / ((lf_div_t*)widget)->_column_count;
   row_i = 0;
   for(uint32_t i = 0; i < widget->num_childs; i++) {
     lf_widget_t* child = widget->childs[i];
-    vec2s effictive = effective_widget_size(child);
     if(i % ((lf_div_t*)widget)->_column_count == 0 && i != 0) {
       y_ptr += row_heights[row_i++];
       x_ptr = x_before + widget->props.padding_left; 
     }
 
+    float w = (child_w - child->props.margin_left - child->props.margin_right);
+    float ph = (w - child->container.size.x) / 2.0f;
+    float h = (row_heights[row_i] - child->props.margin_top - child->props.margin_bottom);
+    float pv = (h - child->container.size.y) / 2.0f;
+    child->props.padding_left = ph; 
+    child->props.padding_right = ph;
+    child->props.padding_top = pv; 
+    child->props.padding_bottom = pv;
+    
+    
     child->container.pos.x = x_ptr + child->props.margin_left; 
-    child->container.pos.y = y_ptr; 
-    x_ptr += effictive.x; 
+    child->container.pos.y = y_ptr + child->props.margin_top; 
+    x_ptr += effective_widget_size(child).x; 
   }
 }
 

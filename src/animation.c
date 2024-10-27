@@ -65,7 +65,6 @@ lf_animation_create(
   anim->next = *head;
   *head = anim;
 
-  printf("Added animation.\n");
   return anim;
 }
 
