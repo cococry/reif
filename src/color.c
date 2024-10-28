@@ -1,4 +1,5 @@
 #include "../include/leif/color.h"
+#include <stdint.h>
 
 lf_color_t 
 lf_color_from_hex(uint32_t hex) {
@@ -26,6 +27,14 @@ lf_color_to_zto(lf_color_t color) {
     .g = color.g / 255.0f, 
     .b = color.b / 255.0f, 
     .a = color.a / 255.0f};
+}
+lf_color_t 
+lf_color_from_zto(vec4s zto) {
+  return (lf_color_t){
+    .r = (uint8_t)(zto.r * 255), 
+    .g = (uint8_t)(zto.g * 255), 
+    .b = (uint8_t)(zto.b * 255), 
+    .a = (uint8_t)(zto.a * 255)};
 }
 
 bool 

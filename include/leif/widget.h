@@ -37,13 +37,13 @@ struct lf_widget_t {
 
   lf_container_t container;
 
-  lf_widget_props_t props;
+  lf_widget_props_t props, _initial_props;
 
   lf_widget_render_cb render;
   lf_widget_handle_event_cb handle_event;
   lf_widget_shape_cb shape;
   
-  bool visible; 
+  bool visible, changed_by_layout; 
 
   lf_widget_type_t type;
   lf_layout_type_t layout_type;
@@ -118,7 +118,7 @@ void lf_widget_set_corner_radius(
 
 void lf_widget_set_layout(lf_widget_t* widget, lf_layout_type_t layout);
 
-void lf_widget_apply_layout(lf_widget_t* widget);
+void lf_widget_apply_layout(lf_ui_state_t* ui, lf_widget_t* widget);
 
 void lf_widget_listen_for(lf_widget_t* widget, uint32_t events);
 

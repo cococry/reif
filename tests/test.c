@@ -33,11 +33,24 @@ float ease_in_out_quad(float t) {
 
 #define ANIM_TIME 0.3
 #define ANIM_BEGIN 30.0f
-#define ANIM_END 50.0f
+#define ANIM_END 40.0f
 #define EASING ease_in_quad 
 
 lf_font_t big_font, small_font;
 
+
+void widget_store_props(lf_widget_t* widget) {
+  widget->_initial_props = widget->props;
+  for(uint32_t i = 0; i < widget->num_childs; i++) {
+    widget_store_props(widget->childs[i]);
+  }
+}
+void widget_restore_props(lf_widget_t* widget) {
+  widget->props = widget->_initial_props;
+  for(uint32_t i = 0; i < widget->num_childs; i++) {
+    widget_restore_props(widget->childs[i]);
+  }
+}
 
 void on_button_enter(lf_ui_state_t* ui, lf_widget_t* widget) {
   if(!widget) return;
@@ -46,10 +59,11 @@ void on_button_enter(lf_ui_state_t* ui, lf_widget_t* widget) {
   float end_val = ANIM_END;
   float anim_time = ANIM_TIME;
   lf_animation_func_t easing = ease_out_quad;
-  lf_widget_add_animation(widget, &widget->props.padding_top, start_val, end_val, anim_time, easing);
-  lf_widget_add_animation(widget, &widget->props.padding_bottom, start_val, end_val, anim_time, easing);
-  lf_widget_add_animation(widget, &widget->props.padding_left, start_val, end_val, anim_time, easing);
-  lf_widget_add_animation(widget, &widget->props.padding_right, start_val, end_val, anim_time, easing);
+  lf_widget_add_animation(widget, &widget->_initial_props.padding_top, start_val, end_val, anim_time, easing);
+  lf_widget_add_animation(widget, &widget->_initial_props.padding_bottom, start_val, end_val, anim_time, easing);
+  lf_widget_add_animation(widget, &widget->_initial_props.padding_left, start_val, end_val, anim_time, easing);
+  lf_widget_add_animation(widget, &widget->_initial_props.padding_right, start_val, end_val, anim_time, easing);
+  
 }
 
 void on_button_leave(lf_ui_state_t* ui, lf_widget_t* widget) {
@@ -59,25 +73,34 @@ void on_button_leave(lf_ui_state_t* ui, lf_widget_t* widget) {
   float end_val = ANIM_BEGIN;
   float anim_time = ANIM_TIME;
   lf_animation_func_t easing = ease_in_quad;
-  lf_widget_add_animation(widget, &widget->props.padding_top, start_val, end_val, anim_time, easing);
-  lf_widget_add_animation(widget, &widget->props.padding_bottom, start_val, end_val, anim_time, easing);
-  lf_widget_add_animation(widget, &widget->props.padding_left, start_val, end_val, anim_time, easing);
-  lf_widget_add_animation(widget, &widget->props.padding_right, start_val, end_val, anim_time, easing);
+  lf_widget_add_animation(widget, &widget->_initial_props.padding_top, start_val, end_val, anim_time, easing);
+  lf_widget_add_animation(widget, &widget->_initial_props.padding_bottom, start_val, end_val, anim_time, easing);
+  lf_widget_add_animation(widget, &widget->_initial_props.padding_left, start_val, end_val, anim_time, easing);
+  lf_widget_add_animation(widget, &widget->_initial_props.padding_right, start_val, end_val, anim_time, easing);
 }
 
-void on_button_click(lf_ui_state_t* ui, lf_widget_t* widget) {
-  (void)widget;
-  lf_widget_set_layout(widget->parent, widget->parent->layout_type == LayoutGrid ?  LayoutHorizontal : LayoutGrid);
+void on_mouse_click(lf_ui_state_t* ui, lf_widget_t* widget, lf_event_t ev) {
+  (void)ev;
+  printf("servus.\n");
   lf_widget_interrupt_all_animations(widget);
+  lf_widget_set_layout(&mydiv->base, mydiv->base.layout_type == LayoutGrid ? LayoutResponsiveGrid : LayoutGrid);
   lf_ui_core_submit(ui);
+}
+void on_resize(lf_ui_state_t* ui, lf_widget_t* widget, lf_event_t ev) {
+  (void)ev;
+  (void)widget;
+  if(ev.type == WinEventResize) {
+    vec2s win_size = lf_win_get_size(ui->win);
+    lf_div_set_fixed_width(mydiv, win_size.x);
+    lf_div_set_fixed_height(mydiv, win_size.y);
+  } else {
+
+    lf_widget_interrupt_all_animations(widget);
+    lf_widget_set_layout(&mydiv->base, mydiv->base.layout_type == LayoutGrid ? LayoutResponsiveGrid : LayoutGrid);
+    lf_ui_core_submit(ui);
+  }
 }
 
-void on_resize(lf_ui_state_t* ui, lf_widget_t* widget, lf_event_t ev) {
-  if(widget->type != WidgetTypeDiv) return;
-  lf_div_t* div = (lf_div_t*)widget;
-  lf_div_set_fixed_height(div, ev.height);
-  lf_ui_core_submit(ui);
-}
 
 int main(void) {
   if(lf_windowing_init() != 0) return EXIT_FAILURE;
@@ -85,28 +108,32 @@ int main(void) {
   lf_window_t* win = lf_ui_core_create_window(1280, 720, "hello leif");
   
   lf_ui_state_t* ui = lf_ui_core_init(win);
-  ui->root->props.color = lf_color_from_hex(0x00ff00);
+  ui->root->props.color = lf_color_from_hex(0xeeeeee);
 
-  lf_div_t* div = lf_div_create(ui, ui->root);
-  lf_widget_set_padding(&div->base, 0);
-  lf_widget_set_margin(&div->base, 0);
-  div->base.props.color = lf_color_from_hex(0xff0000);
+  mydiv = lf_div_create(ui, ui->root);
+  lf_widget_set_padding(&mydiv->base, 0);
+  lf_widget_set_margin(&mydiv->base, 0);
+  mydiv->base.props.color = lf_color_from_hex(0xeeeeee);
 
-  lf_widget_set_layout(&div->base, LayoutGrid);
-
-  lf_div_set_fixed_height(div, 500);
-  lf_div_set_column_count(div, 3);
+  lf_div_set_fixed_height(mydiv, 720);
+  lf_div_set_fixed_width(mydiv, 1280);
+  lf_widget_set_layout(&mydiv->base, LayoutGrid);
+  lf_alignment_flag_set(&mydiv->flags, AlignCenterVertical | AlignCenterHorizontal);
+  lf_widget_set_listener(&mydiv->base, on_resize, WinEventResize | WinEventMouseRelease);
+  lf_div_set_column_count(mydiv, 3);
 
   for(uint32_t i = 0; i < 3*3; i++) {
     char buf[64];
-    sprintf(buf, "Привет, мир: %i", i * 100);
-    lf_button_t* btn = lf_button_create_with_label(ui, &div->base, buf);
+    sprintf(buf, "%i", i + 1);
+    lf_button_t* btn = lf_button_create_with_label(ui, &mydiv->base, buf);
     btn->on_enter = on_button_enter;
     btn->on_leave = on_button_leave;
-    btn->on_click = on_button_click;
+    btn->base.props.border_width = 4;
+    btn->base.props.color= lf_color_from_hex(0x007BFF); 
     lf_widget_set_padding(&btn->base, ANIM_BEGIN);
-    lf_widget_set_margin(&btn->base, 20);
-    btn->base.props.corner_radius = 20;
+    lf_button_set_font_size(ui, btn, 36);
+    btn->base.props.corner_radius = 5;
+    btn->base._initial_props = btn->base.props;
   }
 
 

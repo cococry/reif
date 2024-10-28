@@ -84,6 +84,8 @@ lf_widget_create(
   widget->type = type;
   widget->container = fallback_container;
   widget->props = props;
+  memset((void*)&widget->_initial_props, -1, sizeof(widget->_initial_props));
+
   widget->render = render;
   widget->handle_event = handle_event;
   widget->shape = shape;
@@ -144,7 +146,7 @@ bool lf_widget_animate(
 
   uint32_t n_anims = count_anims(widget->anims);
   if (n_anims != 0) {
-    widget_animate(ui, widget); 
+    widget_animate(ui, widget);
     animated = true;  
   } 
   for (uint32_t i = 0; i < widget->num_childs; i++) {
@@ -236,6 +238,11 @@ void lf_widget_set_padding(
   widget->props.padding_bottom = padding;
   widget->props.padding_left = padding; 
   widget->props.padding_right = padding;
+
+  widget->_initial_props.padding_top = padding;
+  widget->_initial_props.padding_bottom = padding;
+  widget->_initial_props.padding_left = padding; 
+  widget->_initial_props.padding_right = padding;
 }
 
 void lf_widget_set_margin(
@@ -299,7 +306,7 @@ lf_widget_set_layout(lf_widget_t* widget, lf_layout_type_t layout) {
 }
 
 void 
-lf_widget_apply_layout(lf_widget_t* widget) {
+lf_widget_apply_layout(lf_ui_state_t* ui, lf_widget_t* widget) {
   if(widget->layout_type == LayoutVertical) {
     lf_layout_vertical(widget);
   }
@@ -307,7 +314,10 @@ lf_widget_apply_layout(lf_widget_t* widget) {
     lf_layout_horizontal(widget);
   }
   if(widget->layout_type == LayoutGrid) {
-    lf_layout_grid(widget);
+    lf_layout_grid(ui, widget);
+  }
+  if(widget->layout_type == LayoutResponsiveGrid) {
+    lf_layout_responsive_grid(ui, widget);
   }
 }
 

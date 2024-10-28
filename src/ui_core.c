@@ -72,7 +72,7 @@ void
 root_shape(lf_ui_state_t* ui, lf_widget_t* widget) {
   if(!widget) return;
   if(widget->type != WidgetTypeRoot) return;
-  lf_widget_apply_layout(ui->root);
+  lf_widget_apply_layout(ui, ui->root);
 }
 
 void 
@@ -278,6 +278,7 @@ lf_ui_core_init_ex(
 void
 lf_ui_core_next_event(lf_ui_state_t* ui) {
   lf_windowing_next_event();
+
   lf_event_type_t ev = lf_windowing_get_current_event();
   if(ev == WinEventRefresh) {
     vec2s win_size = lf_win_get_size(ui->win);
@@ -316,6 +317,7 @@ lf_ui_core_next_event(lf_ui_state_t* ui) {
     usleep((ui->_frame_duration) * 1000000);
   } 
 
+
   lf_windowing_update();
 }
 
@@ -327,6 +329,7 @@ void lf_ui_core_rerender_dirty(lf_ui_state_t* ui) {
   memset(ui->dirty_widgets, 0, ui->num_dirty * sizeof(lf_widget_t*));
   ui->num_dirty = 0;
 }
+
 
 void 
 lf_ui_core_submit(lf_ui_state_t* ui) {
