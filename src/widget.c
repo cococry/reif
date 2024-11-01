@@ -84,12 +84,17 @@ lf_widget_create(
   widget->type = type;
   widget->container = fallback_container;
   widget->props = props;
-  memset((void*)&widget->_initial_props, -1, sizeof(widget->_initial_props));
+  widget->_initial_props = props;
 
   widget->render = render;
   widget->handle_event = handle_event;
   widget->shape = shape;
+
   widget->listening_for = 0;
+  widget->alignment_flags = 0;
+
+  widget->_fixed_width = false;
+  widget->_fixed_height = false;
 
   widget->anims = NULL; 
 
@@ -313,9 +318,6 @@ lf_widget_apply_layout(lf_ui_state_t* ui, lf_widget_t* widget) {
   if(widget->layout_type == LayoutHorizontal) {
     lf_layout_horizontal(widget);
   }
-  if(widget->layout_type == LayoutGrid) {
-    lf_layout_grid(ui, widget);
-  }
   if(widget->layout_type == LayoutResponsiveGrid) {
     lf_layout_responsive_grid(ui, widget);
   }
@@ -428,4 +430,21 @@ void lf_widget_interrupt_all_animations(
     anim->active = false;
     anim = anim->next;
   }
+}
+
+void 
+lf_widget_submit_props(lf_widget_t* widget) {
+  widget->_initial_props = widget->props;
+}
+
+void 
+lf_widget_set_fixed_width(lf_widget_t* widget, float width) {
+  widget->container.size.x = width;
+  widget->_fixed_width = true;
+}
+
+void 
+lf_widget_set_fixed_height(lf_widget_t* widget, float height) {
+  widget->container.size.y = height;
+  widget->_fixed_height = true;
 }

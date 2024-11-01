@@ -12,6 +12,7 @@ typedef enum {
   WidgetTypeRoot,
   WidgetTypeDiv,
   WidgetTypeButton,
+  WidgetTypeText
 } lf_widget_type_t;
 
 typedef struct lf_widget_t lf_widget_t;
@@ -49,6 +50,11 @@ struct lf_widget_t {
   lf_layout_type_t layout_type;
 
   uint32_t listening_for;
+
+  uint32_t alignment_flags;
+
+  bool _fixed_width;
+  bool _fixed_height;
 
   lf_animation_t* anims;
 };
@@ -165,3 +171,9 @@ void lf_widget_interrupt_animation(
 
 void lf_widget_interrupt_all_animations(
     lf_widget_t* widget);
+
+void lf_widget_submit_props(lf_widget_t* widget);
+
+void lf_widget_set_fixed_width(lf_widget_t* widget, float width);
+
+void lf_widget_set_fixed_height(lf_widget_t* widget, float height);

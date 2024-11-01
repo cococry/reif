@@ -166,9 +166,12 @@ lf_ui_core_default_theme(void) {
   const uint32_t global_padding = 10;
   const uint32_t global_margin = 5;
 
+  theme->text_color = lf_color_from_hex(0xffffff);
+  theme->background_color = lf_color_from_hex(0xeeeeee);
 
   theme->div_props = (lf_widget_props_t){
     .color = lf_color_from_hex(0xffffff),
+    .text_color = theme->text_color,
     .padding_left = global_padding,
     .padding_right = global_padding,
     .padding_top = global_padding,
@@ -184,6 +187,7 @@ lf_ui_core_default_theme(void) {
 
   theme->button_props = (lf_widget_props_t){
     .color = lf_color_from_hex(0x111111),
+    .text_color = theme->text_color,
     .padding_left = global_padding,
     .padding_right = global_padding,
     .padding_top = global_padding,
@@ -196,9 +200,23 @@ lf_ui_core_default_theme(void) {
     .border_width = 0.0f, 
     .border_color = LF_NO_COLOR,
   };
+  
+  theme->text_props = (lf_widget_props_t){
+    .color = LF_NO_COLOR, 
+    .text_color = lf_color_from_hex(0x0),
+    .padding_left = global_padding,
+    .padding_right = global_padding,
+    .padding_top = global_padding,
+    .padding_bottom = global_padding,
+    .margin_left = global_margin,
+    .margin_right = global_margin,
+    .margin_top = global_margin,
+    .margin_bottom = global_margin,
+    .corner_radius = 0.0f, 
+    .border_width = 0.0f, 
+    .border_color = LF_NO_COLOR,
+  };
 
-  theme->text_color = lf_color_from_hex(0xffffff);
-  theme->background_color = lf_color_from_hex(0xeeeeee);
 
   return theme;
 }

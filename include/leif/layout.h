@@ -9,7 +9,6 @@ typedef enum {
   LayoutNone = 0,
   LayoutVertical = 0,
   LayoutHorizontal,
-  LayoutGrid,
   LayoutResponsiveGrid
 } lf_layout_type_t;
 
@@ -21,8 +20,6 @@ typedef enum {
 void lf_layout_vertical(lf_widget_t* widget);
 
 void lf_layout_horizontal(lf_widget_t* widget);
-
-void lf_layout_grid(lf_ui_state_t* ui, lf_widget_t* widget);
 
 void lf_layout_responsive_grid(lf_ui_state_t* ui, lf_widget_t* widget);
 

@@ -31,6 +31,8 @@ typedef void* lf_font_t;
 
 typedef struct {
   lf_color_t color;
+  lf_color_t text_color;
+
   float padding_left, padding_right,
         padding_top, padding_bottom;
 
@@ -40,6 +42,7 @@ typedef struct {
   float corner_radius, border_width;
 
   lf_color_t border_color;
+
 } lf_widget_props_t;
 
 bool lf_point_intersets_container(vec2s point, lf_container_t container);

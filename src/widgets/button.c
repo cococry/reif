@@ -1,11 +1,4 @@
 #include "../../include/leif/widgets/button.h"
-#include "../../include/leif/ui_core.h"
-#include "../../include/leif/event.h"
-#include "../../include/leif/layout.h"
-#include "../../include/leif/render.h"
-#include "../../include/leif/util.h"
-#include <cglm/types-struct.h>
-#include <string.h>
 
 #ifdef LF_RUNARA
 #include <runara/runara.h>
@@ -41,9 +34,9 @@ _button_render(
       .y =  widget->container.pos.y + widget->props.padding_top 
     };
 
-    if(button->_fixed_width && lf_alignment_flag_exists(&button->flags, AlignCenterHorizontal))
+    if(widget->_fixed_width && lf_alignment_flag_exists(&widget->alignment_flags, AlignCenterHorizontal))
       text_pos.x = widget->container.pos.x + (lf_widget_width(widget) - button->_text_dimension.width) / 2.0f;
-    if(button->_fixed_height && lf_alignment_flag_exists(&button->flags, AlignCenterVertical)) 
+    if(widget->_fixed_height && lf_alignment_flag_exists(&widget->alignment_flags, AlignCenterVertical)) 
       text_pos.y = widget->container.pos.y + (lf_widget_height(widget) - button->_text_dimension.height) / 2.0f;
 
     ui->render_text(
@@ -51,7 +44,7 @@ _button_render(
       button->label,
       button->font,
       text_pos,
-      button->text_color
+      widget->props.text_color
     );
   }
 }
@@ -115,14 +108,12 @@ lf_button_create(
 
   button->label = NULL;
   button->font = ui->font_p;
-  button->text_color = ui->theme->text_color;
   button->on_click = NULL;
   button->on_enter = NULL;
   button->on_leave = NULL;
   button->_changed_font_size = false;
   button->_hovered = false;
   button->_text_dimension = (lf_text_dimension_t){.width = 0, .height = 0};
-  button->flags = 0;
 
   button->base.layout_type = LayoutNone;
   lf_widget_add_child(parent, (lf_widget_t*)button);
@@ -156,13 +147,9 @@ lf_button_create_with_label_ex(
   button->on_click = NULL;
   button->on_enter = NULL;
   button->on_leave = NULL;
-  button->text_color = ui->theme->text_color;
   button->_changed_font_size = false;
   button->_hovered = false;
 
-  button->_fixed_width = false;
-  button->_fixed_height = false;
-  button->flags = 0;
 
   lf_text_dimension_t text_dimension = ui->render_get_text_dimension(
     ui->render_state,
@@ -225,16 +212,3 @@ lf_button_set_font_size(
 #endif
 }
 
-void lf_button_set_fixed_width(
-    lf_button_t* button,
-    float width) {
-  button->base.container.size.x = width;
-  button->_fixed_width = true;
-}
-
-void lf_button_set_fixed_height(
-    lf_button_t* button,
-    float height) {
-  button->base.container.size.y = height;
-  button->_fixed_height = true;
-}

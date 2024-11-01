@@ -11,6 +11,7 @@ typedef struct lf_widget_t lf_widget_t;
 typedef struct {
   lf_widget_props_t div_props;
   lf_widget_props_t button_props;
+  lf_widget_props_t text_props;
   lf_color_t text_color, background_color;
 } lf_theme_t;
 
