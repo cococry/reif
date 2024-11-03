@@ -58,3 +58,11 @@ lf_font_t lf_load_font_from_name(lf_ui_state_t* ui, const char* font_name, uint3
 void lf_font_resize(lf_ui_state_t* ui, lf_font_t font, uint32_t size);
 
 uint32_t lf_font_get_size(lf_ui_state_t* ui, lf_font_t font);
+
+float lf_ease_linear(float t);
+
+float lf_ease_out_quad(float t);
+
+float lf_ease_in_quad(float t);
+
+float lf_ease_in_out_quad(float t);

@@ -13,66 +13,53 @@
 
 #include <runara/runara.h>
 
-lf_div_t* mydiv;
+typedef struct {
+  int32_t counter;
+  lf_text_t* text;
+} state_t;
 
-float linear_ease(float t) {
-    return t;
+static state_t s;
+
+void on_click_inc(lf_ui_state_t* ui, lf_widget_t* widget) {
+  (void)widget;
+  s.counter++;
+  char buf[32];
+  sprintf(buf,"Counter: %i", s.counter);
+  lf_text_set_label(ui, s.text, buf);
+  lf_ui_core_submit(ui);
 }
 
-float ease_out_quad(float t) {
-    return 1 - (1 - t) * (1 - t);
+void on_click_dec(lf_ui_state_t* ui, lf_widget_t* widget) {
+  (void)widget;
+  s.counter--;
+  char buf[32];
+  sprintf(buf,"Counter: %i", s.counter);
+  lf_text_set_label(ui, s.text, buf);
+  lf_ui_core_submit(ui);
 }
 
-float ease_in_quad(float t) {
-    return t * t;
-}
-
-float ease_in_out_quad(float t) {
-    return t < 0.5 ? 2 * t * t : 1 - pow(-2 * t + 2, 2) / 2;
-}
-
-#define ANIM_TIME 0.3
-#define ANIM_BEGIN 30.0f
-#define ANIM_END 50.0f
-#define EASING ease_in_quad 
-
-lf_font_t big_font, small_font;
-
-
-void widget_store_props(lf_widget_t* widget) {
-  widget->_initial_props = widget->props;
-  for(uint32_t i = 0; i < widget->num_childs; i++) {
-    widget_store_props(widget->childs[i]);
-  }
-}
-void widget_restore_props(lf_widget_t* widget) {
-  widget->props = widget->_initial_props;
-  for(uint32_t i = 0; i < widget->num_childs; i++) {
-    widget_restore_props(widget->childs[i]);
-  }
-}
 
 void on_button_enter(lf_ui_state_t* ui, lf_widget_t* widget) {
   if(!widget) return;
   (void)ui;
-  float start_val = ANIM_BEGIN; 
-  float end_val = ANIM_END;
-  float anim_time = ANIM_TIME;
-  lf_animation_func_t easing = ease_out_quad;
+  float start_val = 10.0f; 
+  float end_val = 15.0f;
+  float anim_time = 0.2f;
+  lf_animation_func_t easing = lf_ease_out_quad;
   lf_widget_add_animation(widget, &widget->_initial_props.padding_top, start_val, end_val, anim_time, easing);
   lf_widget_add_animation(widget, &widget->_initial_props.padding_bottom, start_val, end_val, anim_time, easing);
   lf_widget_add_animation(widget, &widget->_initial_props.padding_left, start_val, end_val, anim_time, easing);
   lf_widget_add_animation(widget, &widget->_initial_props.padding_right, start_val, end_val, anim_time, easing);
-  
 }
 
 void on_button_leave(lf_ui_state_t* ui, lf_widget_t* widget) {
   if(!widget) return;
   (void)ui;
-  float start_val = ANIM_END; 
-  float end_val = ANIM_BEGIN;
-  float anim_time = ANIM_TIME;
-  lf_animation_func_t easing = ease_in_quad;
+  (void)ui;
+  float start_val = 15.0f; 
+  float end_val = 10.0f;
+  float anim_time = 0.2f;
+  lf_animation_func_t easing = lf_ease_out_quad;
   lf_widget_add_animation(widget, &widget->_initial_props.padding_top, start_val, end_val, anim_time, easing);
   lf_widget_add_animation(widget, &widget->_initial_props.padding_bottom, start_val, end_val, anim_time, easing);
   lf_widget_add_animation(widget, &widget->_initial_props.padding_left, start_val, end_val, anim_time, easing);
@@ -80,22 +67,55 @@ void on_button_leave(lf_ui_state_t* ui, lf_widget_t* widget) {
 }
 
 int main(void) {
+  s.counter = 0;
+
   if(lf_windowing_init() != 0) return EXIT_FAILURE;
 
   lf_window_t* win = lf_ui_core_create_window(1280, 720, "hello leif");
   
   lf_ui_state_t* ui = lf_ui_core_init(win);
-  ui->root->props.color = lf_color_from_hex(0xeeeeee);
 
-  mydiv = lf_div_create(ui, ui->root);
-  mydiv->base.props.color = lf_color_from_hex(0x999999);
-  mydiv->base.props.corner_radius = 10;
+  lf_div_t* div = lf_div_create(ui, ui->root);
+  lf_widget_submit_props(&div->base);
 
+  
+  lf_font_t font = lf_load_font_from_name(ui, "Inter", 24);
 
-  lf_text_create(ui, &mydiv->base, "Hello, world!");
-  lf_button_create_with_label(ui, &mydiv->base, "The white fox!");
+  char buf[32];
+  sprintf(buf,"Counter: %i", s.counter);
+  s.text = lf_text_create_ex(ui, &div->base, buf, font);
 
+  lf_div_t* div2 = lf_div_create(ui, &div->base);
+  div2->base.props.padding_left = 20;
+  div2->base.props.padding_right = 20;
+  div2->base.props.margin_top = 30;
+  div2->base.props.color = lf_color_from_hex(0x999999);
 
+  lf_widget_set_fixed_width(&div2->base, 400);
+  lf_alignment_flag_set(&div2->base.alignment_flags, AlignCenterHorizontal);
+  lf_widget_submit_props(&div2->base);
+
+  const char* texts[4] = {
+    "Downloads",
+    "Documents",
+    "Pictures",
+    "Desktop"
+  };
+  for(uint32_t i = 0; i < 4; i++) {
+    lf_button_t* button_inc = lf_button_create_with_label_ex(
+      ui, &div2->base,
+      texts[i],
+      font
+    );
+    lf_widget_submit_props(&button_inc->base);
+
+    lf_widget_set_fixed_width(&button_inc->base, 150);
+    lf_alignment_flag_set(&button_inc->base.alignment_flags, AlignCenterHorizontal);
+
+    button_inc->on_click = on_click_inc;
+    button_inc->on_enter = on_button_enter;
+    button_inc->on_leave = on_button_leave;
+  }
   lf_ui_core_submit(ui);
 
   while(ui->running) {

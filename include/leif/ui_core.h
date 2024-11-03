@@ -20,9 +20,6 @@ struct lf_ui_state_t {
 
   lf_widget_t* root;
 
-  lf_widget_t** dirty_widgets;
-  uint32_t num_dirty;
-
   bool root_needs_render;
 
   lf_render_rect_func_t render_rect;
@@ -88,10 +85,6 @@ lf_ui_state_t* lf_ui_core_init_ex(
 void lf_ui_core_next_event(lf_ui_state_t* ui);
 
 void lf_ui_core_submit(lf_ui_state_t* ui);
-
-void lf_ui_core_make_dirty(lf_ui_state_t* ui, lf_widget_t* widget);
-
-void lf_ui_core_rerender_dirty(lf_ui_state_t* ui);
 
 void lf_ui_core_begin_render(
     lf_ui_state_t* ui, 

@@ -24,3 +24,5 @@ vec4s lf_color_to_zto(lf_color_t color);
 lf_color_t lf_color_from_zto(vec4s zto);
 
 bool lf_color_equal(lf_color_t a, lf_color_t b);
+
+lf_color_t lf_color_dim(lf_color_t color, float dim);

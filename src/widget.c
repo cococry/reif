@@ -135,10 +135,10 @@ lf_widget_render(lf_ui_state_t* ui,  lf_widget_t* widget) {
 void lf_widget_shape(
   lf_ui_state_t* ui,
   lf_widget_t* widget) {
+
   if (widget->shape != NULL) {
     widget->shape(ui, widget);
   }
-
   for (uint32_t i = 0; i < widget->num_childs; i++) {
     lf_widget_shape(ui, widget->childs[i]);
   }
@@ -272,7 +272,7 @@ void lf_widget_set_color(
   if(lf_color_equal(widget->props.color, color)) return;
 
   widget->props.color = color;
-  lf_ui_core_make_dirty(ui, widget); 
+  ui->root_needs_render = true;
 }
 
 void lf_widget_set_border_color(
@@ -282,7 +282,7 @@ void lf_widget_set_border_color(
   if(lf_color_equal(widget->props.border_color, color)) return;
 
   widget->props.border_color = color;
-  lf_ui_core_make_dirty(ui, widget); 
+  ui->root_needs_render = true;
 }
 
 void lf_widget_set_border_width(
@@ -292,7 +292,7 @@ void lf_widget_set_border_width(
   if(widget->props.border_width == border_width) return;
 
   widget->props.border_width = border_width;
-  lf_ui_core_make_dirty(ui, widget); 
+  ui->root_needs_render = true;
 }
 
 void lf_widget_set_corner_radius(
@@ -302,7 +302,7 @@ void lf_widget_set_corner_radius(
   if(widget->props.corner_radius == corner_radius) return;
 
   widget->props.corner_radius = corner_radius;
-  lf_ui_core_make_dirty(ui, widget); 
+  ui->root_needs_render = true;
 }
 
 void 

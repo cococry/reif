@@ -10,7 +10,7 @@ typedef struct {
   void* font;
 
   lf_text_dimension_t _text_dimension;
-  bool _changed_font_size;
+  bool _changed_font_size, _changed_label;
 } lf_text_t;
 
 
@@ -29,6 +29,11 @@ void lf_text_set_font(
     lf_ui_state_t* ui, 
     lf_text_t* text,
     void* font);
+
+void lf_text_set_label(
+    lf_ui_state_t* ui, 
+    lf_text_t* text,
+    const char* label);
 
 void lf_text_set_font_size(
     lf_ui_state_t* ui, 

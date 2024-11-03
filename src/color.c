@@ -46,3 +46,14 @@ lf_color_equal(lf_color_t a, lf_color_t b) {
     a.a == b.a 
   );
 }
+
+lf_color_t 
+lf_color_dim(lf_color_t color, float dim) {
+  if(dim < 0.0f) dim = 0.0f;
+  return (lf_color_t){
+    color.r * dim, 
+    color.g * dim, 
+    color.b * dim, 
+    color.a
+  };
+}

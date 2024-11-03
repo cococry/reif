@@ -13,6 +13,11 @@ static void _button_handle_event(
   lf_widget_t* widget, 
   lf_event_t event);
 
+static void _button_recalculate_label(
+  lf_ui_state_t* ui,
+  lf_button_t* button
+);
+
 void
 _button_render(
   lf_ui_state_t* ui,
@@ -20,7 +25,10 @@ _button_render(
   if(!widget) return;
 
   lf_button_t* button = (lf_button_t*)widget;
- 
+
+  button->base.props.color =  !button->_hovered ? 
+    button->base._initial_props.color : 
+    lf_color_dim(button->base._initial_props.color, 4.0);
   ui->render_rect(
     ui->render_state, 
     widget->container.pos, 
@@ -72,10 +80,12 @@ _button_handle_event(
 
   lf_button_t* button = (lf_button_t*)widget;
   if(!lf_point_intersets_container(mouse, container)) {
-    if(button->_hovered && button->on_leave) {
-      button->on_leave(ui, widget);
+    if(button->_hovered) {
+      if(button->on_leave)
+        button->on_leave(ui, widget);
+      button->_hovered = false;
+      ui->root_needs_render = true;
     }
-    button->_hovered = false;
     return;
   }
 
@@ -84,12 +94,30 @@ _button_handle_event(
       button->on_click(ui, widget);
   }
   else if(event.type == WinEventMouseMove &&
-    button->on_enter && !button->_hovered) {
-    button->on_enter(ui, widget);
+    !button->_hovered) {
+    if(button->on_enter)
+      button->on_enter(ui, widget);
     button->_hovered = true;
+    ui->root_needs_render = true;
   }
 }
   
+void 
+_button_recalculate_label(
+  lf_ui_state_t* ui,
+  lf_button_t* button 
+) {
+  lf_text_dimension_t text_dimension = ui->render_get_text_dimension(
+    ui->render_state,
+    button->label,
+    button->font
+  );
+  button->base.container.size.x = text_dimension.width;
+  button->base.container.size.y = text_dimension.height;
+
+  button->_text_dimension = text_dimension;
+}
+
 lf_button_t* 
 lf_button_create(
   lf_ui_state_t* ui,
@@ -148,6 +176,7 @@ lf_button_create_with_label_ex(
   button->on_enter = NULL;
   button->on_leave = NULL;
   button->_changed_font_size = false;
+  button->_changed_label = false;
   button->_hovered = false;
 
 
@@ -185,15 +214,19 @@ void lf_button_set_font(
     lf_button_t* button,
     void* font) {
   button->font = font;
-  lf_text_dimension_t text_dimension = ui->render_get_text_dimension(
-    ui->render_state,
-    button->label,
-    button->font
-  );
-  button->base.container.size.x = text_dimension.width;
-  button->base.container.size.y = text_dimension.height;
+  _button_recalculate_label(ui, button);
+}
 
-  button->_text_dimension = text_dimension;
+void lf_button_set_label(
+    lf_ui_state_t* ui, 
+    lf_button_t* button,
+    const char* label) {
+  if(button->_changed_label) {
+    free(button->label);
+  }
+  button->label = strdup(label);
+  button->_changed_label = true;
+  _button_recalculate_label(ui, button);
 }
 
 

@@ -4,6 +4,22 @@
 #include <runara/runara.h>
 #endif
 
+void 
+_recalculate_label(
+  lf_ui_state_t* ui,
+  lf_text_t* text
+) {
+  lf_text_dimension_t text_dimension = ui->render_get_text_dimension(
+    ui->render_state,
+    text->label,
+    text->font
+  );
+  text->base.container.size.x = text_dimension.width;
+  text->base.container.size.y = text_dimension.height;
+
+  text->_text_dimension = text_dimension;
+}
+
 void
 _text_render(
   lf_ui_state_t* ui,
@@ -85,15 +101,20 @@ void lf_text_set_font(
     lf_text_t* text,
     void* font) {
   text->font = font;
-  lf_text_dimension_t text_dimension = ui->render_get_text_dimension(
-    ui->render_state,
-    text->label,
-    text->font
-  );
-  text->base.container.size.x = text_dimension.width;
-  text->base.container.size.y = text_dimension.height;
+  _recalculate_label(ui, text);
+}
 
-  text->_text_dimension = text_dimension;
+void 
+lf_text_set_label(
+    lf_ui_state_t* ui, 
+    lf_text_t* text,
+    const char* label) {
+  if(text->_changed_label) {
+    free(text->label);
+  }
+  text->_changed_label = false;
+  text->label = strdup(label);
+  _recalculate_label(ui, text);
 }
 
 void lf_text_set_font_size(

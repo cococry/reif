@@ -43,3 +43,21 @@ uint32_t
 lf_font_get_size(lf_ui_state_t* ui, lf_font_t font) {
   return ui->render_font_get_size(font);
 }
+
+float 
+lf_ease_linear(float t) {
+    return t;
+}
+
+float 
+lf_ease_out_quad(float t) {
+    return 1 - (1 - t) * (1 - t);
+}
+
+float lf_ease_in_quad(float t) {
+    return t * t;
+}
+
+float lf_ease_in_out_quad(float t) {
+    return t < 0.5 ? 2 * t * t : 1 - pow(-2 * t + 2, 2) / 2;
+}

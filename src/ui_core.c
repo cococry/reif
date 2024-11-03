@@ -16,23 +16,52 @@
 #endif
 
 #define OVERDRAW_CORNER_RADIUS 2 
-#define MAX_DIRTY_WIDGETS 10
 
 static void init_fonts(lf_ui_state_t* ui);
 
 static void render_widget_and_submit(
   lf_ui_state_t* ui, 
   lf_widget_t* widget,
-  lf_container_t clear_area);
+  lf_container_t clear_area); 
 
 static void root_shape(lf_ui_state_t* ui, lf_widget_t* widget);
-static void root_resize(lf_ui_state_t* ui, lf_widget_t* widget, lf_event_t ev);
 static void win_close_callback(lf_ui_state_t* ui, void* window);
+static void win_refresh_callback(lf_ui_state_t* ui, void* window);
+static void win_resize_callback(lf_ui_state_t* ui, void* window, uint32_t width, uint32_t height);
 
 void 
 win_close_callback(lf_ui_state_t* ui, void* window) {
   (void)window;
   ui->running = false;
+}
+
+void 
+win_refresh_callback(lf_ui_state_t* ui, void* window) {
+  (void)window;
+  vec2s win_size = lf_win_get_size(ui->win);
+  lf_container_t clear_area = LF_SCALE_CONTAINER(
+    win_size.x,
+    win_size.y);
+  ui->root->container = clear_area;
+  ui->render_resize_display(ui->render_state, ui->root->container.size.x, ui->root->container.size.y);
+  lf_widget_shape(ui, ui->root);
+  render_widget_and_submit(ui, ui->root, clear_area);
+  ui->root_needs_render = false;
+  lf_win_swap_buffers(ui->win);
+}
+
+void
+win_resize_callback(lf_ui_state_t* ui, void* window, uint32_t width, uint32_t height) {
+  (void)window;
+  lf_container_t clear_area = LF_SCALE_CONTAINER(
+    width,
+    height);
+  ui->root->container = clear_area;
+  ui->render_resize_display(ui->render_state, ui->root->container.size.x, ui->root->container.size.y);
+  lf_widget_shape(ui, ui->root);
+  render_widget_and_submit(ui, ui->root, clear_area);
+  ui->root_needs_render = false;
+  lf_win_swap_buffers(ui->win);
 }
 
 void 
@@ -49,12 +78,20 @@ init_fonts(lf_ui_state_t* ui) {
 }
 
 void 
-render_widget_and_submit(lf_ui_state_t* ui, lf_widget_t* widget, lf_container_t clear_area) {
+render_widget_and_submit(
+  lf_ui_state_t* ui, 
+  lf_widget_t* widget, 
+  lf_container_t clear_area) {
+
   float overdraw = (widget->props.corner_radius != 0) ? OVERDRAW_CORNER_RADIUS : 0;
   vec2s win_size = lf_win_get_size(ui->win);
+  lf_color_t clear_color = 
+    (widget->parent) ? 
+    widget->parent->props.color : ui->root->props.color;
+
   lf_ui_core_begin_render(
     ui,
-    ui->root->props.color,
+    clear_color,
     win_size.x, win_size.y,
     (lf_container_t){
       .pos = (vec2s){
@@ -63,7 +100,8 @@ render_widget_and_submit(lf_ui_state_t* ui, lf_widget_t* widget, lf_container_t 
       .size = (vec2s){
         .x = clear_area.size.x + widget->props.padding_left + widget->props.padding_right + overdraw * 2,
         .y = clear_area.size.y + widget->props.padding_top + widget->props.padding_bottom + overdraw * 2, 
-      }}); 
+      }});
+
   lf_widget_render(ui, widget);
   lf_ui_core_end_render(ui);
 }
@@ -75,13 +113,6 @@ root_shape(lf_ui_state_t* ui, lf_widget_t* widget) {
   lf_widget_apply_layout(ui, ui->root);
 }
 
-void 
-root_resize(lf_ui_state_t* ui, lf_widget_t* widget, lf_event_t ev) {
-  (void)widget;
-  ui->render_resize_display(ui->render_state, ev.width, ev.height);
-  ui->root_needs_render = true;
-}
-
 lf_window_t*
 lf_ui_core_create_window(
     uint32_t width, 
@@ -90,6 +121,8 @@ lf_ui_core_create_window(
   lf_window_t* win = lf_win_create(width, height, title);
 
   lf_win_set_close_cb(win, win_close_callback);
+  lf_win_set_resize_cb(win, win_resize_callback);
+  lf_win_set_refresh_cb(win, win_refresh_callback);
 
   lf_win_make_gl_context(win);
 
@@ -137,17 +170,12 @@ lf_ui_core_init(lf_window_t* win) {
 
   init_fonts(state);
 
-  state->dirty_widgets = malloc(sizeof(lf_widget_t*) * MAX_DIRTY_WIDGETS);
-  state->num_dirty = 0;
-
-
   state->root = lf_widget_create(
     WidgetTypeRoot,
     LF_SCALE_CONTAINER(lf_win_get_size(win).x, lf_win_get_size(win).y),
     (lf_widget_props_t){0},
-    NULL, root_resize, root_shape);
+    NULL, NULL, root_shape);
 
-  lf_widget_set_listener(state->root, root_resize, WinEventResize);
 
   lf_windowing_set_ui_state(state);
  
@@ -167,10 +195,10 @@ lf_ui_core_default_theme(void) {
   const uint32_t global_margin = 5;
 
   theme->text_color = lf_color_from_hex(0xffffff);
-  theme->background_color = lf_color_from_hex(0xeeeeee);
+  theme->background_color = lf_color_from_hex(0x111111);
 
   theme->div_props = (lf_widget_props_t){
-    .color = lf_color_from_hex(0xffffff),
+    .color = LF_NO_COLOR,
     .text_color = theme->text_color,
     .padding_left = global_padding,
     .padding_right = global_padding,
@@ -186,8 +214,8 @@ lf_ui_core_default_theme(void) {
   };
 
   theme->button_props = (lf_widget_props_t){
-    .color = lf_color_from_hex(0x111111),
-    .text_color = theme->text_color,
+    .color = lf_color_from_hex(0xffffff),
+    .text_color = lf_color_from_hex(0x111111),
     .padding_left = global_padding,
     .padding_right = global_padding,
     .padding_top = global_padding,
@@ -196,18 +224,18 @@ lf_ui_core_default_theme(void) {
     .margin_right = global_margin,
     .margin_top = global_margin,
     .margin_bottom = global_margin,
-    .corner_radius = 5.0f, 
+    .corner_radius = 0.0f, 
     .border_width = 0.0f, 
     .border_color = LF_NO_COLOR,
   };
   
   theme->text_props = (lf_widget_props_t){
     .color = LF_NO_COLOR, 
-    .text_color = lf_color_from_hex(0x0),
-    .padding_left = global_padding,
-    .padding_right = global_padding,
-    .padding_top = global_padding,
-    .padding_bottom = global_padding,
+    .text_color = theme->text_color,
+    .padding_left = 0,
+    .padding_right = 0,
+    .padding_top = 0,
+    .padding_bottom = 0,
     .margin_left = global_margin,
     .margin_right = global_margin,
     .margin_top = global_margin,
@@ -269,18 +297,13 @@ lf_ui_core_init_ex(
 
   state->theme = lf_ui_core_default_theme();
 
-  state->dirty_widgets = malloc(sizeof(lf_widget_t*) * MAX_DIRTY_WIDGETS);
-  state->num_dirty = 0;
-
   init_fonts(state);
 
   state->root = lf_widget_create(
     WidgetTypeRoot,
     LF_SCALE_CONTAINER((float)lf_win_get_size(win).x, lf_win_get_size(win).y),
     (lf_widget_props_t){0},
-    NULL, root_resize, root_shape);
-
-  lf_widget_set_listener(state->root, root_resize, WinEventResize);
+    NULL, NULL, root_shape);
 
   state->root->type = WidgetTypeRoot;
 
@@ -297,13 +320,6 @@ void
 lf_ui_core_next_event(lf_ui_state_t* ui) {
   lf_windowing_next_event();
 
-  lf_event_type_t ev = lf_windowing_get_current_event();
-  if(ev == WinEventRefresh) {
-    vec2s win_size = lf_win_get_size(ui->win);
-    ui->render_resize_display(ui->render_state, win_size.x, win_size.y);
-    ui->root_needs_render = true;
-  }
-
   float cur_time = glfwGetTime();
   ui->delta_time = cur_time - ui->_last_time;
   ui->_last_time = cur_time;
@@ -314,38 +330,19 @@ lf_ui_core_next_event(lf_ui_state_t* ui) {
 
   bool rendered = false;
   // Check if there is some widget to be rerendered
-  if((ui->root_needs_render || ui->num_dirty > MAX_DIRTY_WIDGETS)) { 
-  vec2s win_size = lf_win_get_size(ui->win);
-    lf_container_t clear_area = LF_SCALE_CONTAINER(
-      win_size.x,
-      win_size.y);
-    ui->root->container = clear_area;
+  if(ui->root_needs_render) { 
     lf_widget_shape(ui, ui->root);
-    render_widget_and_submit(ui, ui->root, clear_area);
+    render_widget_and_submit(ui, ui->root, ui->root->container);
     ui->root_needs_render = false;
     lf_win_swap_buffers(ui->win);
     rendered = true;
-  } else if(ui->num_dirty < MAX_DIRTY_WIDGETS && ui->num_dirty != 0) {
-    lf_ui_core_rerender_dirty(ui);
-    lf_win_swap_buffers(ui->win);
-    rendered = true;
   }
- 
+
   if(!rendered) {
     usleep((ui->_frame_duration) * 1000000);
   } 
 
-
   lf_windowing_update();
-}
-
-
-void lf_ui_core_rerender_dirty(lf_ui_state_t* ui) {
-  for(uint32_t i = 0; i < ui->num_dirty; i++) {
-    render_widget_and_submit(ui, ui->dirty_widgets[i], ui->dirty_widgets[i]->container);
-  }
-  memset(ui->dirty_widgets, 0, ui->num_dirty * sizeof(lf_widget_t*));
-  ui->num_dirty = 0;
 }
 
 
@@ -356,22 +353,15 @@ lf_ui_core_submit(lf_ui_state_t* ui) {
 }
 
 void 
-lf_ui_core_make_dirty(lf_ui_state_t* ui, lf_widget_t* widget) {
-  if(ui->num_dirty + 1 > MAX_DIRTY_WIDGETS) return;
-  ui->dirty_widgets[ui->num_dirty++] = widget;
-}
-
-void 
 lf_ui_core_begin_render(
   lf_ui_state_t* ui,
   lf_color_t clear_color,
   uint32_t render_width,
   uint32_t render_height,
   lf_container_t render_area) {
-  (void)clear_color;
   ui->root->container = LF_SCALE_CONTAINER(render_width, render_height);
 
-  ui->render_clear_color_area(ui->root->props.color, render_area, render_height);
+  ui->render_clear_color_area(clear_color, render_area, render_height);
 
   ui->render_begin(ui->render_state);
 }
@@ -400,6 +390,5 @@ lf_ui_core_terminate(lf_ui_state_t* ui) {
   rn_terminate((RnState*)ui->render_state);
 #endif
   
-  free(ui->dirty_widgets);
   free(ui);
 }
