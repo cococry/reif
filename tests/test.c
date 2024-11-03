@@ -20,18 +20,12 @@ typedef struct {
 
 static state_t s;
 
-void on_click_inc(lf_ui_state_t* ui, lf_widget_t* widget) {
+void on_click(lf_ui_state_t* ui, lf_widget_t* widget) {
   (void)widget;
-  s.counter++;
-  char buf[32];
-  sprintf(buf,"Counter: %i", s.counter);
-  lf_text_set_label(ui, s.text, buf);
-  lf_ui_core_submit(ui);
-}
-
-void on_click_dec(lf_ui_state_t* ui, lf_widget_t* widget) {
-  (void)widget;
-  s.counter--;
+  if(((lf_button_t*)widget)->label[0] == 'I')
+    s.counter++;
+  else 
+    s.counter--;
   char buf[32];
   sprintf(buf,"Counter: %i", s.counter);
   lf_text_set_label(ui, s.text, buf);
@@ -91,15 +85,17 @@ int main(void) {
   div2->base.props.margin_top = 30;
   div2->base.props.color = lf_color_from_hex(0x999999);
 
-  lf_widget_set_fixed_width(&div2->base, 400);
-  lf_alignment_flag_set(&div2->base.alignment_flags, AlignCenterHorizontal);
+  lf_alignment_flag_set(&div2->base.alignment_flags, AlignCenterVertical);
+  lf_widget_set_layout(&div2->base, LayoutResponsiveGrid);
   lf_widget_submit_props(&div2->base);
 
+  lf_div_set_column_count(div2, 2);
+
   const char* texts[4] = {
-    "Downloads",
-    "Documents",
-    "Pictures",
-    "Desktop"
+    "Increment",
+    "Decrement",
+    "Decrement",
+    "Increment"
   };
   for(uint32_t i = 0; i < 4; i++) {
     lf_button_t* button_inc = lf_button_create_with_label_ex(
@@ -109,10 +105,9 @@ int main(void) {
     );
     lf_widget_submit_props(&button_inc->base);
 
-    lf_widget_set_fixed_width(&button_inc->base, 150);
     lf_alignment_flag_set(&button_inc->base.alignment_flags, AlignCenterHorizontal);
 
-    button_inc->on_click = on_click_inc;
+    button_inc->on_click = on_click;
     button_inc->on_enter = on_button_enter;
     button_inc->on_leave = on_button_leave;
   }

@@ -28,6 +28,7 @@ static void root_shape(lf_ui_state_t* ui, lf_widget_t* widget);
 static void win_close_callback(lf_ui_state_t* ui, void* window);
 static void win_refresh_callback(lf_ui_state_t* ui, void* window);
 static void win_resize_callback(lf_ui_state_t* ui, void* window, uint32_t width, uint32_t height);
+static void commit_entire_render(lf_ui_state_t* ui);
 
 void 
 win_close_callback(lf_ui_state_t* ui, void* window) {
@@ -38,24 +39,23 @@ win_close_callback(lf_ui_state_t* ui, void* window) {
 void 
 win_refresh_callback(lf_ui_state_t* ui, void* window) {
   (void)window;
-  vec2s win_size = lf_win_get_size(ui->win);
-  lf_container_t clear_area = LF_SCALE_CONTAINER(
-    win_size.x,
-    win_size.y);
-  ui->root->container = clear_area;
-  ui->render_resize_display(ui->render_state, ui->root->container.size.x, ui->root->container.size.y);
-  lf_widget_shape(ui, ui->root);
-  render_widget_and_submit(ui, ui->root, clear_area);
-  ui->root_needs_render = false;
-  lf_win_swap_buffers(ui->win);
+  commit_entire_render(ui);
 }
 
 void
 win_resize_callback(lf_ui_state_t* ui, void* window, uint32_t width, uint32_t height) {
   (void)window;
+  (void)ui;
+  (void)width;
+  (void)height;
+}
+
+void 
+commit_entire_render(lf_ui_state_t* ui) {
+  vec2s win_size = lf_win_get_size(ui->win);
   lf_container_t clear_area = LF_SCALE_CONTAINER(
-    width,
-    height);
+    win_size.x,
+    win_size.y);
   ui->root->container = clear_area;
   ui->render_resize_display(ui->render_state, ui->root->container.size.x, ui->root->container.size.y);
   lf_widget_shape(ui, ui->root);
@@ -121,7 +121,8 @@ lf_ui_core_create_window(
   lf_window_t* win = lf_win_create(width, height, title);
 
   lf_win_set_close_cb(win, win_close_callback);
-  lf_win_set_resize_cb(win, win_resize_callback);
+  if(false)
+    lf_win_set_resize_cb(win, win_resize_callback);
   lf_win_set_refresh_cb(win, win_refresh_callback);
 
   lf_win_make_gl_context(win);
@@ -328,13 +329,11 @@ lf_ui_core_next_event(lf_ui_state_t* ui) {
     ui->root_needs_render = true;
   }
 
-  bool rendered = false;
+  bool rendered = lf_windowing_get_current_event() == WinEventRefresh;
+
   // Check if there is some widget to be rerendered
   if(ui->root_needs_render) { 
-    lf_widget_shape(ui, ui->root);
-    render_widget_and_submit(ui, ui->root, ui->root->container);
-    ui->root_needs_render = false;
-    lf_win_swap_buffers(ui->win);
+    commit_entire_render(ui);
     rendered = true;
   }
 

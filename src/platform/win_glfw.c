@@ -76,7 +76,6 @@ glfw_mouse_button_callback(
 
 }
 
-
 void 
 glfw_resize_callback(
   GLFWwindow* window,
@@ -100,7 +99,7 @@ glfw_refresh_callback(
   current_event = WinEventRefresh;
   lf_widget_handle_event(ui, ui->root, ev);
   for(uint32_t i = 0; i < n_windows; i++) {
-      if(window_callbacks[i].win == window && window_callbacks[i].ev_resize_cb)
+      if(window_callbacks[i].win == window && window_callbacks[i].ev_refresh_cb)
         window_callbacks[i].ev_refresh_cb(ui, window);
   }
 }

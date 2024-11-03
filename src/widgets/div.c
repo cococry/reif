@@ -42,7 +42,7 @@ lf_div_create(
   lf_widget_add_child(parent, (lf_widget_t*)div);
 
   div->base.layout_type = LayoutVertical;
-  div->_column_count = -1;
+  div->_column_count = 0;
 
   return div;
 }
