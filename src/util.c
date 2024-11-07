@@ -61,3 +61,21 @@ float lf_ease_in_quad(float t) {
 float lf_ease_in_out_quad(float t) {
     return t < 0.5 ? 2 * t * t : 1 - pow(-2 * t + 2, 2) / 2;
 }
+
+void lf_flag_set(
+    uint32_t* flags, 
+    uint32_t flag) {
+  *flags |= flag;
+}
+
+void lf_flag_unset(
+    uint32_t* flags,
+    uint32_t flag) {
+  *flags &= ~flag;
+}
+
+bool lf_flag_exists(
+    uint32_t* flags,
+    uint32_t flag) {
+  return (*flags & flag) != 0;
+}

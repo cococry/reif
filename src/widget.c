@@ -85,6 +85,8 @@ lf_widget_create(
   widget->container = fallback_container;
   widget->props = props;
   widget->_initial_props = props;
+  widget->justify_type = JustifyStart;
+  widget->sizing_type = SizingFitToParent;
 
   widget->render = render;
   widget->handle_event = handle_event;
@@ -311,7 +313,7 @@ lf_widget_set_layout(lf_widget_t* widget, lf_layout_type_t layout) {
 }
 
 void 
-lf_widget_apply_layout(lf_ui_state_t* ui, lf_widget_t* widget) {
+lf_widget_apply_layout(lf_widget_t* widget) {
   if(widget->layout_type == LayoutVertical) {
     lf_layout_vertical(widget);
   }
@@ -319,7 +321,7 @@ lf_widget_apply_layout(lf_ui_state_t* ui, lf_widget_t* widget) {
     lf_layout_horizontal(widget);
   }
   if(widget->layout_type == LayoutResponsiveGrid) {
-    lf_layout_responsive_grid(ui, widget);
+    lf_layout_responsive_grid(widget);
   }
 }
 

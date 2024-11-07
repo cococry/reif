@@ -21,13 +21,14 @@ _div_shape(lf_ui_state_t* ui, lf_widget_t* widget) {
   (void)ui;
   if(!widget) return;
   if(widget->type != WidgetTypeDiv) return;
-  lf_widget_apply_layout(ui, widget);
+  lf_widget_apply_layout(widget);
 }
 
 lf_div_t* 
 lf_div_create(
   lf_ui_state_t* ui,
   lf_widget_t* parent) {
+  if(!parent) return NULL;
 
   lf_div_t* div = malloc(sizeof(*div));
 

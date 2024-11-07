@@ -27,7 +27,6 @@ static void render_widget_and_submit(
 static void root_shape(lf_ui_state_t* ui, lf_widget_t* widget);
 static void win_close_callback(lf_ui_state_t* ui, void* window);
 static void win_refresh_callback(lf_ui_state_t* ui, void* window);
-static void win_resize_callback(lf_ui_state_t* ui, void* window, uint32_t width, uint32_t height);
 static void commit_entire_render(lf_ui_state_t* ui);
 
 void 
@@ -43,21 +42,13 @@ win_refresh_callback(lf_ui_state_t* ui, void* window) {
 }
 
 void
-win_resize_callback(lf_ui_state_t* ui, void* window, uint32_t width, uint32_t height) {
-  (void)window;
-  (void)ui;
-  (void)width;
-  (void)height;
-}
-
-void 
 commit_entire_render(lf_ui_state_t* ui) {
   vec2s win_size = lf_win_get_size(ui->win);
   lf_container_t clear_area = LF_SCALE_CONTAINER(
     win_size.x,
     win_size.y);
   ui->root->container = clear_area;
-  ui->render_resize_display(ui->render_state, ui->root->container.size.x, ui->root->container.size.y);
+  ui->render_resize_display(ui->render_state, win_size.x, win_size.y);
   lf_widget_shape(ui, ui->root);
   render_widget_and_submit(ui, ui->root, clear_area);
   ui->root_needs_render = false;
@@ -110,30 +101,27 @@ void
 root_shape(lf_ui_state_t* ui, lf_widget_t* widget) {
   if(!widget) return;
   if(widget->type != WidgetTypeRoot) return;
-  lf_widget_apply_layout(ui, ui->root);
+  lf_widget_apply_layout(ui->root);
 }
 
 lf_window_t*
 lf_ui_core_create_window(
-    uint32_t width, 
-    uint32_t height, 
-    const char* title) {
+  uint32_t width, 
+  uint32_t height, 
+  const char* title) {
   lf_window_t* win = lf_win_create(width, height, title);
 
   lf_win_set_close_cb(win, win_close_callback);
-  if(false)
-    lf_win_set_resize_cb(win, win_resize_callback);
   lf_win_set_refresh_cb(win, win_refresh_callback);
 
   lf_win_make_gl_context(win);
 
   return win;
 }
+
 lf_ui_state_t*
 lf_ui_core_init(lf_window_t* win) {
   lf_ui_state_t* state = malloc(sizeof(*state));
-
-
 #ifdef LF_RUNARA
 #ifdef LF_X11
   state->render_state = rn_init(
@@ -144,7 +132,7 @@ lf_ui_core_init(lf_window_t* win) {
     lf_win_get_size(win).x, lf_win_get_size(win).y,
     (RnGLLoader)glfwGetProcAddress);
 #else 
-#error 
+  #error 
 #error "Invalid windowing system specified (valid windowing systems: LF_X11)"
 #endif
 
@@ -169,6 +157,7 @@ lf_ui_core_init(lf_window_t* win) {
 
   state->theme = lf_ui_core_default_theme();
 
+
   init_fonts(state);
 
   state->root = lf_widget_create(
@@ -177,13 +166,17 @@ lf_ui_core_init(lf_window_t* win) {
     (lf_widget_props_t){0},
     NULL, NULL, root_shape);
 
-
   lf_windowing_set_ui_state(state);
- 
+
   state->root->props.color = state->theme->background_color;
   state->root->layout_type = LayoutVertical;
-  
+  state->root->_fixed_width = true;
+  state->root->_fixed_height = true;
+
   state->running = true;
+  
+  state->_last_parent = state->root;
+  state->_current_widget = state->root;
 
   return state;
 }
@@ -229,7 +222,7 @@ lf_ui_core_default_theme(void) {
     .border_width = 0.0f, 
     .border_color = LF_NO_COLOR,
   };
-  
+
   theme->text_props = (lf_widget_props_t){
     .color = LF_NO_COLOR, 
     .text_color = theme->text_color,
@@ -261,20 +254,20 @@ lf_ui_core_set_theme(
 
 lf_ui_state_t* 
 lf_ui_core_init_ex(
-    lf_window_t* win,
-    void* render_state,
-    lf_render_rect_func_t render_rect,
-    lf_render_text_func_t render_text,
-    lf_render_get_text_dimension_func_t render_get_text_dimension,
-    lf_render_clear_color_func_t render_clear_color,
-    lf_render_clear_color_area_func_t render_clear_color_area,
-    lf_render_begin_func_t render_begin,
-    lf_render_end_func_t render_end,
-    lf_render_resize_display_func_t render_resize_display,
-    lf_render_font_create render_font_create,
-    lf_render_font_destroy render_font_destroy,
-    lf_render_font_file_from_name render_font_file_from_name,
-    lf_render_font_get_size render_font_get_size) {
+  lf_window_t* win,
+  void* render_state,
+  lf_render_rect_func_t render_rect,
+  lf_render_text_func_t render_text,
+  lf_render_get_text_dimension_func_t render_get_text_dimension,
+  lf_render_clear_color_func_t render_clear_color,
+  lf_render_clear_color_area_func_t render_clear_color_area,
+  lf_render_begin_func_t render_begin,
+  lf_render_end_func_t render_end,
+  lf_render_resize_display_func_t render_resize_display,
+  lf_render_font_create render_font_create,
+  lf_render_font_destroy render_font_destroy,
+  lf_render_font_file_from_name render_font_file_from_name,
+  lf_render_font_get_size render_font_get_size) {
 
   lf_ui_state_t* state = malloc(sizeof(*state));
 
@@ -310,8 +303,13 @@ lf_ui_core_init_ex(
 
   state->root->props.color = state->theme->background_color;
   state->root->layout_type = LayoutVertical;
+  state->root->_fixed_width = true;
+  state->root->_fixed_height = true;
 
   state->running = true;
+  
+  state->_last_parent = state->root;
+  state->_current_widget = state->root;
 
   return state;
 }
@@ -340,6 +338,7 @@ lf_ui_core_next_event(lf_ui_state_t* ui) {
   if(!rendered) {
     usleep((ui->_frame_duration) * 1000000);
   } 
+
 
   lf_windowing_update();
 }
@@ -388,6 +387,6 @@ lf_ui_core_terminate(lf_ui_state_t* ui) {
 #ifdef LF_RUNARA
   rn_terminate((RnState*)ui->render_state);
 #endif
-  
+
   free(ui);
 }

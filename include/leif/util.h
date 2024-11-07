@@ -66,3 +66,18 @@ float lf_ease_out_quad(float t);
 float lf_ease_in_quad(float t);
 
 float lf_ease_in_out_quad(float t);
+
+void lf_flag_set(
+    uint32_t* flags, 
+    uint32_t flag
+    );
+
+void lf_flag_unset(
+    uint32_t* flags,
+    uint32_t flag
+    );
+
+bool lf_flag_exists(
+    uint32_t* flags,
+    uint32_t flag
+    );

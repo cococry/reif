@@ -66,51 +66,23 @@ int main(void) {
   if(lf_windowing_init() != 0) return EXIT_FAILURE;
 
   lf_window_t* win = lf_ui_core_create_window(1280, 720, "hello leif");
-  
   lf_ui_state_t* ui = lf_ui_core_init(win);
 
-  lf_div_t* div = lf_div_create(ui, ui->root);
-  lf_widget_submit_props(&div->base);
+  for(uint32_t i = 0; i < 2; i++) {
+    lf_div(ui);
 
-  
-  lf_font_t font = lf_load_font_from_name(ui, "Inter", 24);
+    lf_style_crnt_widget_prop(ui, color, lf_color_from_hex(0x555555));
+    lf_crnt(ui)->sizing_type = SizingFitToContent;
 
-  char buf[32];
-  sprintf(buf,"Counter: %i", s.counter);
-  s.text = lf_text_create_ex(ui, &div->base, buf, font);
-
-  lf_div_t* div2 = lf_div_create(ui, &div->base);
-  div2->base.props.padding_left = 20;
-  div2->base.props.padding_right = 20;
-  div2->base.props.margin_top = 30;
-  div2->base.props.color = lf_color_from_hex(0x999999);
-
-  lf_alignment_flag_set(&div2->base.alignment_flags, AlignCenterVertical);
-  lf_widget_set_layout(&div2->base, LayoutResponsiveGrid);
-  lf_widget_submit_props(&div2->base);
-
-  lf_div_set_column_count(div2, 2);
-
-  const char* texts[4] = {
-    "Increment",
-    "Decrement",
-    "Decrement",
-    "Increment"
-  };
-  for(uint32_t i = 0; i < 4; i++) {
-    lf_button_t* button_inc = lf_button_create_with_label_ex(
-      ui, &div2->base,
-      texts[i],
-      font
-    );
-    lf_widget_submit_props(&button_inc->base);
-
-    lf_alignment_flag_set(&button_inc->base.alignment_flags, AlignCenterHorizontal);
-
-    button_inc->on_click = on_click;
-    button_inc->on_enter = on_button_enter;
-    button_inc->on_leave = on_button_leave;
+    lf_text_h1(ui, "Hello, World!");
+    lf_text_h2(ui, "Привет, мир!"); // Russian
+    lf_text_h3(ui, "Hallo, Welt!"); // German
+    lf_text_h4(ui, "Witaj, świecie!"); // Polish
+    lf_text_h5(ui, "Hei, verden!"); // Norwegian
+    lf_text_h6(ui, "Γειά σου, Κόσμε!"); // Greek
+    lf_div_end(ui);
   }
+
   lf_ui_core_submit(ui);
 
   while(ui->running) {

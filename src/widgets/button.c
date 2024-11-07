@@ -42,9 +42,9 @@ _button_render(
       .y =  widget->container.pos.y + widget->props.padding_top 
     };
 
-    if(widget->_fixed_width && lf_alignment_flag_exists(&widget->alignment_flags, AlignCenterHorizontal))
+    if(widget->_fixed_width && lf_flag_exists(&widget->alignment_flags, AlignCenterHorizontal))
       text_pos.x = widget->container.pos.x + (lf_widget_width(widget) - button->_text_dimension.width) / 2.0f;
-    if(widget->_fixed_height && lf_alignment_flag_exists(&widget->alignment_flags, AlignCenterVertical)) 
+    if(widget->_fixed_height && lf_flag_exists(&widget->alignment_flags, AlignCenterVertical)) 
       text_pos.y = widget->container.pos.y + (lf_widget_height(widget) - button->_text_dimension.height) / 2.0f;
 
     ui->render_text(

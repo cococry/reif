@@ -9,7 +9,7 @@ typedef enum {
   LayoutNone = 0,
   LayoutVertical = 0,
   LayoutHorizontal,
-  LayoutResponsiveGrid
+  LayoutResponsiveGrid,
 } lf_layout_type_t;
 
 typedef enum {
@@ -17,23 +17,19 @@ typedef enum {
   AlignCenterVertical = 1 << 1
 } lf_alignment_flag_t;
 
+typedef enum {
+  JustifyStart = 0,
+  JustifyEnd
+} lf_justify_type_t;
+
+typedef enum {
+  SizingFitToParent = 0,
+  SizingFitToContent 
+} lf_sizing_type_t;
+
 void lf_layout_vertical(lf_widget_t* widget);
 
 void lf_layout_horizontal(lf_widget_t* widget);
 
-void lf_layout_responsive_grid(lf_ui_state_t* ui, lf_widget_t* widget);
+void lf_layout_responsive_grid(lf_widget_t* widget);
 
-void lf_alignment_flag_set(
-    uint32_t* flags, 
-    lf_alignment_flag_t flag
-    );
-
-void lf_alignment_flag_unset(
-    uint32_t* flags,
-    lf_alignment_flag_t flag
-    );
-
-bool lf_alignment_flag_exists(
-    uint32_t* flags,
-    lf_alignment_flag_t flag
-    );

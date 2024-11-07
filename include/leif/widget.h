@@ -48,6 +48,8 @@ struct lf_widget_t {
 
   lf_widget_type_t type;
   lf_layout_type_t layout_type;
+  lf_justify_type_t justify_type;
+  lf_sizing_type_t sizing_type;
 
   uint32_t listening_for;
 
@@ -57,6 +59,7 @@ struct lf_widget_t {
   bool _fixed_height;
 
   lf_animation_t* anims;
+
 };
 
 lf_widget_t* lf_widget_create(
@@ -124,7 +127,7 @@ void lf_widget_set_corner_radius(
 
 void lf_widget_set_layout(lf_widget_t* widget, lf_layout_type_t layout);
 
-void lf_widget_apply_layout(lf_ui_state_t* ui, lf_widget_t* widget);
+void lf_widget_apply_layout(lf_widget_t* widget);
 
 void lf_widget_listen_for(lf_widget_t* widget, uint32_t events);
 
