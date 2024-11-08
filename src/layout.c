@@ -124,7 +124,7 @@ lf_layout_horizontal(lf_widget_t* widget) {
     if(h > height)
       height = h;
   }
-  
+ 
   if(lf_flag_exists(&widget->alignment_flags, AlignCenterHorizontal)) {
     offset.x = (widget->container.size.x - width) / 2.0f - widget->props.padding_right;
   }

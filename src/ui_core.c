@@ -175,6 +175,8 @@ lf_ui_core_init(lf_window_t* win) {
 
   state->running = true;
   
+  state->_root_never_shaped = true;
+  
   state->_last_parent = state->root;
   state->_current_widget = state->root;
 
@@ -307,6 +309,8 @@ lf_ui_core_init_ex(
   state->root->_fixed_height = true;
 
   state->running = true;
+
+  state->_root_never_shaped = true;
   
   state->_last_parent = state->root;
   state->_current_widget = state->root;
@@ -347,6 +351,10 @@ lf_ui_core_next_event(lf_ui_state_t* ui) {
 void 
 lf_ui_core_submit(lf_ui_state_t* ui) {
   lf_widget_shape(ui, ui->root);
+  if(ui->_root_never_shaped) {
+    lf_widget_shape(ui, ui->root);
+    ui->_root_never_shaped = true;
+  }
   ui->root_needs_render = true;
 }
 

@@ -265,6 +265,7 @@ void lf_widget_set_margin(
   widget->props.margin_bottom = margin;
   widget->props.margin_left = margin; 
   widget->props.margin_right = margin;
+  lf_widget_submit_props(widget);
 }
 
 void lf_widget_set_color(
@@ -274,6 +275,8 @@ void lf_widget_set_color(
   if(lf_color_equal(widget->props.color, color)) return;
 
   widget->props.color = color;
+  lf_widget_submit_props(widget);
+
   ui->root_needs_render = true;
 }
 
@@ -284,6 +287,8 @@ void lf_widget_set_border_color(
   if(lf_color_equal(widget->props.border_color, color)) return;
 
   widget->props.border_color = color;
+  lf_widget_submit_props(widget);
+
   ui->root_needs_render = true;
 }
 
@@ -294,6 +299,8 @@ void lf_widget_set_border_width(
   if(widget->props.border_width == border_width) return;
 
   widget->props.border_width = border_width;
+  lf_widget_submit_props(widget);
+
   ui->root_needs_render = true;
 }
 
@@ -304,6 +311,8 @@ void lf_widget_set_corner_radius(
   if(widget->props.corner_radius == corner_radius) return;
 
   widget->props.corner_radius = corner_radius;
+  lf_widget_submit_props(widget);
+
   ui->root_needs_render = true;
 }
 

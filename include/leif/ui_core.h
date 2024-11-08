@@ -55,6 +55,8 @@ struct lf_ui_state_t {
   float delta_time, _last_time;
 
   lf_widget_t* _last_parent, *_current_widget;
+
+  bool _root_never_shaped;
 };
 
 lf_window_t* lf_ui_core_create_window(
