@@ -23,11 +23,14 @@ _button_render(
   lf_widget_t* widget) { 
   if(!widget) return;
 
-  /*lf_button_t* button = (lf_button_t*)widget;
+  lf_button_t* button = (lf_button_t*)widget;
+  
+  if(button->_held) {
+    button->base.props.color =  lf_color_dim(button->base._initial_props.color, 0.6f);
+  } else if(button->_hovered) {
+    button->base.props.color =  lf_color_dim(button->base._initial_props.color, 0.8f);
+  }
 
-  button->base.props.color =  !button->_hovered ? 
-    button->base._initial_props.color : 
-    lf_color_dim(button->base._initial_props.color, 4.0);*/
   ui->render_rect(
     ui->render_state, 
     widget->container.pos, 
@@ -70,15 +73,25 @@ _button_handle_event(
       if(button->on_leave)
         button->on_leave(ui, widget);
       button->_hovered = false;
+      button->_held = false;
       ui->root_needs_render = true;
     }
     return;
   }
 
-  if(event.type == WinEventMouseRelease && 
-    button->on_click) {
+  if(event.type == WinEventMouseRelease) {
+    if(button->on_click)
       button->on_click(ui, widget);
+    button->_held = false;
+    printf("not held.\n");
+    ui->root_needs_render = true;
   }
+  if(event.type == WinEventMousePress) {
+    button->_held = true;
+    printf("held.\n");
+    ui->root_needs_render = true;
+  }
+
   else if(event.type == WinEventMouseMove &&
     !button->_hovered) {
     if(button->on_enter)
@@ -97,6 +110,7 @@ lf_button_create(
   button->on_enter = NULL;
   button->on_leave = NULL;
   button->_hovered = false;
+  button->_held = false;
 
 
   lf_widget_props_t props = ui->theme->button_props;
@@ -116,7 +130,7 @@ lf_button_create(
   button->base.sizing_type = SizingFitToContent;
 
   lf_widget_listen_for(&button->base, 
-                       WinEventMouseRelease | WinEventMouseMove);
+                       WinEventMouseRelease | WinEventMousePress | WinEventMouseMove);
   
   lf_widget_add_child(parent, (lf_widget_t*)button);
 

@@ -49,11 +49,16 @@ lf_color_equal(lf_color_t a, lf_color_t b) {
 
 lf_color_t 
 lf_color_dim(lf_color_t color, float dim) {
-  if(dim < 0.0f) dim = 0.0f;
-  return (lf_color_t){
-    color.r * dim, 
-    color.g * dim, 
-    color.b * dim, 
-    color.a
-  };
+   if (dim < 0.0f || dim > 1.0f) {
+        // Ensure dim is in the range (0, 1).
+        dim = 0.9f;  // Default to a 10% dimming.
+    }
+
+    lf_color_t dimmed_color;
+    dimmed_color.r = (unsigned char)(color.r * dim);
+    dimmed_color.g = (unsigned char)(color.g * dim);
+    dimmed_color.b = (unsigned char)(color.b * dim);
+    dimmed_color.a = color.a;  // Keep the alpha the same
+
+    return dimmed_color;
 }

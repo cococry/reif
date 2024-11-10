@@ -13,7 +13,7 @@ typedef struct {
   lf_button_func_t on_click;
   lf_button_func_t on_enter, on_leave;
 
-  bool _hovered;
+  bool _hovered, _held;
 } lf_button_t;
 
 lf_button_t* lf_button_create(

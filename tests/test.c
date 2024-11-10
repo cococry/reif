@@ -102,25 +102,18 @@ int main(void) {
   lf_widget_set_alignment(lf_crnt(ui), AlignCenterHorizontal | AlignCenterVertical);
   lf_widget_set_layout(lf_crnt(ui), LayoutVertical);
 
-  lf_text_h1(ui, "Your Mail");
-  lf_style_crnt_widget_prop(ui, margin_bottom, 20);
 
-  for(uint32_t i = 0; i < 1; i++) {
-    lf_button(ui);
-    ((lf_button_t*)lf_crnt(ui))->on_enter = on_button_enter;
-    ((lf_button_t*)lf_crnt(ui))->on_leave = on_button_leave;
-    lf_widget_set_fixed_width(lf_crnt(ui), 200);
-    lf_style_crnt_widget_prop(ui, corner_radius, lf_crnt(ui)->container.size.y / 2.0f);
-    lf_style_crnt_widget_prop(ui, color, lf_color_from_hex(0x0B57D0));
-    lf_text_h3(ui, "Send");
-    lf_text_p(ui, "󰒊");
-    lf_crnt(ui)->visible = false;
-    lf_button_end(ui);
-  }
+  lf_button_t* btn = lf_button(ui);
+  ((lf_button_t*)lf_crnt(ui))->on_enter = on_button_enter;
+  ((lf_button_t*)lf_crnt(ui))->on_leave = on_button_leave;
+  lf_widget_set_fixed_width(lf_crnt(ui), 200);
+  lf_style_crnt_widget_prop(ui, color, lf_color_from_hex(0x0B57D0));
+  lf_text_h3(ui, "Send");
+  lf_text_p(ui, "󰒊");
+  lf_crnt(ui)->visible = false;
+  lf_button_end(ui);
 
-  lf_text_p(ui, "Manage your email.");
-  lf_style_crnt_widget_prop(ui, margin_top, 20);
-
+  lf_style_widget_prop(ui, &btn->base, corner_radius, 24);
   lf_div_end(ui);
 
   lf_ui_core_submit(ui);
