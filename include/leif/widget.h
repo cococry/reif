@@ -180,3 +180,5 @@ void lf_widget_submit_props(lf_widget_t* widget);
 void lf_widget_set_fixed_width(lf_widget_t* widget, float width);
 
 void lf_widget_set_fixed_height(lf_widget_t* widget, float height);
+
+void lf_widget_set_alignment(lf_widget_t* widget, uint32_t flags);

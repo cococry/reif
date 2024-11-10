@@ -39,42 +39,42 @@ lf_text_p(lf_ui_state_t* ui, const char* label) {
 
 lf_text_t* 
 lf_text_h1(lf_ui_state_t* ui, const char* label) {
-  lf_text_t* txt = lf_text_create_ex(ui, ui->_last_parent, label, ui->font_h1);
+  lf_text_t* txt = lf_text_create_ex(ui, ui->_last_parent, label, ui->fonts[TextLevelH1]);
   ui->_current_widget = &txt->base;
   return txt;
 }
 
 lf_text_t* 
 lf_text_h2(lf_ui_state_t* ui, const char* label) {
-  lf_text_t* txt = lf_text_create_ex(ui, ui->_last_parent, label, ui->font_h2);
+  lf_text_t* txt = lf_text_create_ex(ui, ui->_last_parent, label, ui->fonts[TextLevelH2]);
   ui->_current_widget = &txt->base;
   return txt;
 }
 
 lf_text_t*
 lf_text_h3(lf_ui_state_t* ui, const char* label) {
-  lf_text_t* txt = lf_text_create_ex(ui, ui->_last_parent, label, ui->font_h3);
+  lf_text_t* txt = lf_text_create_ex(ui, ui->_last_parent, label, ui->fonts[TextLevelH3]);
   ui->_current_widget = &txt->base;
   return txt;
 }
 
 lf_text_t*
 lf_text_h4(lf_ui_state_t* ui, const char* label) {
-  lf_text_t* txt = lf_text_create_ex(ui, ui->_last_parent, label, ui->font_h4);
+  lf_text_t* txt = lf_text_create_ex(ui, ui->_last_parent, label, ui->fonts[TextLevelH4]);
   ui->_current_widget = &txt->base;
   return txt;
 }
 
 lf_text_t*
 lf_text_h5(lf_ui_state_t* ui, const char* label) {
-  lf_text_t* txt = lf_text_create_ex(ui, ui->_last_parent, label, ui->font_h5);
+  lf_text_t* txt = lf_text_create_ex(ui, ui->_last_parent, label, ui->fonts[TextLevelH5]);
   ui->_current_widget = &txt->base;
   return txt;
 }
 
 lf_text_t* 
 lf_text_h6(lf_ui_state_t* ui, const char* label) {
-  lf_text_t* txt = lf_text_create_ex(ui, ui->_last_parent, label, ui->font_h6);
+  lf_text_t* txt = lf_text_create_ex(ui, ui->_last_parent, label, ui->fonts[TextLevelH6]);
   ui->_current_widget = &txt->base;
   return txt;
 }

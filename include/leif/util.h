@@ -6,6 +6,10 @@
 
 #include "color.h"
 
+#ifdef LF_RUNARA
+#include <runara/runara.h>
+#endif
+
 typedef struct lf_ui_state_t lf_ui_state_t;
 
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
@@ -27,7 +31,9 @@ typedef struct {
   vec2s pos, size;
 } lf_container_t;
 
-typedef void* lf_font_t;
+#ifdef LF_RUNARA
+typedef RnFont* lf_font_t;
+#endif
 
 typedef struct {
   lf_color_t color;

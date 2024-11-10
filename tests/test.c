@@ -69,35 +69,11 @@ int main(void) {
   lf_ui_state_t* ui = lf_ui_core_init(win);
 
   lf_div(ui);
-  lf_style_crnt_widget_prop(ui, color, lf_color_from_hex(0x333333));
-  lf_style_crnt_widget_prop(ui, corner_radius, 10);
-  lf_crnt(ui)->sizing_type = SizingFitToContent;
-  lf_flag_set(&ui->root->alignment_flags, AlignCenterHorizontal | AlignCenterVertical);
-  lf_widget_set_layout(ui->root, LayoutHorizontal);
 
-  for(uint32_t i = 0; i < 2; i++) {
-    lf_div(ui);
+  lf_widget_set_alignment(lf_crnt(ui), AlignCenterHorizontal | AlignCenterVertical);
+  lf_widget_set_layout(lf_crnt(ui), LayoutHorizontal);
 
-    lf_style_crnt_widget_prop(ui, color, lf_color_from_hex(0x555555));
-    lf_style_crnt_widget_prop(ui, corner_radius, 10);
-    lf_widget_set_margin(lf_crnt(ui), 5);
-    lf_widget_set_fixed_height(lf_crnt(ui), 200);
-    lf_widget_set_fixed_width(lf_crnt(ui), 400);
-    lf_flag_set(&lf_crnt(ui)->alignment_flags, AlignCenterHorizontal | AlignCenterVertical);
-    lf_crnt(ui)->sizing_type = SizingFitToContent;
-    lf_widget_set_layout(lf_crnt(ui), LayoutResponsiveGrid);
-    lf_div_set_column_count((lf_div_t*)lf_crnt(ui), 3);
-
-    for(uint32_t i = 0; i < 3; i++) {
-      for(uint32_t i = 0; i < 3; i++) {
-        lf_button(ui, "Click Me");
-        ((lf_button_t*)lf_crnt(ui))->on_enter = on_button_enter;
-        ((lf_button_t*)lf_crnt(ui))->on_leave = on_button_leave;
-        lf_style_crnt_widget_prop(ui, corner_radius, 10);
-      }
-    }
-    lf_div_end(ui);
-  }
+  lf_text_h2(ui, "Hello, World!");
 
   lf_div_end(ui);
 

@@ -127,7 +127,7 @@ lf_button_create(
 
   button->base = *lf_widget_create(
     WidgetTypeButton,
-    LF_SCALE_CONTAINER(100.0f, ui->render_font_get_size(ui->font_p)), 
+    LF_SCALE_CONTAINER(100.0f, ui->render_font_get_size(ui->fonts[TextLevelParagraph])), 
     ui->theme->button_props,
     _button_render, 
     _button_handle_event,
@@ -135,7 +135,7 @@ lf_button_create(
   );
 
   button->label = NULL;
-  button->font = ui->font_p;
+  button->font = ui->fonts[TextLevelParagraph];
   button->on_click = NULL;
   button->on_enter = NULL;
   button->on_leave = NULL;
@@ -158,7 +158,7 @@ lf_button_create_with_label(
     ui,
     parent,
     label,
-    ui->font_p);
+    ui->fonts[TextLevelParagraph]);
 }
 
 

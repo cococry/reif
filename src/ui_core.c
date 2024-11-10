@@ -4,6 +4,7 @@
 #include "../include/leif/util.h"
 
 #include <cglm/types-struct.h>
+#include <stdint.h>
 #include <time.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -29,6 +30,11 @@ static void win_close_callback(lf_ui_state_t* ui, void* window);
 static void win_refresh_callback(lf_ui_state_t* ui, void* window);
 static void commit_entire_render(lf_ui_state_t* ui);
 
+static uint32_t font_sizes[] = {
+  36, 28, 22, 18, 15, 13, 16
+};
+
+
 void 
 win_close_callback(lf_ui_state_t* ui, void* window) {
   (void)window;
@@ -43,6 +49,7 @@ win_refresh_callback(lf_ui_state_t* ui, void* window) {
 
 void
 commit_entire_render(lf_ui_state_t* ui) {
+  if(!ui) return;
   vec2s win_size = lf_win_get_size(ui->win);
   lf_container_t clear_area = LF_SCALE_CONTAINER(
     win_size.x,
@@ -57,15 +64,10 @@ commit_entire_render(lf_ui_state_t* ui) {
 
 void 
 init_fonts(lf_ui_state_t* ui) {
-  const char* fontfile = ui->render_font_file_from_name("Inter");;
-
-  ui->font_h1 = ui->render_font_create(ui->render_state, fontfile, 36);
-  ui->font_h2 = ui->render_font_create(ui->render_state, fontfile, 24);
-  ui->font_h3 = ui->render_font_create(ui->render_state, fontfile, 18);
-  ui->font_h4 = ui->render_font_create(ui->render_state, fontfile, 16);
-  ui->font_h5 = ui->render_font_create(ui->render_state, fontfile, 13);
-  ui->font_h6 = ui->render_font_create(ui->render_state, fontfile, 10);
-  ui->font_p  = ui->render_font_create(ui->render_state, fontfile, 16);
+  if(!ui) return;
+  printf("Initializing fonts.\n");
+  lf_ui_core_set_font(ui, ui->render_font_file_from_name("Inter"));
+  printf("Done.\n");
 }
 
 void 
@@ -73,6 +75,7 @@ render_widget_and_submit(
   lf_ui_state_t* ui, 
   lf_widget_t* widget, 
   lf_container_t clear_area) {
+  if(!ui || !widget) return;
 
   float overdraw = (widget->props.corner_radius != 0) ? OVERDRAW_CORNER_RADIUS : 0;
   vec2s win_size = lf_win_get_size(ui->win);
@@ -157,7 +160,12 @@ lf_ui_core_init(lf_window_t* win) {
 
   state->theme = lf_ui_core_default_theme();
 
+  state->fonts = malloc(sizeof(lf_font_t) * TextLevelMax);
+  for(uint32_t i = 0; i < TextLevelMax; i++) {
+    state->fonts[i] = NULL; 
+  }
 
+  state->fontpath = NULL;
   init_fonts(state);
 
   state->root = lf_widget_create(
@@ -293,6 +301,8 @@ lf_ui_core_init_ex(
 
   state->theme = lf_ui_core_default_theme();
 
+  state->fonts = malloc(sizeof(lf_font_t) * TextLevelMax);
+  state->fontpath = NULL;
   init_fonts(state);
 
   state->root = lf_widget_create(
@@ -397,4 +407,25 @@ lf_ui_core_terminate(lf_ui_state_t* ui) {
 #endif
 
   free(ui);
+}
+
+void 
+lf_ui_core_set_font(lf_ui_state_t* ui, const char* fontpath) {
+  if(!fontpath || !ui) return;
+
+  if(ui->fontpath != NULL) {
+    printf("Freeing font path.\n");
+    free((void*)ui->fontpath);
+  }
+  ui->fontpath = strdup(fontpath);
+
+  for(uint32_t i = 0; i < TextLevelMax; i++) { 
+    if(ui->fonts[i] != NULL) {
+      ui->render_font_destroy(ui->render_state, ui->fonts[i]);
+    }
+  }
+
+  for(uint32_t i = 0; i < TextLevelMax; i++) {
+    ui->fonts[i] = ui->render_font_create(ui->render_state, ui->fontpath, font_sizes[i]);
+  }
 }

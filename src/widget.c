@@ -459,3 +459,7 @@ lf_widget_set_fixed_height(lf_widget_t* widget, float height) {
   widget->container.size.y = height;
   widget->_fixed_height = true;
 }
+
+void lf_widget_set_alignment(lf_widget_t* widget, uint32_t flags) {
+  lf_flag_set(&widget->alignment_flags, flags);
+}

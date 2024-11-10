@@ -85,7 +85,7 @@ lf_text_t* lf_text_create(
     lf_ui_state_t* ui,
     lf_widget_t* parent,
     const char* label) {
-   return _text_create(ui, parent, label, ui->font_p);
+   return _text_create(ui, parent, label, ui->fonts[TextLevelParagraph]);
 }
 
 lf_text_t* lf_text_create_ex(
