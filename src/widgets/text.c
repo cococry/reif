@@ -65,6 +65,7 @@ lf_text_t* _text_create(
     text->label,
     text->font
   );
+  text->base.props.color = LF_GREEN;
 
   text->base = *lf_widget_create(
     WidgetTypeText,

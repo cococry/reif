@@ -97,6 +97,7 @@ lf_widget_create(
 
   widget->_fixed_width = false;
   widget->_fixed_height = false;
+  widget->_changed_by_layout = false;
 
   widget->anims = NULL; 
 
@@ -105,6 +106,7 @@ lf_widget_create(
 
 void
 lf_widget_render(lf_ui_state_t* ui,  lf_widget_t* widget) {
+  if(!widget->visible) return;
   if(widget->render) {
 #ifdef LF_RUNARA
     rn_set_cull_end_x(

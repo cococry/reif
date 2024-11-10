@@ -8,7 +8,7 @@ lf_animation_keyframe_t keyframe_create(
   lf_animation_keyframe_t kf,
   float* target
 ) {
-(void)target; 
+  (void)target; 
   float remaining_distance = fabsf(kf.end - (*target));
   if (remaining_distance <= 0.0f) return (lf_animation_keyframe_t){0};
 
@@ -65,6 +65,10 @@ lf_animation_create(
   anim->next = *head;
   *head = anim;
 
+  anim->finish_cb = NULL;
+  anim->tick_cb = NULL;
+  anim->user_data = NULL;
+
   return anim;
 }
 
@@ -73,6 +77,9 @@ lf_animation_update(lf_animation_t* anim, float dt) {
   if(!anim || !anim->keyframes || anim->n_keyframes <= 0) return;
 
   anim->elapsed_time += dt;
+  if(anim->tick_cb) {
+    anim->tick_cb(anim, anim->user_data);
+  }
 
   if(anim->i_keyframes < anim->n_keyframes && 
     anim->elapsed_time >= anim->keyframes[anim->i_keyframes].duration) {
@@ -97,7 +104,10 @@ lf_animation_update(lf_animation_t* anim, float dt) {
   float t = anim->elapsed_time / kf.duration;
   if (t >= 1.0f) {
     t = 1.0f;
-    anim->active = false;  
+    anim->active = false; 
+    if(anim->finish_cb) {
+      anim->finish_cb(anim, anim->user_data);
+    }
   }
   float eased_t = kf.easing(t);
   *anim->target = kf.start + (kf.end - kf.start) * eased_t;

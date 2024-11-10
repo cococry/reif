@@ -1,5 +1,13 @@
 #include "../include/leif/ez_api.h"
 
+static void _end_widget(lf_ui_state_t* ui);
+
+void 
+_end_widget(lf_ui_state_t* ui) {
+  if(!ui->_last_parent || !ui->_last_parent->parent) return;
+  ui->_last_parent = ui->_last_parent->parent;
+}
+
 lf_div_t*
 lf_div(lf_ui_state_t* ui) {
   if(!ui->_last_parent) return NULL;
@@ -11,22 +19,20 @@ lf_div(lf_ui_state_t* ui) {
 
 void 
 lf_div_end(lf_ui_state_t* ui) {
-  if(!ui->_last_parent || !ui->_last_parent->parent)  return;
-  ui->_last_parent = ui->_last_parent->parent;
+  _end_widget(ui);
 }
 
 lf_button_t*
-lf_button(lf_ui_state_t* ui, const char* label) {
-  lf_button_t* btn = lf_button_create_with_label(ui, ui->_last_parent, label);
+lf_button(lf_ui_state_t* ui) {
+  lf_button_t* btn = lf_button_create(ui, ui->_last_parent);
+  ui->_last_parent = &btn->base;
   ui->_current_widget = &btn->base;
   return btn;
 }
 
-lf_button_t* 
-lf_button_empty(lf_ui_state_t* ui) {
-  lf_button_t* btn = lf_button_create(ui, ui->_last_parent);
-  ui->_current_widget = &btn->base;
-  return btn;
+void
+lf_button_end(lf_ui_state_t* ui) {
+  _end_widget(ui);
 }
 
 lf_text_t* 

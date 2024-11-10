@@ -44,7 +44,8 @@ struct lf_widget_t {
   lf_widget_handle_event_cb handle_event;
   lf_widget_shape_cb shape;
   
-  bool visible, changed_by_layout; 
+  bool visible;
+
 
   lf_widget_type_t type;
   lf_layout_type_t layout_type;
@@ -57,6 +58,7 @@ struct lf_widget_t {
 
   bool _fixed_width;
   bool _fixed_height;
+  bool _changed_by_layout;
 
   lf_animation_t* anims;
 

@@ -5,9 +5,10 @@
 #include <GL/gl.h>
 
 RnColor _lf_color_to_rn(lf_color_t color) {
-  return (RnColor){
-    color.r, color.g, color.b, color.a
+  RnColor rn_color =(RnColor){
+    color.r, color.g, color.b, color.a 
   };
+  return rn_color;
 }
 
 void

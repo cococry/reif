@@ -13,10 +13,9 @@ static void _button_handle_event(
   lf_widget_t* widget, 
   lf_event_t event);
 
-static void _button_recalculate_label(
-  lf_ui_state_t* ui,
-  lf_button_t* button
-);
+static void _button_shape(
+  lf_ui_state_t* ui, 
+  lf_widget_t* widget);
 
 void
 _button_render(
@@ -24,37 +23,25 @@ _button_render(
   lf_widget_t* widget) { 
   if(!widget) return;
 
-  lf_button_t* button = (lf_button_t*)widget;
+  /*lf_button_t* button = (lf_button_t*)widget;
 
   button->base.props.color =  !button->_hovered ? 
     button->base._initial_props.color : 
-    lf_color_dim(button->base._initial_props.color, 4.0);
+    lf_color_dim(button->base._initial_props.color, 4.0);*/
   ui->render_rect(
     ui->render_state, 
     widget->container.pos, 
     LF_WIDGET_SIZE_V2(widget),
     widget->props.color, widget->props.border_color,
     widget->props.border_width, widget->props.corner_radius);
+}
 
-  if(button->label) {
-    vec2s text_pos =(vec2s){
-      .x = widget->container.pos.x + widget->props.padding_left, 
-      .y =  widget->container.pos.y + widget->props.padding_top 
-    };
-
-    if(widget->_fixed_width && lf_flag_exists(&widget->alignment_flags, AlignCenterHorizontal))
-      text_pos.x = widget->container.pos.x + (lf_widget_width(widget) - button->_text_dimension.width) / 2.0f;
-    if(widget->_fixed_height && lf_flag_exists(&widget->alignment_flags, AlignCenterVertical)) 
-      text_pos.y = widget->container.pos.y + (lf_widget_height(widget) - button->_text_dimension.height) / 2.0f;
-
-    ui->render_text(
-      ui->render_state,
-      button->label,
-      button->font,
-      text_pos,
-      widget->props.text_color
-    );
-  }
+void 
+_button_shape(lf_ui_state_t* ui, lf_widget_t* widget) {
+  (void)ui;
+  if(!widget) return;
+  if(widget->type != WidgetTypeButton) return;
+  lf_widget_apply_layout(widget);
 }
 
 void 
@@ -62,7 +49,6 @@ _button_handle_event(
   lf_ui_state_t* ui, 
   lf_widget_t* widget, 
   lf_event_t event) {
-  (void)ui;
   if(event.button != LeftMouse) return;
   if(!lf_container_intersets_container(
     widget->container, ui->root->container)) {
@@ -102,104 +88,32 @@ _button_handle_event(
   }
 }
   
-void 
-_button_recalculate_label(
-  lf_ui_state_t* ui,
-  lf_button_t* button 
-) {
-  lf_text_dimension_t text_dimension = ui->render_get_text_dimension(
-    ui->render_state,
-    button->label,
-    button->font
-  );
-  button->base.container.size.x = text_dimension.width;
-  button->base.container.size.y = text_dimension.height;
-
-  button->_text_dimension = text_dimension;
-}
-
 lf_button_t* 
 lf_button_create(
   lf_ui_state_t* ui,
   lf_widget_t* parent) {
-
   lf_button_t* button = (lf_button_t*)malloc(sizeof(lf_button_t));
-
-  button->base = *lf_widget_create(
-    WidgetTypeButton,
-    LF_SCALE_CONTAINER(100.0f, ui->render_font_get_size(ui->fonts[TextLevelParagraph])), 
-    ui->theme->button_props,
-    _button_render, 
-    _button_handle_event,
-    NULL
-  );
-
-  button->label = NULL;
-  button->font = ui->fonts[TextLevelParagraph];
   button->on_click = NULL;
   button->on_enter = NULL;
   button->on_leave = NULL;
-  button->_changed_font_size = false;
-  button->_hovered = false;
-  button->_text_dimension = (lf_text_dimension_t){.width = 0, .height = 0};
-
-  button->base.layout_type = LayoutNone;
-  lf_widget_add_child(parent, (lf_widget_t*)button);
-
-  return button;
-}
-
-lf_button_t*
-lf_button_create_with_label(
-  lf_ui_state_t* ui,
-  lf_widget_t* parent,
-  const char* label) {
-  return lf_button_create_with_label_ex(
-    ui,
-    parent,
-    label,
-    ui->fonts[TextLevelParagraph]);
-}
-
-
-lf_button_t* 
-lf_button_create_with_label_ex(
-    lf_ui_state_t* ui,
-    lf_widget_t* parent,
-    const char* label,
-    lf_font_t font) {
-
-  lf_button_t* button = (lf_button_t*)malloc(sizeof(lf_button_t));
-  button->label = strdup(label);
-  button->font = font; 
-  button->on_click = NULL;
-  button->on_enter = NULL;
-  button->on_leave = NULL;
-  button->_changed_font_size = false;
-  button->_changed_label = false;
   button->_hovered = false;
 
-
-  lf_text_dimension_t text_dimension = ui->render_get_text_dimension(
-    ui->render_state,
-    button->label,
-    button->font
-  );
-
-  button->_text_dimension = text_dimension;
 
   lf_widget_props_t props = ui->theme->button_props;
   button->base = *lf_widget_create(
     WidgetTypeButton,
     LF_SCALE_CONTAINER(
-      text_dimension.width, 
-      text_dimension.height),
+      150, 
+      50),
     props,
     _button_render, 
     _button_handle_event,
-    NULL
+    _button_shape
   );
-  button->base.layout_type = LayoutNone;
+
+  button->base.layout_type = LayoutHorizontal;
+  lf_widget_set_alignment(&button->base, AlignCenterHorizontal | AlignCenterVertical);
+  button->base.sizing_type = SizingFitToContent;
 
   lf_widget_listen_for(&button->base, 
                        WinEventMouseRelease | WinEventMouseMove);
@@ -208,40 +122,3 @@ lf_button_create_with_label_ex(
 
   return button;
 }
-
-void lf_button_set_font(
-    lf_ui_state_t* ui, 
-    lf_button_t* button,
-    void* font) {
-  button->font = font;
-  _button_recalculate_label(ui, button);
-}
-
-void lf_button_set_label(
-    lf_ui_state_t* ui, 
-    lf_button_t* button,
-    const char* label) {
-  if(button->_changed_label) {
-    free(button->label);
-  }
-  button->label = strdup(label);
-  button->_changed_label = true;
-  _button_recalculate_label(ui, button);
-}
-
-
-void 
-lf_button_set_font_size(
-    lf_ui_state_t* ui, 
-    lf_button_t* button,
-    uint32_t size) {
-#ifdef LF_RUNARA
-  if(!button->_changed_font_size) {
-    button->font = lf_load_font(ui, ((RnFont*)button->font)->filepath, size);
-  } else {
-    lf_font_resize(ui, button->font, size);
-  }
-  lf_button_set_font(ui, button, button->font);
-#endif
-}
-

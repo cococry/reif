@@ -17,9 +17,9 @@ lf_div_t* lf_div(lf_ui_state_t* ui);
 
 void lf_div_end(lf_ui_state_t* ui);
 
-lf_button_t* lf_button(lf_ui_state_t* ui, const char* label);
+lf_button_t* lf_button(lf_ui_state_t* ui);
 
-lf_button_t* lf_button_empty(lf_ui_state_t* ui);
+void lf_button_end(lf_ui_state_t* ui);
 
 lf_text_t* lf_text_p(lf_ui_state_t* ui, const char* label);
 

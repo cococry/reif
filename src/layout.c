@@ -1,6 +1,7 @@
 #include "../include/leif/layout.h"
 #include "../include/leif/widget.h"
 #include "../include/leif/widgets/div.h"
+#include "../include/leif/widgets/text.h"
 #include "../include/leif/util.h"
 
 static void adjust_widget_size(lf_widget_t* widget, bool* o_fixed_w, bool* o_fixed_h, bool horizontal);
@@ -83,7 +84,7 @@ lf_layout_vertical(lf_widget_t* widget) {
       offset.x = (widget->container.size.x - (effictive.x + child->props.margin_left + child->props.margin_right)) / 2.0f;
 
     child->container.pos.x = widget->container.pos.x
-      + widget->props.padding_left + child->props.margin_left + offset.x;
+      + ((widget->parent && widget->parent->parent != NULL) ? widget->props.padding_left : 0.0f) + child->props.margin_left + offset.x;
 
 
     if(widget->justify_type != JustifyEnd) {
@@ -104,62 +105,75 @@ lf_layout_vertical(lf_widget_t* widget) {
 
 void 
 lf_layout_horizontal(lf_widget_t* widget) {
-  bool fixed_w = false, fixed_h = false;
+ bool fixed_w = false, fixed_h = false;
   adjust_widget_size(widget, &fixed_w, &fixed_h, true);
-  for(uint32_t i = 0; i < widget->num_childs; i++) {
+
+  for (uint32_t i = 0; i < widget->num_childs; i++) {
     widget->childs[i]->props = widget->childs[i]->_initial_props;
   }
 
-  vec2s offset = (vec2s){
-    .x = 0,
-    .y = 0 
-  };
+  vec2s offset = { .x = 0, .y = 0 };
+  float total_width = 0.0f, max_height = 0.0f;
 
-  float height = 0.0f, width = 0.0f;
-  for(uint32_t i = 0; i < widget->num_childs; i++) {
+  // Calculate total width needed and max height of children
+  for (uint32_t i = 0; i < widget->num_childs; i++) {
     lf_widget_t* child = widget->childs[i];
-    vec2s effictive = LF_WIDGET_SIZE_V2(child);
-    width += effictive.x + child->props.margin_left + child->props.margin_right;
-    float h = effictive.y + child->props.margin_top + child->props.margin_bottom;
-    if(h > height)
-      height = h;
-  }
- 
-  if(lf_flag_exists(&widget->alignment_flags, AlignCenterHorizontal)) {
-    offset.x = (widget->container.size.x - width) / 2.0f - widget->props.padding_right;
-  }
+    if(!child->visible) continue;
+    vec2s effective_size = LF_WIDGET_SIZE_V2(child);
 
-  float x_ptr;
-
-  if(widget->justify_type != JustifyEnd)
-    x_ptr = widget->container.pos.x + offset.x + widget->props.padding_left;
-  else 
-    x_ptr = widget->container.pos.x + widget->container.size.x - widget->props.padding_right - offset.x;
-
-  for(uint32_t i = 0; i < widget->num_childs; i++) {
-    lf_widget_t* child = widget->childs[i];
-    vec2s effictive = LF_WIDGET_SIZE_V2(child);
-
-    if(lf_flag_exists(&widget->alignment_flags, AlignCenterVertical))
-      offset.y = (widget->container.size.y - (effictive.y + child->props.margin_top + child->props.margin_bottom)) / 2.0f;
-
-    child->container.pos.y = widget->container.pos.y
-      + widget->props.padding_top + child->props.margin_top + offset.y;
-
-    if(widget->justify_type != JustifyEnd) {
-      child->container.pos.x = x_ptr + child->props.margin_left; 
-      x_ptr += effictive.x + child->props.margin_right + child->props.margin_left; 
-    } else {
-      child->container.pos.x = x_ptr - effictive.x - child->props.margin_right; 
-      x_ptr -= effictive.x + child->props.margin_right + child->props.margin_left; 
+    total_width += effective_size.x + child->props.margin_left + child->props.margin_right;
+    float child_height = effective_size.y + child->props.margin_top + child->props.margin_bottom;
+    if (child_height > max_height) {
+      max_height = child_height;
     }
   }
 
-  if(!fixed_w) {
-    widget->container.size.x = width; 
+  // Calculate centering offset, excluding padding for horizontal centering
+  if (lf_flag_exists(&widget->alignment_flags, AlignCenterHorizontal)) {
+    offset.x = (widget->container.size.x - total_width) / 2.0f;
   }
-  if(!fixed_h)
-    widget->container.size.y = height; 
+
+  // Initial x position based on offset and padding
+  float x_ptr = widget->container.pos.x + offset.x;
+  if (widget->justify_type == JustifyEnd) {
+    x_ptr = widget->container.pos.x + widget->container.size.x - widget->props.padding_right - total_width;
+  } else {
+    if((widget->parent && widget->parent->parent != NULL))
+      x_ptr += widget->props.padding_left;
+  }
+
+  // Position each child widget
+  for (uint32_t i = 0; i < widget->num_childs; i++) {
+    lf_widget_t* child = widget->childs[i];
+    if(!child->visible) continue;
+    vec2s effective_size = LF_WIDGET_SIZE_V2(child);
+
+    // Vertical centering if enabled
+    if (lf_flag_exists(&widget->alignment_flags, AlignCenterVertical)) {
+      offset.y = (widget->container.size.y - (effective_size.y)) / 2.0f - child->props.margin_top;
+    }
+
+    child->container.pos.y = widget->container.pos.y
+      + ((widget->parent && widget->parent->parent != NULL) ? widget->props.padding_top : 0.0f) + child->props.margin_top + offset.y;
+
+    // Set x position and advance pointer based on justify type
+    if (widget->justify_type == JustifyEnd) {
+      x_ptr -= effective_size.x + child->props.margin_right;
+      child->container.pos.x = x_ptr;
+      x_ptr -= child->props.margin_left;
+    } else {
+      child->container.pos.x = x_ptr + child->props.margin_left;
+      x_ptr += effective_size.x + child->props.margin_right + child->props.margin_left;
+    }
+  }
+
+  // Update container size if not fixed
+  if (!fixed_w) {
+    widget->container.size.x = total_width;
+  }
+  if (!fixed_h) {
+    widget->container.size.y = max_height;
+  } 
 }
 
 void lf_layout_responsive_grid(lf_widget_t* widget) {
@@ -192,7 +206,7 @@ void lf_layout_responsive_grid(lf_widget_t* widget) {
     float widget_h = effective_widget_size(child).y + child->props.margin_top + child->props.margin_bottom;
 
     // Ensure row height is updated at least once, even if `changed_by_layout` is true.
-    if (!child->changed_by_layout || row_heights[row_i] == 0) {
+    if (!child->_changed_by_layout || row_heights[row_i] == 0) {
       row_heights[row_i] = fmax(row_heights[row_i], widget_h);
     }
 

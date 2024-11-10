@@ -13,41 +13,9 @@ typedef struct {
   lf_button_func_t on_click;
   lf_button_func_t on_enter, on_leave;
 
-  char* label;
-  void* font;
-  lf_text_dimension_t _text_dimension;
-
-  bool _changed_font_size, _changed_label;
   bool _hovered;
-
 } lf_button_t;
 
 lf_button_t* lf_button_create(
     lf_ui_state_t* ui,
     lf_widget_t* parent);
-
-lf_button_t* lf_button_create_with_label(
-    lf_ui_state_t* ui,
-    lf_widget_t* parent,
-    const char* label);
-
-lf_button_t* lf_button_create_with_label_ex(
-    lf_ui_state_t* ui,
-    lf_widget_t* parent,
-    const char* label,
-    lf_font_t font);
-
-void lf_button_set_font(
-    lf_ui_state_t* ui, 
-    lf_button_t* button,
-    void* font);
-
-void lf_button_set_label(
-    lf_ui_state_t* ui, 
-    lf_button_t* button,
-    const char* label);
-
-void lf_button_set_font_size(
-    lf_ui_state_t* ui, 
-    lf_button_t* button,
-    uint32_t size);
