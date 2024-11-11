@@ -101,6 +101,9 @@ lf_widget_create(
 
   widget->anims = NULL; 
 
+  widget->_width_percent = 0.0f;
+  widget->_height_percent = 0.0f;
+
   return widget;
 }
 
@@ -459,6 +462,18 @@ lf_widget_set_fixed_width(lf_widget_t* widget, float width) {
 void 
 lf_widget_set_fixed_height(lf_widget_t* widget, float height) {
   widget->container.size.y = height;
+  widget->_fixed_height = true;
+}
+
+void 
+lf_widget_set_fixed_width_percent(lf_widget_t* widget, float percent) {
+  widget->_width_percent = percent / 100.0f;
+  widget->_fixed_width = true;
+}
+
+void 
+lf_widget_set_fixed_height_percent(lf_widget_t* widget, float percent) {
+  widget->_height_percent = percent / 100.0f;
   widget->_fixed_height = true;
 }
 

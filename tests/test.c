@@ -19,6 +19,7 @@ typedef struct {
   int32_t counter;
   lf_text_t* text;
   float icon_alpha;
+  lf_ui_state_t* ui;
 } state_t;
 
 static state_t s;
@@ -27,6 +28,7 @@ void finish_anim(lf_animation_t* anim, void* user_data) {
   (void)anim;
   lf_widget_t* icon = (lf_widget_t*)user_data;
   icon->visible = false;
+  lf_ui_core_submit(s.ui);
 }
 
 void tick_alpha(lf_animation_t* anim, void* user_data) {
@@ -88,41 +90,39 @@ int main(void) {
   if(lf_windowing_init() != 0) return EXIT_FAILURE;
 
   lf_window_t* win = lf_ui_core_create_window(1280, 720, "hello leif");
-  lf_ui_state_t* ui = lf_ui_core_init(win);
+  s.ui = lf_ui_core_init(win);
 
-  lf_ui_core_set_font(ui, "/usr/share/fonts/TTF/IosevkaNerdFont-Regular.ttf");
+  lf_ui_core_set_font(s.ui, "/usr/share/fonts/TTF/IosevkaNerdFont-BoldItalic.ttf");
   
-  lf_div(ui);
+  lf_div(s.ui);
+
+  lf_widget_set_fixed_width_percent(lf_crnt(s.ui), 100);
+
+  lf_widget_set_alignment(lf_crnt(s.ui), AlignCenterHorizontal | AlignCenterVertical);
+  lf_widget_set_layout(lf_crnt(s.ui), LayoutVertical);
 
 
-  lf_widget_set_fixed_width(lf_crnt(ui), 1280);
+  lf_text_h1(s.ui, "Email button test");
+  lf_style_crnt_widget_prop(s.ui, margin_bottom, 20.0f);
 
-  lf_widget_set_listener(lf_crnt(ui), listener, WinEventResize);
+  lf_button_t* btn = lf_button(s.ui);
+  ((lf_button_t*)lf_crnt(s.ui))->on_enter = on_button_enter;
+  ((lf_button_t*)lf_crnt(s.ui))->on_leave = on_button_leave;
+  lf_style_crnt_widget_prop(s.ui, color, lf_color_from_hex(0x0B57D0));
+  lf_text_h3(s.ui, "Send"); lf_text_p(s.ui, "");
+  lf_crnt(s.ui)->visible = false;
+  lf_button_end(s.ui);
 
-  lf_widget_set_alignment(lf_crnt(ui), AlignCenterHorizontal | AlignCenterVertical);
-  lf_widget_set_layout(lf_crnt(ui), LayoutVertical);
+  lf_style_widget_prop(s.ui, &btn->base, corner_radius, 24);
+  lf_div_end(s.ui);
 
+  lf_ui_core_submit(s.ui);
 
-  lf_button_t* btn = lf_button(ui);
-  ((lf_button_t*)lf_crnt(ui))->on_enter = on_button_enter;
-  ((lf_button_t*)lf_crnt(ui))->on_leave = on_button_leave;
-  lf_widget_set_fixed_width(lf_crnt(ui), 200);
-  lf_style_crnt_widget_prop(ui, color, lf_color_from_hex(0x0B57D0));
-  lf_text_h3(ui, "Send");
-  lf_text_p(ui, "󰒊");
-  lf_crnt(ui)->visible = false;
-  lf_button_end(ui);
-
-  lf_style_widget_prop(ui, &btn->base, corner_radius, 24);
-  lf_div_end(ui);
-
-  lf_ui_core_submit(ui);
-
-  while(ui->running) {
-    lf_ui_core_next_event(ui);
+  while(s.ui->running) {
+    lf_ui_core_next_event(s.ui);
   }
  
-  lf_ui_core_terminate(ui);
+  lf_ui_core_terminate(s.ui);
 
   return EXIT_SUCCESS;
 }

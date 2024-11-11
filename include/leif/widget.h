@@ -62,6 +62,9 @@ struct lf_widget_t {
 
   lf_animation_t* anims;
 
+  float _width_percent;
+  float _height_percent;
+
 };
 
 lf_widget_t* lf_widget_create(
@@ -183,4 +186,9 @@ void lf_widget_set_fixed_width(lf_widget_t* widget, float width);
 
 void lf_widget_set_fixed_height(lf_widget_t* widget, float height);
 
+void lf_widget_set_fixed_width_percent(lf_widget_t* widget, float percent);
+
+void lf_widget_set_fixed_height_percent(lf_widget_t* widget, float percent);
+
 void lf_widget_set_alignment(lf_widget_t* widget, uint32_t flags);
+

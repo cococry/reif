@@ -1,7 +1,6 @@
 #include "../include/leif/layout.h"
 #include "../include/leif/widget.h"
 #include "../include/leif/widgets/div.h"
-#include "../include/leif/widgets/text.h"
 #include "../include/leif/util.h"
 
 static void adjust_widget_size(lf_widget_t* widget, bool* o_fixed_w, bool* o_fixed_h, bool horizontal);
@@ -12,10 +11,18 @@ void
 adjust_widget_size(lf_widget_t* widget, bool* o_fixed_w, bool* o_fixed_h, bool horizontal) {
   bool resizable = (!widget->_fixed_width && horizontal) || (!widget->_fixed_height && !horizontal);
   if(widget->parent && resizable && widget->sizing_type == SizingFitToParent) {
-    if(horizontal)
-      widget->container.size.x = widget->parent->container.size.x - widget->props.margin_right - widget->props.margin_left * 2; 
-    else 
-      widget->container.size.y = widget->parent->container.size.y - widget->container.pos.y - widget->props.margin_bottom - widget->props.margin_top * 2; 
+    if(horizontal) {
+      widget->container.size.x = (widget->parent->container.size.x - widget->props.margin_right - widget->props.margin_left * 2); 
+    } else{
+      widget->container.size.y = (widget->parent->container.size.y - widget->container.pos.y - widget->props.margin_bottom - widget->props.margin_top * 2);
+    }
+  }
+
+  if(widget->parent && widget->_fixed_width && widget->_width_percent != 0.0f) {
+      widget->container.size.x = widget->parent->container.size.x * widget->_width_percent; 
+  }
+  if(widget->parent && widget->_fixed_height && widget->_height_percent != 0.0f) {
+      widget->container.size.y = widget->parent->container.size.y * widget->_height_percent; 
   }
 
   if(o_fixed_w) {
@@ -30,7 +37,6 @@ adjust_widget_size(lf_widget_t* widget, bool* o_fixed_w, bool* o_fixed_h, bool h
       widget->_fixed_height :
       widget->_fixed_height || widget->sizing_type == SizingFitToParent;
   }
-
 }
 
 vec2s 
