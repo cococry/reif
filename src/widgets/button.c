@@ -26,9 +26,9 @@ _button_render(
   lf_button_t* button = (lf_button_t*)widget;
   
   if(button->_held) {
-    button->base.props.color =  lf_color_dim(button->base._initial_props.color, 0.6f);
-  } else if(button->_hovered) {
     button->base.props.color =  lf_color_dim(button->base._initial_props.color, 0.8f);
+  } else if(button->_hovered) {
+    button->base.props.color =  lf_color_dim(button->base._initial_props.color, 0.9f);
   }
 
   ui->render_rect(
@@ -83,12 +83,10 @@ _button_handle_event(
     if(button->on_click)
       button->on_click(ui, widget);
     button->_held = false;
-    printf("not held.\n");
     ui->root_needs_render = true;
   }
   if(event.type == WinEventMousePress) {
     button->_held = true;
-    printf("held.\n");
     ui->root_needs_render = true;
   }
 

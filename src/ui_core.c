@@ -97,6 +97,14 @@ render_widget_and_submit(
       }});
 
   lf_widget_render(ui, widget);
+
+#ifdef LF_RUNARA
+  rn_unset_cull_end_x((RnState*)ui->render_state);
+  rn_unset_cull_end_y((RnState*)ui->render_state);
+  rn_unset_cull_start_x((RnState*)ui->render_state);
+  rn_unset_cull_start_y((RnState*)ui->render_state);
+#endif
+
   lf_ui_core_end_render(ui);
 }
 

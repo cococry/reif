@@ -93,27 +93,21 @@ int main(void) {
   s.ui = lf_ui_core_init(win);
 
   lf_ui_core_set_font(s.ui, "/usr/share/fonts/TTF/IosevkaNerdFont-BoldItalic.ttf");
-  
+ 
   lf_div(s.ui);
+  lf_style_crnt_widget_prop(s.ui, color, lf_color_from_hex(0x555555));
+  lf_widget_set_layout(lf_crnt(s.ui), LayoutHorizontal);
 
-  lf_widget_set_fixed_width_percent(lf_crnt(s.ui), 100);
+  for(uint32_t i = 0; i < 3; i++) {
 
-  lf_widget_set_alignment(lf_crnt(s.ui), AlignCenterHorizontal | AlignCenterVertical);
-  lf_widget_set_layout(lf_crnt(s.ui), LayoutVertical);
+    lf_div(s.ui);
+    lf_button(s.ui);
+    lf_text_h3(s.ui, "Hello");
+    lf_button_end(s.ui);
 
-
-  lf_text_h1(s.ui, "Email button test");
-  lf_style_crnt_widget_prop(s.ui, margin_bottom, 20.0f);
-
-  lf_button_t* btn = lf_button(s.ui);
-  ((lf_button_t*)lf_crnt(s.ui))->on_enter = on_button_enter;
-  ((lf_button_t*)lf_crnt(s.ui))->on_leave = on_button_leave;
-  lf_style_crnt_widget_prop(s.ui, color, lf_color_from_hex(0x0B57D0));
-  lf_text_h3(s.ui, "Send"); lf_text_p(s.ui, "");
-  lf_crnt(s.ui)->visible = false;
-  lf_button_end(s.ui);
-
-  lf_style_widget_prop(s.ui, &btn->base, corner_radius, 24);
+    lf_div_end(s.ui);
+  }
+    
   lf_div_end(s.ui);
 
   lf_ui_core_submit(s.ui);

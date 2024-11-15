@@ -107,25 +107,20 @@ lf_widget_create(
   return widget;
 }
 
+lf_widget_t* get_first_intersecting_parent(lf_widget_t* widget) {
+  lf_widget_t* current = widget->parent;
+  while (current != NULL) {
+    if (lf_container_intersets_container(LF_WIDGET_CONTAINER(widget), LF_WIDGET_CONTAINER(current))) {
+      return current; // Return the first intersecting parent found
+    }
+    current = current->parent; // Move up to the next parent in the hierarchy
+  }
+  return NULL; // Return NULL if no intersecting parent is found
+}
 void
 lf_widget_render(lf_ui_state_t* ui,  lf_widget_t* widget) {
   if(!widget->visible) return;
   if(widget->render) {
-#ifdef LF_RUNARA
-    rn_set_cull_end_x(
-      (RnState*)ui->render_state, 
-      widget->parent->container.pos.x + lf_widget_width(widget->parent) - 
-      widget->parent->props.border_width); 
-    rn_set_cull_end_y(
-      (RnState*)ui->render_state, 
-      widget->parent->container.pos.y + lf_widget_height(widget->parent) - 
-      widget->props.border_width); 
-    rn_set_cull_start_x(ui->render_state,
-                        widget->parent->container.pos.x + widget->parent->props.border_width); 
-    rn_set_cull_start_y(ui->render_state,
-                        widget->parent->container.pos.y + widget->parent->props.border_width); 
-
-#endif
     if(!lf_container_intersets_container(
       LF_WIDGET_CONTAINER(widget), ui->root->container)) {
       return;

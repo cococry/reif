@@ -13,6 +13,21 @@ _div_render(lf_ui_state_t* ui, lf_widget_t* widget) {
     LF_WIDGET_SIZE_V2(widget),
     widget->props.color, widget->props.border_color, 
     widget->props.border_width, widget->props.corner_radius);
+#ifdef LF_RUNARA
+  rn_set_cull_end_x(
+    (RnState*)ui->render_state, 
+    widget->container.pos.x + lf_widget_width(widget) - 
+    widget->props.border_width); 
+  rn_set_cull_end_y(
+    (RnState*)ui->render_state, 
+    widget->container.pos.y + lf_widget_height(widget) - 
+    widget->props.border_width); 
+  rn_set_cull_start_x(ui->render_state,
+                      widget->container.pos.x + widget->props.border_width); 
+  rn_set_cull_start_y(ui->render_state,
+                      widget->container.pos.y + widget->props.border_width); 
+
+#endif
 
 }
 
