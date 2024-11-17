@@ -1,7 +1,7 @@
 CC			= gcc
 BIN			= test
 DEPLIBS = -lrunara -lfreetype -lharfbuzz -lfontconfig -lm -lGL -lglfw
-CFLAGS	= -DLF_GLFW -DLF_RUNARA -ffast-math -O3 -pedantic -Wall -Werror -Wextra
+CFLAGS	= -DLF_GLFW -DLF_RUNARA -ffast-math -O3 -pedantic -Wall -Werror -Wextra -g
 LIBS 		=-L../lib -lleif  ${DEPLIBS} 
 
 all:

@@ -14,6 +14,7 @@ typedef struct {
   lf_widget_props_t text_props;
   lf_color_t text_color, background_color;
 } lf_theme_t;
+
 typedef enum {
   TextLevelH1         = 0,
   TextLevelH2         = 1,
@@ -60,7 +61,7 @@ struct lf_ui_state_t {
 
   lf_widget_t* _last_parent, *_current_widget;
 
-  bool _root_never_shaped;
+  bool _root_never_shaped, _dirty;
 
   const char* fontpath;
 };
@@ -108,3 +109,5 @@ void lf_ui_core_end_render(lf_ui_state_t* ui);
 void lf_ui_core_terminate(lf_ui_state_t* ui);
 
 void lf_ui_core_set_font(lf_ui_state_t* ui, const char* fontpath);
+
+void lf_ui_core_remove_all_widgets(lf_ui_state_t* ui);

@@ -64,7 +64,8 @@ struct lf_widget_t {
 
   float _width_percent;
   float _height_percent;
-
+  
+  bool _marked_for_removal;
 };
 
 lf_widget_t* lf_widget_create(
@@ -100,7 +101,11 @@ float lf_widget_width(lf_widget_t* widget);
 
 float lf_widget_height(lf_widget_t* widget);
 
-int32_t lf_widget_remove(lf_widget_t* widget);
+void lf_widget_remove(lf_widget_t* widget);
+
+void lf_widget_remove_from_memory(lf_widget_t* widget);
+
+void lf_widget_remove_child_from_memory(lf_widget_t* parent, uint32_t child_idx);
 
 void lf_widget_set_padding(
     lf_widget_t* widget,

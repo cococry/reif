@@ -59,6 +59,7 @@ glfw_mouse_button_callback(
   ev.x = (int16_t)x; 
   ev.y = (int16_t)y; 
   lf_widget_handle_event(ui, ui->root, ev);
+  printf("got here.\n");
   
   if(action != GLFW_RELEASE) {
     for(uint32_t i = 0; i < n_windows; i++) {

@@ -28,7 +28,7 @@ widget_animate(lf_ui_state_t* ui, lf_widget_t* widget) {
 
   while (anim) {
     if (anim->active) {
-    lf_animation_update(anim, ui->delta_time);
+      lf_animation_update(anim, ui->delta_time);
     }
     if (!anim->active) {
       if (prev) {
@@ -80,6 +80,7 @@ lf_widget_create(
   widget->cap_childs = 0;
   widget->num_childs = 0;
   widget->visible = true;
+  widget->_marked_for_removal = false;
 
   widget->type = type;
   widget->container = fallback_container;
@@ -132,6 +133,12 @@ lf_widget_render(lf_ui_state_t* ui,  lf_widget_t* widget) {
   for(uint32_t i = 0; i < widget->num_childs; i++) {
     lf_widget_render(ui, widget->childs[i]);
   }
+#ifdef LF_RUNARA
+  rn_unset_cull_end_x((RnState*)ui->render_state);
+  rn_unset_cull_end_y((RnState*)ui->render_state);
+  rn_unset_cull_start_x((RnState*)ui->render_state);
+  rn_unset_cull_start_y((RnState*)ui->render_state);
+#endif
 }
 
 void lf_widget_shape(
@@ -166,10 +173,15 @@ bool lf_widget_animate(
 
 void
 lf_widget_handle_event(lf_ui_state_t* ui, lf_widget_t* widget, lf_event_t event) {
+  if(!widget) return;
   if(widget->handle_event && lf_widget_is_listening(widget, event.type)) {
-    widget->handle_event(ui, widget, event);
+    widget->handle_event(ui, widget, event); // Removes the button
   }
 
+  if(!widget) {
+    return;
+  }
+  // Handles the events of the childs (Segfaults)
   for(uint32_t i = 0; i < widget->num_childs; i++) {
     lf_widget_handle_event(ui, widget->childs[i], event);
   }
@@ -188,34 +200,60 @@ lf_widget_add_child(lf_widget_t* parent, lf_widget_t* child) {
   return 0;
 }
 
-int32_t 
+void
 lf_widget_remove(lf_widget_t* widget) {
-  for(uint32_t i = 0; i < widget->num_childs; i++) {
+  if (!widget) return;
+  widget->_marked_for_removal = true;
+
+  for (uint32_t i = 0; i < widget->num_childs; i++) {
+    lf_widget_remove(widget->childs[i]);
+  }
+}
+
+void
+lf_widget_remove_from_memory(lf_widget_t* widget) {
+  if (!widget) return;
+
+  for (uint32_t i = 0; i < widget->num_childs; i++) {
     lf_widget_remove(widget->childs[i]);
   }
 
-  if(widget->parent && widget->parent->num_childs) {
+  if (widget->childs) {
+    free(widget->childs);
+    widget->childs = NULL;
+  }
+
+  if (widget->parent) {
     int32_t child_idx = -1;
-    for(uint32_t i = 0; i < widget->parent->num_childs; i++) {
-      lf_widget_t* child = widget->parent->childs[i];
-      if(child == widget) {
+    for (uint32_t i = 0; i < widget->parent->num_childs; i++) {
+      if (widget->parent->childs[i] == widget) {
         child_idx = i;
         break;
       }
     }
-    for(uint32_t i = child_idx; i < widget->parent->num_childs - 1; i++) {
-      widget->parent->childs[i] = widget->parent->childs[i + 1];
-    }
-    if(child_idx == -1) {
-      fprintf(stderr, 
-              "leif: cannot find widget to destroy within parent.\n");
-      return 1;
-    }
-    widget->parent->num_childs--;
-  }
-  free(widget->childs);
 
-  return 0;
+    if (child_idx != -1) {
+      lf_widget_remove_child_from_memory(widget->parent, child_idx);
+    } else {
+      fprintf(stderr, "leif: cannot find widget to destroy within parent.\n");
+    }
+  }
+
+  free(widget);
+}
+
+void lf_widget_remove_child_from_memory(lf_widget_t* parent, uint32_t child_idx) {
+  if (!parent || child_idx >= parent->num_childs) return;
+
+  lf_widget_t* child = parent->childs[child_idx];
+  free(child);
+
+  for (uint32_t i = child_idx; i < parent->num_childs - 1; i++) {
+    parent->childs[i] = parent->childs[i + 1];
+  }
+  parent->num_childs--;
+
+  parent->childs = realloc(parent->childs, parent->num_childs * sizeof(lf_widget_t*));
 }
 
 float 

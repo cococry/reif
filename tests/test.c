@@ -14,10 +14,11 @@
 
 #include <runara/runara.h>
 #include <sys/types.h>
+#include <unistd.h>
 
 typedef struct {
   int32_t counter;
-  lf_text_t* text;
+  lf_button_t* text_div;
   float icon_alpha;
   lf_ui_state_t* ui;
 } state_t;
@@ -79,6 +80,15 @@ void on_button_leave(lf_ui_state_t* ui, lf_widget_t* widget) {
   }
 }
 
+void on_button_click(lf_ui_state_t* ui, lf_widget_t* widget) {
+  (void)widget;
+  if(widget) {
+    lf_widget_remove(widget);
+    s.text_div = NULL;
+  }
+  lf_ui_core_submit(ui);
+}
+
 void listener(lf_ui_state_t* ui, lf_widget_t* widget, lf_event_t ev) {
   (void)ui;
   lf_widget_set_fixed_width(widget, ev.width);
@@ -93,24 +103,43 @@ int main(void) {
   s.ui = lf_ui_core_init(win);
 
   lf_ui_core_set_font(s.ui, "/usr/share/fonts/TTF/IosevkaNerdFont-BoldItalic.ttf");
- 
+  
   lf_div(s.ui);
-  lf_style_crnt_widget_prop(s.ui, color, lf_color_from_hex(0x555555));
-  lf_widget_set_layout(lf_crnt(s.ui), LayoutHorizontal);
 
-  for(uint32_t i = 0; i < 3; i++) {
+  lf_widget_set_fixed_width_percent(lf_crnt(s.ui), 100);
+  lf_widget_set_fixed_height_percent(lf_crnt(s.ui), 100);
 
-    lf_div(s.ui);
-    lf_button(s.ui);
-    lf_text_h3(s.ui, "Hello");
-    lf_button_end(s.ui);
+  lf_style_crnt_widget_prop(s.ui, color, lf_color_from_hex(0x282828));
+  lf_widget_set_alignment(lf_crnt(s.ui), AlignCenterHorizontal | AlignCenterVertical);
+  lf_widget_set_layout(lf_crnt(s.ui), LayoutVertical);
 
-    lf_div_end(s.ui);
-  }
-    
+
+  lf_text_h1(s.ui, "Email button test");
+  lf_style_crnt_widget_prop(s.ui, margin_left, 0); 
+  lf_style_crnt_widget_prop(s.ui, margin_right, 0); 
+
+  lf_text_h4(s.ui, "Try hovering the button.");
+  
+  lf_style_crnt_widget_prop(s.ui, margin_left, 0); 
+  lf_style_crnt_widget_prop(s.ui, margin_right, 0); 
+  lf_style_crnt_widget_prop(s.ui, text_color, lf_color_from_hex(0x777777));
+  lf_style_crnt_widget_prop(s.ui, margin_bottom, 20.0f);
+
+  lf_button_t* btn = lf_button(s.ui);
+  ((lf_button_t*)lf_crnt(s.ui))->on_click = on_button_click;
+  ((lf_button_t*)lf_crnt(s.ui))->on_enter = on_button_enter;
+  ((lf_button_t*)lf_crnt(s.ui))->on_leave = on_button_leave;
+  lf_style_crnt_widget_prop(s.ui, color, lf_color_from_hex(0x0B57D0));
+  lf_text_h3(s.ui, "Send"); 
+  lf_text_p(s.ui, ""); 
+  lf_crnt(s.ui)->visible = false;
+  lf_button_end(s.ui);
+
+  lf_style_widget_prop(s.ui, &btn->base, corner_radius, 25);
+
   lf_div_end(s.ui);
 
-  lf_ui_core_submit(s.ui);
+
 
   while(s.ui->running) {
     lf_ui_core_next_event(s.ui);

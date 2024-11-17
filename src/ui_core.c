@@ -26,9 +26,11 @@ static void render_widget_and_submit(
   lf_container_t clear_area); 
 
 static void root_shape(lf_ui_state_t* ui, lf_widget_t* widget);
+static void root_resize(lf_ui_state_t* ui, lf_widget_t* widget, lf_event_t ev);
 static void win_close_callback(lf_ui_state_t* ui, void* window);
 static void win_refresh_callback(lf_ui_state_t* ui, void* window);
 static void commit_entire_render(lf_ui_state_t* ui);
+static void remove_marked_widgets(lf_widget_t* root);
 
 static uint32_t font_sizes[] = {
   36, 28, 22, 18, 15, 13, 16
@@ -44,30 +46,57 @@ win_close_callback(lf_ui_state_t* ui, void* window) {
 void 
 win_refresh_callback(lf_ui_state_t* ui, void* window) {
   (void)window;
+  lf_widget_shape(ui, ui->root);
+  ui->root_needs_render = true;
   commit_entire_render(ui);
 }
 
+void 
+reset_widget_props(lf_widget_t* widget) {
+  widget->props = widget->_initial_props;
+  for(uint32_t i = 0; i < widget->num_childs; i++) {
+    reset_widget_props(widget->childs[i]);
+  }
+}
 void
 commit_entire_render(lf_ui_state_t* ui) {
   if(!ui) return;
+  if(!ui->root_needs_render) return;
   vec2s win_size = lf_win_get_size(ui->win);
   lf_container_t clear_area = LF_SCALE_CONTAINER(
     win_size.x,
     win_size.y);
   ui->root->container = clear_area;
   ui->render_resize_display(ui->render_state, win_size.x, win_size.y);
-  lf_widget_shape(ui, ui->root);
+  reset_widget_props(ui->root);
   render_widget_and_submit(ui, ui->root, clear_area);
   ui->root_needs_render = false;
   lf_win_swap_buffers(ui->win);
 }
 
 void 
+remove_marked_widgets(lf_widget_t* root) {
+ if (!root) return;
+
+  for (uint32_t i = 0; i < root->num_childs; ) {
+    lf_widget_t* child = root->childs[i];
+    if (child->_marked_for_removal) {
+      lf_widget_remove_child_from_memory(root, i);
+    } else {
+      remove_marked_widgets(child);
+      i++;
+    }
+  }
+
+  if (root->_marked_for_removal) {
+    lf_widget_remove_from_memory(root);
+  }
+}
+
+void 
 init_fonts(lf_ui_state_t* ui) {
   if(!ui) return;
-  printf("Initializing fonts.\n");
   lf_ui_core_set_font(ui, ui->render_font_file_from_name("Inter"));
-  printf("Done.\n");
 }
 
 void 
@@ -113,6 +142,16 @@ root_shape(lf_ui_state_t* ui, lf_widget_t* widget) {
   if(!widget) return;
   if(widget->type != WidgetTypeRoot) return;
   lf_widget_apply_layout(ui->root);
+}
+
+void 
+root_resize(lf_ui_state_t* ui, lf_widget_t* widget, lf_event_t ev) {
+  (void)ev;
+  if(!widget) return;
+  if(widget->type != WidgetTypeRoot) return;
+  lf_widget_shape(ui, ui->root);
+  ui->root_needs_render = true;
+  commit_entire_render(ui);
 }
 
 lf_window_t*
@@ -182,6 +221,8 @@ lf_ui_core_init(lf_window_t* win) {
     (lf_widget_props_t){0},
     NULL, NULL, root_shape);
 
+  lf_widget_set_listener(state->root, root_resize, WinEventResize);
+
   lf_windowing_set_ui_state(state);
 
   state->root->props.color = state->theme->background_color;
@@ -192,6 +233,7 @@ lf_ui_core_init(lf_window_t* win) {
   state->running = true;
   
   state->_root_never_shaped = true;
+  state->_dirty = true;
   
   state->_last_parent = state->root;
   state->_current_widget = state->root;
@@ -318,6 +360,8 @@ lf_ui_core_init_ex(
     LF_SCALE_CONTAINER((float)lf_win_get_size(win).x, lf_win_get_size(win).y),
     (lf_widget_props_t){0},
     NULL, NULL, root_shape);
+  
+  lf_widget_set_listener(state->root, root_resize, WinEventResize);
 
   state->root->type = WidgetTypeRoot;
 
@@ -329,6 +373,7 @@ lf_ui_core_init_ex(
   state->running = true;
 
   state->_root_never_shaped = true;
+  state->_dirty = true;
   
   state->_last_parent = state->root;
   state->_current_widget = state->root;
@@ -340,6 +385,16 @@ lf_ui_core_init_ex(
 void
 lf_ui_core_next_event(lf_ui_state_t* ui) {
   lf_windowing_next_event();
+  if(ui->_dirty) {
+    remove_marked_widgets(ui->root);
+    lf_widget_shape(ui, ui->root);
+    if(ui->_root_never_shaped) {
+      lf_widget_shape(ui, ui->root);
+      ui->_root_never_shaped = false;
+    }
+    ui->root_needs_render = true;
+    ui->_dirty = false;
+  }
 
   float cur_time = glfwGetTime();
   ui->delta_time = cur_time - ui->_last_time;
@@ -347,6 +402,7 @@ lf_ui_core_next_event(lf_ui_state_t* ui) {
 
   if(lf_widget_animate(ui, ui->root)) {
     ui->root_needs_render = true;
+    lf_widget_shape(ui, ui->root);
   }
 
   bool rendered = lf_windowing_get_current_event() == WinEventRefresh;
@@ -361,19 +417,14 @@ lf_ui_core_next_event(lf_ui_state_t* ui) {
     usleep((ui->_frame_duration) * 1000000);
   } 
 
-
   lf_windowing_update();
+
 }
 
 
 void 
 lf_ui_core_submit(lf_ui_state_t* ui) {
-  lf_widget_shape(ui, ui->root);
-  if(ui->_root_never_shaped) {
-    lf_widget_shape(ui, ui->root);
-    ui->_root_never_shaped = true;
-  }
-  ui->root_needs_render = true;
+  ui->_dirty = true;
 }
 
 void 
@@ -405,6 +456,7 @@ lf_ui_core_terminate(lf_ui_state_t* ui) {
   if(!ui) return;
 
   lf_widget_remove(ui->root);
+  remove_marked_widgets(ui->root);
 
   lf_win_destroy(ui->win);
 
@@ -435,5 +487,11 @@ lf_ui_core_set_font(lf_ui_state_t* ui, const char* fontpath) {
 
   for(uint32_t i = 0; i < TextLevelMax; i++) {
     ui->fonts[i] = ui->render_font_create(ui->render_state, ui->fontpath, font_sizes[i]);
+  }
+}
+void 
+lf_ui_core_remove_all_widgets(lf_ui_state_t* ui) {
+  for(uint32_t i = 0; i < ui->root->num_childs; i++) {
+    lf_widget_remove(ui->root->childs[i]);
   }
 }
