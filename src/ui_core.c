@@ -491,7 +491,6 @@ lf_ui_core_set_font(lf_ui_state_t* ui, const char* fontpath) {
 }
 void 
 lf_ui_core_remove_all_widgets(lf_ui_state_t* ui) {
-  for(uint32_t i = 0; i < ui->root->num_childs; i++) {
-    lf_widget_remove(ui->root->childs[i]);
-  }
+  lf_widget_remove(ui->root);
+  ui->root->_marked_for_removal = false;
 }

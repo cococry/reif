@@ -82,10 +82,7 @@ void on_button_leave(lf_ui_state_t* ui, lf_widget_t* widget) {
 
 void on_button_click(lf_ui_state_t* ui, lf_widget_t* widget) {
   (void)widget;
-  if(widget) {
-    lf_widget_remove(widget);
-    s.text_div = NULL;
-  }
+  lf_ui_core_remove_all_widgets(ui);
   lf_ui_core_submit(ui);
 }
 
