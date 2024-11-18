@@ -79,3 +79,14 @@ bool lf_flag_exists(
     uint32_t flag) {
   return (*flags & flag) != 0;
 }
+
+uint64_t lf_djb2_hash(const unsigned char *str) {
+  unsigned long hash = 5381;
+  int c;
+
+  while ((c = *str++)) {
+    hash = ((hash << 5) + hash) + c;  // hash * 33 + c
+  }
+
+  return hash;
+}

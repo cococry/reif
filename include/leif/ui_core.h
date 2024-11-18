@@ -15,6 +15,7 @@ typedef struct {
   lf_color_t text_color, background_color;
 } lf_theme_t;
 
+
 typedef enum {
   TextLevelH1         = 0,
   TextLevelH2         = 1,
@@ -26,11 +27,24 @@ typedef enum {
   TextLevelMax        = 7
 } lf_text_level;
 
+typedef struct lf_page_t lf_page_t;
+
+typedef struct {
+  lf_page_t* pages;
+  uint32_t cap, size;
+} lf_page_list_t;
+
+
+typedef void (*lf_page_func_t)(
+      lf_ui_state_t* ui);
+
 struct lf_ui_state_t {
   lf_window_t* win;
 
   lf_widget_t* root;
 
+  lf_page_list_t pages;
+  uint64_t crnt_page_id;
   bool root_needs_render;
 
   lf_render_rect_func_t render_rect;
@@ -64,7 +78,14 @@ struct lf_ui_state_t {
   bool _root_never_shaped, _dirty;
 
   const char* fontpath;
+
+  lf_page_func_t _root_layout_func;
 };
+
+struct lf_page_t {
+  lf_page_func_t display;
+  uint64_t id;
+} ;
 
 lf_window_t* lf_ui_core_create_window(
     uint32_t width, 
@@ -111,3 +132,15 @@ void lf_ui_core_terminate(lf_ui_state_t* ui);
 void lf_ui_core_set_font(lf_ui_state_t* ui, const char* fontpath);
 
 void lf_ui_core_remove_all_widgets(lf_ui_state_t* ui);
+
+void lf_ui_core_add_page(lf_ui_state_t* ui, lf_page_func_t page_func, const char* identifier);
+
+void lf_ui_core_set_page(lf_ui_state_t* ui, const char* identifier);
+
+void lf_ui_core_set_page_by_id(lf_ui_state_t* ui, uint64_t id);
+
+void lf_ui_core_remove_page(lf_ui_state_t* ui, const char* identifier);
+
+void lf_ui_core_display_current_page(lf_ui_state_t* ui);
+
+void lf_ui_core_set_root_layout(lf_ui_state_t* ui, lf_page_func_t layout_func);

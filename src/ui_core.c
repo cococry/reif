@@ -5,6 +5,7 @@
 
 #include <cglm/types-struct.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <time.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -17,6 +18,7 @@
 #endif
 
 #define OVERDRAW_CORNER_RADIUS 2 
+#define INIT_PAGES_CAP 4
 
 static void init_fonts(lf_ui_state_t* ui);
 
@@ -31,6 +33,13 @@ static void win_close_callback(lf_ui_state_t* ui, void* window);
 static void win_refresh_callback(lf_ui_state_t* ui, void* window);
 static void commit_entire_render(lf_ui_state_t* ui);
 static void remove_marked_widgets(lf_widget_t* root);
+static void interrupt_all_animations_recursively(lf_widget_t* widget);
+static void default_root_layout_func(lf_ui_state_t* ui);
+
+static void init_pages(lf_page_list_t* pages, uint32_t init_cap);
+static void free_pages(lf_page_list_t* pages);
+static void resize_pages(lf_page_list_t* pages, uint32_t new_cap);
+static void add_page_to_pages(lf_page_list_t* pages, lf_page_t page);
 
 static uint32_t font_sizes[] = {
   36, 28, 22, 18, 15, 13, 16
@@ -91,6 +100,53 @@ remove_marked_widgets(lf_widget_t* root) {
   if (root->_marked_for_removal) {
     lf_widget_remove_from_memory(root);
   }
+}
+
+void 
+interrupt_all_animations_recursively(lf_widget_t* widget) {
+  lf_widget_interrupt_all_animations(widget);
+
+  for(uint32_t i = 0; i < widget->num_childs; i++) {
+    interrupt_all_animations_recursively(widget->childs[i]);
+  }
+}
+
+void 
+default_root_layout_func(lf_ui_state_t* ui) {
+  lf_ui_core_display_current_page(ui);
+}
+
+void 
+init_pages(lf_page_list_t* pages, uint32_t init_cap) {
+  pages->pages = malloc(init_cap * sizeof(*pages->pages));
+  pages->size   = 0;
+  pages->cap    = init_cap;
+}
+
+void 
+free_pages(lf_page_list_t* pages) {
+  free(pages->pages);
+  pages->size = 0;
+  pages->cap = 0;
+}
+
+void 
+resize_pages(lf_page_list_t* pages, uint32_t new_cap) {
+  lf_page_t* tmp = (lf_page_t*)realloc(pages->pages, new_cap * sizeof(*pages->pages));
+  if(tmp) {
+    pages->pages = tmp;
+    pages->cap = new_cap;
+  } else {
+    fprintf(stderr, "leif: failed to allocate memory for page.");
+  }
+}
+
+void 
+add_page_to_pages(lf_page_list_t* pages, lf_page_t page) {
+  if(pages->size == pages->cap) {
+    resize_pages(pages, pages->cap * 2);
+  }
+  pages->pages[pages->size++] = page;
 }
 
 void 
@@ -214,6 +270,8 @@ lf_ui_core_init(lf_window_t* win) {
 
   state->fontpath = NULL;
   init_fonts(state);
+  init_pages(&state->pages, INIT_PAGES_CAP);
+  lf_ui_core_set_root_layout(state, default_root_layout_func);
 
   state->root = lf_widget_create(
     WidgetTypeRoot,
@@ -354,6 +412,8 @@ lf_ui_core_init_ex(
   state->fonts = malloc(sizeof(lf_font_t) * TextLevelMax);
   state->fontpath = NULL;
   init_fonts(state);
+  init_pages(&state->pages, INIT_PAGES_CAP);
+  lf_ui_core_set_root_layout(state, default_root_layout_func);
 
   state->root = lf_widget_create(
     WidgetTypeRoot,
@@ -384,6 +444,10 @@ lf_ui_core_init_ex(
 
 void
 lf_ui_core_next_event(lf_ui_state_t* ui) {
+  if(ui->crnt_page_id == 0 && ui->pages.size != 0) {
+    lf_ui_core_set_page_by_id(ui, ui->pages.pages[0].id);
+    fprintf(stderr, "leif: no active page set, but pages available, defaulting to first page.\n");
+  }
   lf_windowing_next_event();
   if(ui->_dirty) {
     remove_marked_widgets(ui->root);
@@ -455,6 +519,14 @@ void
 lf_ui_core_terminate(lf_ui_state_t* ui) {
   if(!ui) return;
 
+  for(uint32_t i = 0; i < TextLevelMax; i++) { 
+    if(ui->fonts[i] != NULL) {
+      ui->render_font_destroy(ui->render_state, ui->fonts[i]);
+    }
+  }
+
+  free_pages(&ui->pages);
+
   lf_widget_remove(ui->root);
   remove_marked_widgets(ui->root);
 
@@ -474,7 +546,6 @@ lf_ui_core_set_font(lf_ui_state_t* ui, const char* fontpath) {
   if(!fontpath || !ui) return;
 
   if(ui->fontpath != NULL) {
-    printf("Freeing font path.\n");
     free((void*)ui->fontpath);
   }
   ui->fontpath = strdup(fontpath);
@@ -493,4 +564,91 @@ void
 lf_ui_core_remove_all_widgets(lf_ui_state_t* ui) {
   lf_widget_remove(ui->root);
   ui->root->_marked_for_removal = false;
+}
+
+void 
+lf_ui_core_add_page(lf_ui_state_t* ui, lf_page_func_t page_func, const char* identifier) {
+  add_page_to_pages(
+    &ui->pages, 
+    (lf_page_t) {
+      .id = lf_djb2_hash((const unsigned char*)identifier),
+      .display= page_func 
+    });
+}
+
+void 
+lf_ui_core_set_page(lf_ui_state_t* ui, const char* identifier) {
+  uint64_t id = lf_djb2_hash((const unsigned char*)identifier);
+  lf_ui_core_set_page_by_id(ui, id);
+}
+
+void 
+lf_ui_core_set_page_by_id(lf_ui_state_t* ui, uint64_t id) {
+ if(ui->crnt_page_id == id) return;
+
+  if(ui->crnt_page_id != 0) {
+    lf_ui_core_remove_all_widgets(ui);
+  }
+  lf_page_t* page = NULL;
+  for(uint32_t i = 0; i < ui->pages.size; i++) {
+    if(ui->pages.pages[i].id == id) {
+      page = &ui->pages.pages[i];
+      break;
+    }
+  }
+
+  if(!page) {
+    fprintf(stderr, "leif: cannot set page to %li because a page with this ID does not exist.", id);
+    return;
+  }
+
+  ui->crnt_page_id = id;
+  ui->_root_never_shaped = true;
+  interrupt_all_animations_recursively(ui->root);
+
+  ui->_root_layout_func(ui);
+}
+
+void 
+lf_ui_core_remove_page(lf_ui_state_t* ui, const char* identifier) {
+
+  uint64_t id = lf_djb2_hash((const unsigned char*)identifier);
+  int32_t page_idx = -1;
+  for(uint32_t i = 0; i < ui->pages.size; i++) {
+    if(ui->pages.pages[i].id == id) {
+      page_idx = (int32_t)i;
+      break;
+    }
+  }
+  if(page_idx == -1) {
+    fprintf(stderr, "leif: cannot remove page '%s' because a page with this ID does not exist.", identifier);
+  }
+
+  for (uint32_t i = page_idx; i < ui->pages.size - 1; i++) {
+    ui->pages.pages[i] = ui->pages.pages[i + 1];
+  }
+  ui->pages.size--;
+
+  ui->pages.pages = realloc(ui->pages.pages, ui->pages.size * sizeof(lf_page_t*));
+}
+
+void 
+lf_ui_core_display_current_page(lf_ui_state_t* ui) {
+  lf_page_t* page = NULL;
+  for(uint32_t i = 0; i < ui->pages.size; i++) {
+    if(ui->pages.pages[i].id == ui->crnt_page_id) {
+      page = &ui->pages.pages[i];
+      break;
+    }
+  }
+  if(!page) {
+    fprintf(stderr, "leif: cannot display current page '%li' because a page with this ID does not exist.\n", ui->crnt_page_id);
+    return;
+  }
+  page->display(ui);
+}
+
+void 
+lf_ui_core_set_root_layout(lf_ui_state_t* ui, lf_page_func_t layout_func) {
+  ui->_root_layout_func = layout_func;
 }

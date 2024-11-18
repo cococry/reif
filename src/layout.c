@@ -52,7 +52,6 @@ effective_widget_size(lf_widget_t* widget) {
     };
 }
 
-/*
 void 
 lf_layout_vertical(lf_widget_t* widget) {
   bool fixed_w = false, fixed_h = false;
@@ -131,7 +130,7 @@ lf_layout_vertical(lf_widget_t* widget) {
 
 void 
 lf_layout_horizontal(lf_widget_t* widget) {
- bool fixed_w = false, fixed_h = false;
+  bool fixed_w = false, fixed_h = false;
   adjust_widget_size(widget, &fixed_w, &fixed_h, true);
 
   for (uint32_t i = 0; i < widget->num_childs; i++) {
@@ -152,6 +151,7 @@ lf_layout_horizontal(lf_widget_t* widget) {
     vec2s effective_size = LF_WIDGET_SIZE_V2(child);
 
     total_width += effective_size.x;
+    if( i > 0)
       total_width += child->props.margin_left + child->props.margin_right;
     float child_height = effective_size.y;
     if (child_height > max_height) {
@@ -191,7 +191,7 @@ lf_layout_horizontal(lf_widget_t* widget) {
     } else {
       child->container.pos.x = x_ptr; 
       if(child->type == WidgetTypeDiv) {
-    }
+      }
       x_ptr += effective_size.x + child->props.margin_right + child->props.margin_left;
     }
   }
@@ -203,9 +203,8 @@ lf_layout_horizontal(lf_widget_t* widget) {
   if (!fixed_h) {
     widget->container.size.y = max_height;
   } 
-}*/
-
-void
+} 
+/*void
 lf_layout_vertical(lf_widget_t* widget) {
   if(!widget) return;
   bool fixed_w = false, fixed_h = false;
@@ -340,7 +339,7 @@ lf_layout_horizontal(lf_widget_t* widget) {
   if (!fixed_h) {
     widget->container.size.y = max_height;
   } 
-} 
+}*/ 
 
 
 void lf_layout_responsive_grid(lf_widget_t* widget) {

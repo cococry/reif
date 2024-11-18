@@ -87,3 +87,6 @@ bool lf_flag_exists(
     uint32_t* flags,
     uint32_t flag
     );
+
+uint64_t lf_djb2_hash(const unsigned char* str);
+
