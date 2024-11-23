@@ -49,7 +49,34 @@ lf_text_dimension_t lf_rn_render_text(
   };
 }
 
-lf_text_dimension_t lf_rn_render_get_text_dimension(
+lf_text_dimension_t 
+lf_rn_render_text_paragraph(
+      void* render_state,
+      const char* text,
+      lf_font_t font,
+      vec2s pos,
+      lf_color_t color,
+      lf_paragraph_props_t props) {
+  RnTextProps text_props = rn_text_render_paragraph(
+    (RnState*)render_state, 
+    text,
+    (RnFont*)font, 
+    pos, 
+    _lf_color_to_rn(color),
+    (RnParagraphProps){
+      .wrap = props.wrap,
+      .align = (RnParagraphAlignment)props.align
+    });
+
+  return (lf_text_dimension_t){
+    .width  = text_props.width,
+    .height = text_props.height
+  };
+
+}
+
+lf_text_dimension_t 
+lf_rn_render_get_text_dimension(
   void* render_state,
   const char* text,
   lf_font_t font) {
@@ -63,6 +90,29 @@ lf_text_dimension_t lf_rn_render_get_text_dimension(
     .width  = props.width,
     .height = props.height
   };
+}
+
+lf_text_dimension_t 
+lf_rn_render_get_text_dimension_paragraph(
+      void* render_state,
+      const char* text,
+      lf_font_t font,
+      lf_paragraph_props_t props) {
+
+  RnTextProps text_props = rn_text_props_paragraph(
+    (RnState*)render_state, 
+    text, 
+    (RnFont*)font,
+    (RnParagraphProps){
+      .wrap = props.wrap,
+      .align = (RnParagraphAlignment)props.align
+    });
+
+  return (lf_text_dimension_t){
+    .width  = text_props.width,
+    .height = text_props.height
+  };
+
 }
 
 void 

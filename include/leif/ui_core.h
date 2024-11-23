@@ -1,6 +1,7 @@
 #pragma once
 
 #include "render.h"
+#include "timer.h"
 #include "util.h"
 #include "win.h"
 
@@ -30,10 +31,14 @@ typedef enum {
 typedef struct lf_page_t lf_page_t;
 
 typedef struct {
-  lf_page_t* pages;
+  lf_page_t* items;
   uint32_t cap, size;
 } lf_page_list_t;
 
+typedef struct {
+  lf_timer_t* items;
+  uint32_t cap, size;
+} lf_timer_list_t;
 
 typedef void (*lf_page_func_t)(
       lf_ui_state_t* ui);
@@ -49,7 +54,9 @@ struct lf_ui_state_t {
 
   lf_render_rect_func_t render_rect;
   lf_render_text_func_t render_text;
+  lf_render_text_paragraph_func_t render_paragraph;
   lf_render_get_text_dimension_func_t render_get_text_dimension;
+  lf_render_get_paragraph_dimension_func_t render_get_paragraph_dimension;
   lf_render_clear_color_func_t render_clear_color;
   lf_render_clear_color_area_func_t render_clear_color_area;
   lf_render_begin_func_t render_begin;
@@ -80,6 +87,8 @@ struct lf_ui_state_t {
   const char* fontpath;
 
   lf_page_func_t _root_layout_func;
+
+  lf_timer_list_t timers;
 };
 
 struct lf_page_t {
@@ -103,14 +112,16 @@ lf_ui_state_t* lf_ui_core_init_ex(
     void* render_state,
     lf_render_rect_func_t render_rect,
     lf_render_text_func_t render_text,
+    lf_render_text_paragraph_func_t render_paragraph,
     lf_render_get_text_dimension_func_t render_get_text_dimension,
+    lf_render_get_paragraph_dimension_func_t render_get_paragraph_dimension,
     lf_render_clear_color_func_t render_clear_color,
     lf_render_clear_color_area_func_t render_clear_color_area,
     lf_render_begin_func_t render_begin,
     lf_render_end_func_t render_end,
     lf_render_resize_display_func_t render_resize_display,
     lf_render_font_create render_font_create,
-    lf_render_font_destroy render_font_destry,
+    lf_render_font_destroy render_font_destory,
     lf_render_font_file_from_name render_font_file_from_name,
     lf_render_font_get_size render_font_get_size);
 
@@ -144,3 +155,5 @@ void lf_ui_core_remove_page(lf_ui_state_t* ui, const char* identifier);
 void lf_ui_core_display_current_page(lf_ui_state_t* ui);
 
 void lf_ui_core_set_root_layout(lf_ui_state_t* ui, lf_page_func_t layout_func);
+
+void lf_ui_core_start_timer(lf_ui_state_t* ui, float duration, lf_timer_finish_func_t finish_cb);

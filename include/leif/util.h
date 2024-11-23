@@ -15,6 +15,8 @@ typedef struct lf_ui_state_t lf_ui_state_t;
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define MIN(a, b) (a) < (b) ? (a) : (b)
 
+#define VEC_INIT_CAP 4
+
 #define LF_SCALE_CONTAINER(width, height) ((lf_container_t){  \
   .pos = (vec2s){.x = 0, .y = 0},                             \
   .size = (vec2s){.x = (width), .y = (height)}}) 
@@ -26,6 +28,41 @@ typedef struct lf_ui_state_t lf_ui_state_t;
 #define LF_WIDGET_CONTAINER(widget) ((lf_container_t){        \
     .pos = (widget)->container.pos,                           \
     .size = LF_WIDGET_SIZE_V2((widget))})                     \
+
+#define lf_vector_init(vec)                                                       \
+do {                                                                              \
+  (vec)->items = malloc(sizeof(*(vec)) * VEC_INIT_CAP);                           \
+  (vec)->size = 0;                                                                \
+  (vec)->cap = 0;                                                                 \
+} while (0)
+
+#define lf_vector_free(vec)                                                       \
+do {                                                                              \
+  if((vec)->items) {                                                              \
+    free((vec)->items);                                                           \
+    (vec)->items = NULL;                                                          \
+  }                                                                               \
+  (vec)->size = 0;                                                                \
+  (vec)->cap = 0;                                                                 \
+} while (0)
+
+#define lf_vector_remove_by_idx(vec, idx)                                         \
+do {                                                                              \
+  for (uint32_t _i = (idx); _i < (vec)->size - 1; _i++) {                         \
+  (vec)->items[_i] = (vec)->items[_i + 1];                                        \
+  }                                                                               \
+  (vec)->size--;                                                                  \
+  (vec)->items = realloc((vec)->items, (vec)->size * sizeof(*(vec)->items));      \
+} while (0)                                                                       
+
+#define lf_vector_append(vec, item)                                               \
+do {                                                                              \
+  if ((vec)->size >= (vec)->cap) {                                                \
+    (vec)->cap = (vec)->cap == 0 ? VEC_INIT_CAP : (vec)->cap*2;                   \
+    (vec)->items = realloc((vec)->items, (vec)->cap*sizeof(*(vec)->items));       \
+  }                                                                               \
+  (vec)->items[(vec)->size++] = (item);                                           \
+} while (0)
 
 typedef struct {
   vec2s pos, size;

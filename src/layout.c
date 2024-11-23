@@ -64,7 +64,7 @@ lf_layout_vertical(lf_widget_t* widget) {
   vec2s offset = 
     { 
       .x = widget->props.padding_left, 
-      .y = widget->props.padding_top
+      .y = widget->props.padding_top 
     };
   float total_height = 0.0f, max_width = 0.0f;
 
@@ -91,7 +91,8 @@ lf_layout_vertical(lf_widget_t* widget) {
   // Initial y position based on offset and padding
   float y_ptr = widget->container.pos.y + offset.y;
   if (widget->justify_type == JustifyEnd) {
-    y_ptr = widget->container.pos.y + widget->container.size.y - widget->props.padding_top - total_height;
+    y_ptr = widget->container.pos.y + widget->container.size.y -
+      widget->props.padding_top - total_height;
   } 
 
   // Position each child widget
@@ -101,7 +102,8 @@ lf_layout_vertical(lf_widget_t* widget) {
     vec2s effective_size = LF_WIDGET_SIZE_V2(child);
 
     // Horizontal centering if enabled
-    if (lf_flag_exists(&widget->alignment_flags, AlignCenterHorizontal)) {
+    if (lf_flag_exists(&widget->alignment_flags, AlignCenterHorizontal) &&
+        widget->justify_type != JustifyEnd) {
       offset.x = (lf_widget_width(widget) - effective_size.x) / 2.0f;
     }
 
@@ -160,14 +162,15 @@ lf_layout_horizontal(lf_widget_t* widget) {
   }
 
   // Calculate centering offset, excluding padding for horizontal centering
-  if (lf_flag_exists(&widget->alignment_flags, AlignCenterHorizontal)) {
+  if (lf_flag_exists(&widget->alignment_flags, AlignCenterHorizontal) && 
+    widget->justify_type != JustifyEnd) {
     offset.x = (lf_widget_width(widget) - total_width) / 2.0f;
   }
 
   // Initial x position based on offset and padding
   float x_ptr = widget->container.pos.x + offset.x;
   if (widget->justify_type == JustifyEnd) {
-    x_ptr = widget->container.pos.x + widget->container.size.x - widget->props.padding_right - total_width;
+    x_ptr = widget->container.pos.x + lf_widget_width(widget) - widget->props.padding_right; 
   } 
 
   // Position each child widget

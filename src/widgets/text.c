@@ -9,10 +9,14 @@ _recalculate_label(
   lf_ui_state_t* ui,
   lf_text_t* text
 ) {
-  lf_text_dimension_t text_dimension = ui->render_get_text_dimension(
+  lf_text_dimension_t text_dimension = ui->render_get_paragraph_dimension(
     ui->render_state,
     text->label,
-    text->font
+    text->font,
+    (lf_paragraph_props_t){
+      .wrap = text->base.parent->container.pos.x + text->base.parent->container.size.x,
+      .align = ParagraphAlignmentLeft
+    }
   );
   text->base.container.size.x = text_dimension.width;
   text->base.container.size.y = text_dimension.height;
@@ -41,12 +45,16 @@ _text_render(
       .y =  widget->container.pos.y + widget->props.padding_top 
     };
 
-    ui->render_text(
+    ui->render_paragraph(
       ui->render_state,
       text->label,
       text->font,
       text_pos,
-      widget->props.text_color
+      widget->props.text_color,
+      (lf_paragraph_props_t){
+        .wrap = widget->container.pos.x + widget->parent->container.size.x + widget->props.margin_left, 
+        .align = ParagraphAlignmentLeft
+      }
     );
   }
 }
@@ -56,14 +64,19 @@ lf_text_t* _text_create(
   lf_widget_t* parent,
   const char* label,
   lf_font_t font) {
+  if(!parent) return NULL;
   lf_text_t* text = (lf_text_t*)malloc(sizeof(lf_text_t));
 
   text->label = (char*)label;
   text->font = font;
-  lf_text_dimension_t text_dimension = ui->render_get_text_dimension(
+  lf_text_dimension_t text_dimension = ui->render_get_paragraph_dimension(
     ui->render_state,
     text->label,
-    text->font
+    text->font,
+    (lf_paragraph_props_t){
+      .wrap = parent->container.pos.x + lf_widget_width(parent), 
+      .align = ParagraphAlignmentLeft
+    }
   );
   text->base.props.color = LF_GREEN;
 

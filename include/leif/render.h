@@ -13,6 +13,17 @@ typedef struct {
   float width, height;
 } lf_text_dimension_t;
 
+typedef enum {
+  ParagraphAlignmentLeft,
+  ParagraphAlignmentRight,
+  ParagraphAlignmentCenter,
+} lf_paragraph_alignment_t;
+
+typedef struct {
+  float wrap;
+  lf_paragraph_alignment_t align;
+} lf_paragraph_props_t;
+
 typedef void (*lf_render_rect_func_t)(
       void*, vec2s, vec2s, 
       lf_color_t, lf_color_t, 
@@ -23,9 +34,23 @@ typedef lf_text_dimension_t (*lf_render_text_func_t)(
       lf_font_t, 
       vec2s, lf_color_t);
 
+typedef lf_text_dimension_t (*lf_render_text_paragraph_func_t)(
+      void*, 
+      const char*,
+      lf_font_t, 
+      vec2s, 
+      lf_color_t,
+      lf_paragraph_props_t);
+
 typedef lf_text_dimension_t (*lf_render_get_text_dimension_func_t)(
       void*,
       const char*, lf_font_t); 
+
+typedef lf_text_dimension_t (*lf_render_get_paragraph_dimension_func_t)(
+      void*,
+      const char*, 
+      lf_font_t,
+      lf_paragraph_props_t props); 
 
 typedef void (*lf_render_clear_color_func_t)(lf_color_t); 
 
@@ -67,10 +92,24 @@ lf_text_dimension_t lf_rn_render_text(
       vec2s pos,
       lf_color_t color);
 
+lf_text_dimension_t lf_rn_render_text_paragraph(
+      void* render_state,
+      const char* text,
+      lf_font_t font,
+      vec2s pos,
+      lf_color_t color,
+      lf_paragraph_props_t props);
+
 lf_text_dimension_t lf_rn_render_get_text_dimension(
       void* render_state,
       const char* text,
       lf_font_t font); 
+
+lf_text_dimension_t lf_rn_render_get_text_dimension_paragraph(
+      void* render_state,
+      const char* text,
+      lf_font_t font,
+      lf_paragraph_props_t props); 
 
 void lf_rn_render_clear_color(
     lf_color_t color);

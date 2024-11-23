@@ -18,7 +18,8 @@
 #endif
 
 #define OVERDRAW_CORNER_RADIUS 2 
-#define INIT_PAGES_CAP 4
+#define MAX_CONCURRENT_TIMERS 16
+
 
 static void init_fonts(lf_ui_state_t* ui);
 
@@ -35,11 +36,6 @@ static void commit_entire_render(lf_ui_state_t* ui);
 static void remove_marked_widgets(lf_widget_t* root);
 static void interrupt_all_animations_recursively(lf_widget_t* widget);
 static void default_root_layout_func(lf_ui_state_t* ui);
-
-static void init_pages(lf_page_list_t* pages, uint32_t init_cap);
-static void free_pages(lf_page_list_t* pages);
-static void resize_pages(lf_page_list_t* pages, uint32_t new_cap);
-static void add_page_to_pages(lf_page_list_t* pages, lf_page_t page);
 
 static uint32_t font_sizes[] = {
   36, 28, 22, 18, 15, 13, 16
@@ -114,39 +110,6 @@ interrupt_all_animations_recursively(lf_widget_t* widget) {
 void 
 default_root_layout_func(lf_ui_state_t* ui) {
   lf_ui_core_display_current_page(ui);
-}
-
-void 
-init_pages(lf_page_list_t* pages, uint32_t init_cap) {
-  pages->pages = malloc(init_cap * sizeof(*pages->pages));
-  pages->size   = 0;
-  pages->cap    = init_cap;
-}
-
-void 
-free_pages(lf_page_list_t* pages) {
-  free(pages->pages);
-  pages->size = 0;
-  pages->cap = 0;
-}
-
-void 
-resize_pages(lf_page_list_t* pages, uint32_t new_cap) {
-  lf_page_t* tmp = (lf_page_t*)realloc(pages->pages, new_cap * sizeof(*pages->pages));
-  if(tmp) {
-    pages->pages = tmp;
-    pages->cap = new_cap;
-  } else {
-    fprintf(stderr, "leif: failed to allocate memory for page.");
-  }
-}
-
-void 
-add_page_to_pages(lf_page_list_t* pages, lf_page_t page) {
-  if(pages->size == pages->cap) {
-    resize_pages(pages, pages->cap * 2);
-  }
-  pages->pages[pages->size++] = page;
 }
 
 void 
@@ -244,7 +207,9 @@ lf_ui_core_init(lf_window_t* win) {
 
   state->render_rect                = lf_rn_render_rect;
   state->render_text                = lf_rn_render_text;
+  state->render_paragraph           = lf_rn_render_text_paragraph;
   state->render_get_text_dimension  = lf_rn_render_get_text_dimension;
+  state->render_get_paragraph_dimension = lf_rn_render_get_text_dimension_paragraph;
   state->render_clear_color         = lf_rn_render_clear_color;
   state->render_clear_color_area    = lf_rn_render_clear_color_area;
   state->render_begin               = lf_rn_render_begin;
@@ -269,8 +234,13 @@ lf_ui_core_init(lf_window_t* win) {
   }
 
   state->fontpath = NULL;
+
   init_fonts(state);
-  init_pages(&state->pages, INIT_PAGES_CAP);
+  lf_vector_init(&state->pages);
+  lf_vector_init(&state->timers);
+
+  state->crnt_page_id = 0;
+
   lf_ui_core_set_root_layout(state, default_root_layout_func);
 
   state->root = lf_widget_create(
@@ -370,22 +340,23 @@ lf_ui_core_set_theme(
   ui->theme = theme;
 }
 
-lf_ui_state_t* 
-lf_ui_core_init_ex(
-  lf_window_t* win,
-  void* render_state,
-  lf_render_rect_func_t render_rect,
-  lf_render_text_func_t render_text,
-  lf_render_get_text_dimension_func_t render_get_text_dimension,
-  lf_render_clear_color_func_t render_clear_color,
-  lf_render_clear_color_area_func_t render_clear_color_area,
-  lf_render_begin_func_t render_begin,
-  lf_render_end_func_t render_end,
-  lf_render_resize_display_func_t render_resize_display,
-  lf_render_font_create render_font_create,
-  lf_render_font_destroy render_font_destroy,
-  lf_render_font_file_from_name render_font_file_from_name,
-  lf_render_font_get_size render_font_get_size) {
+lf_ui_state_t* lf_ui_core_init_ex(
+    lf_window_t* win, 
+    void* render_state,
+    lf_render_rect_func_t render_rect,
+    lf_render_text_func_t render_text,
+    lf_render_text_paragraph_func_t render_paragraph,
+    lf_render_get_text_dimension_func_t render_get_text_dimension,
+    lf_render_get_paragraph_dimension_func_t render_get_paragraph_dimension,
+    lf_render_clear_color_func_t render_clear_color,
+    lf_render_clear_color_area_func_t render_clear_color_area,
+    lf_render_begin_func_t render_begin,
+    lf_render_end_func_t render_end,
+    lf_render_resize_display_func_t render_resize_display,
+    lf_render_font_create render_font_create,
+    lf_render_font_destroy render_font_destroy,
+    lf_render_font_file_from_name render_font_file_from_name,
+    lf_render_font_get_size render_font_get_size) {
 
   lf_ui_state_t* state = malloc(sizeof(*state));
 
@@ -396,7 +367,9 @@ lf_ui_core_init_ex(
   state->render_state = render_state;
   state->render_rect                = render_rect;
   state->render_text                = render_text;
+  state->render_paragraph           = render_paragraph;
   state->render_get_text_dimension  = render_get_text_dimension;
+  state->render_get_paragraph_dimension = render_get_paragraph_dimension; 
   state->render_clear_color         = render_clear_color;
   state->render_clear_color_area    = render_clear_color_area;
   state->render_begin               = render_begin;
@@ -412,7 +385,12 @@ lf_ui_core_init_ex(
   state->fonts = malloc(sizeof(lf_font_t) * TextLevelMax);
   state->fontpath = NULL;
   init_fonts(state);
-  init_pages(&state->pages, INIT_PAGES_CAP);
+
+  lf_vector_init(&state->pages);
+  lf_vector_init(&state->timers);
+
+  state->crnt_page_id = 0;
+
   lf_ui_core_set_root_layout(state, default_root_layout_func);
 
   state->root = lf_widget_create(
@@ -445,10 +423,23 @@ lf_ui_core_init_ex(
 void
 lf_ui_core_next_event(lf_ui_state_t* ui) {
   if(ui->crnt_page_id == 0 && ui->pages.size != 0) {
-    lf_ui_core_set_page_by_id(ui, ui->pages.pages[0].id);
+    lf_ui_core_set_page_by_id(ui, ui->pages.items[0].id);
     fprintf(stderr, "leif: no active page set, but pages available, defaulting to first page.\n");
   }
   lf_windowing_next_event();
+
+  for(uint32_t i = 0; i < ui->timers.size; ) {
+    if(ui->timers.items[i].elapsed >= ui->timers.items[i].duration) {
+      lf_vector_remove_by_idx(&ui->timers, i);
+    } else {
+      i++;
+    }
+  }
+
+  for(uint32_t i = 0; i < ui->timers.size; i++) {
+    lf_timer_tick(ui, &ui->timers.items[i], ui->delta_time, false);
+  }
+
   if(ui->_dirty) {
     remove_marked_widgets(ui->root);
     lf_widget_shape(ui, ui->root);
@@ -525,7 +516,7 @@ lf_ui_core_terminate(lf_ui_state_t* ui) {
     }
   }
 
-  free_pages(&ui->pages);
+  lf_vector_free(&ui->pages);
 
   lf_widget_remove(ui->root);
   remove_marked_widgets(ui->root);
@@ -568,18 +559,19 @@ lf_ui_core_remove_all_widgets(lf_ui_state_t* ui) {
 
 void 
 lf_ui_core_add_page(lf_ui_state_t* ui, lf_page_func_t page_func, const char* identifier) {
-  add_page_to_pages(
+  lf_vector_append(
     &ui->pages, 
-    (lf_page_t) {
+    ((lf_page_t) {
       .id = lf_djb2_hash((const unsigned char*)identifier),
       .display= page_func 
-    });
+    }));
 }
 
 void 
 lf_ui_core_set_page(lf_ui_state_t* ui, const char* identifier) {
   uint64_t id = lf_djb2_hash((const unsigned char*)identifier);
   lf_ui_core_set_page_by_id(ui, id);
+  lf_ui_core_submit(ui);
 }
 
 void 
@@ -591,8 +583,8 @@ lf_ui_core_set_page_by_id(lf_ui_state_t* ui, uint64_t id) {
   }
   lf_page_t* page = NULL;
   for(uint32_t i = 0; i < ui->pages.size; i++) {
-    if(ui->pages.pages[i].id == id) {
-      page = &ui->pages.pages[i];
+    if(ui->pages.items[i].id == id) {
+      page = &ui->pages.items[i];
       break;
     }
   }
@@ -611,11 +603,10 @@ lf_ui_core_set_page_by_id(lf_ui_state_t* ui, uint64_t id) {
 
 void 
 lf_ui_core_remove_page(lf_ui_state_t* ui, const char* identifier) {
-
   uint64_t id = lf_djb2_hash((const unsigned char*)identifier);
   int32_t page_idx = -1;
   for(uint32_t i = 0; i < ui->pages.size; i++) {
-    if(ui->pages.pages[i].id == id) {
+    if(ui->pages.items[i].id == id) {
       page_idx = (int32_t)i;
       break;
     }
@@ -624,20 +615,15 @@ lf_ui_core_remove_page(lf_ui_state_t* ui, const char* identifier) {
     fprintf(stderr, "leif: cannot remove page '%s' because a page with this ID does not exist.", identifier);
   }
 
-  for (uint32_t i = page_idx; i < ui->pages.size - 1; i++) {
-    ui->pages.pages[i] = ui->pages.pages[i + 1];
-  }
-  ui->pages.size--;
-
-  ui->pages.pages = realloc(ui->pages.pages, ui->pages.size * sizeof(lf_page_t*));
+  lf_vector_remove_by_idx(&ui->pages, page_idx);
 }
 
 void 
 lf_ui_core_display_current_page(lf_ui_state_t* ui) {
   lf_page_t* page = NULL;
   for(uint32_t i = 0; i < ui->pages.size; i++) {
-    if(ui->pages.pages[i].id == ui->crnt_page_id) {
-      page = &ui->pages.pages[i];
+    if(ui->pages.items[i].id == ui->crnt_page_id) {
+      page = &ui->pages.items[i];
       break;
     }
   }
@@ -651,4 +637,14 @@ lf_ui_core_display_current_page(lf_ui_state_t* ui) {
 void 
 lf_ui_core_set_root_layout(lf_ui_state_t* ui, lf_page_func_t layout_func) {
   ui->_root_layout_func = layout_func;
+}
+
+void
+lf_ui_core_start_timer(lf_ui_state_t* ui, float duration, lf_timer_finish_func_t finish_cb) {
+  lf_vector_append(
+    &ui->timers, ((lf_timer_t){
+      .duration = duration,
+      .elapsed = 0.0f,
+      .finish_cb = finish_cb
+    }));
 }
