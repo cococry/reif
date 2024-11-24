@@ -202,7 +202,7 @@ popup_test_page(lf_ui_state_t* ui) {
   lf_widget_set_fixed_width(lf_crnt(ui), 200.0f);
   lf_widget_set_fixed_height(lf_crnt(ui), 300.0f);
 
-  lf_text_h1(ui, "wWwWwWwWwWwWwWwW");
+  lf_text_h1(ui, "Hello my    name is anton.");
 
   lf_div_end(ui);
 
@@ -241,7 +241,7 @@ int main(void) {
   lf_window_t* win = lf_ui_core_create_window(1280, 720, "hello leif");
   s.ui = lf_ui_core_init(win);
 
-  lf_ui_core_set_font(s.ui, "/usr/share/fonts/OTF/Lora-Italic.otf");
+  lf_ui_core_set_font(s.ui, "/home/luca/Downloads/Lora_Complete/Fonts/WEB/fonts/Lora-Italic.ttf");
   
   lf_ui_core_add_page(s.ui, home_page, "home");
   lf_ui_core_add_page(s.ui, popup_test_page, "popup_test");
