@@ -19,6 +19,7 @@ typedef enum {
 
 typedef enum {
   JustifyStart = 0,
+  JustifySpaceBetween,
   JustifyEnd
 } lf_justify_type_t;
 

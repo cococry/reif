@@ -137,29 +137,65 @@ popup_test_page(lf_ui_state_t* ui) {
   lf_style_crnt_widget_prop(ui, margin_bottom, 20.0f); 
 
   lf_div(ui);
-  lf_style_crnt_widget_prop(ui, color, LF_WHITE);
-  lf_widget_set_padding(lf_crnt(ui), 25.0f);
-  lf_widget_set_corner_radius(ui, lf_crnt(ui), 15.0f);
-  
-  lf_widget_set_fixed_width(lf_crnt(ui), 500.0f);
-  lf_widget_set_fixed_height(lf_crnt(ui), 400.0f);
+  lf_widget_set_fixed_width(lf_crnt(ui), 550.0f);
+  lf_widget_set_fixed_height(lf_crnt(ui), 300.0f);
+  lf_style_crnt_widget_prop(ui, color, LF_WHITE); 
+  lf_style_crnt_widget_prop(ui, corner_radius, 10.0f); 
 
-  lf_text_p(ui, "1. The Industrial Revolution and its consequences have been a disaster for the human race. They have greatly increased the life-expectancy of those of us who live in “advanced” countries, but they have destabilized society, have made life unfulfilling, have subjected human beings to indignities, have led to widespread psychological suffering (in the Third World to physical suffering as well) and have inflicted severe damage on the natural world. The continued development of technology will worsen the situation. It will certainly subject human beings to greater indignities and inflict greater damage on the natural world, it will probably lead to greater social disruption and psychological suffering, and it may lead to increased physical suffering even in “advanced” countries.");
-  lf_style_crnt_widget_prop(ui, text_color, LF_BLACK);
-  lf_style_crnt_widget_prop(ui, color, LF_GREEN);
 
+  {
+    lf_div(ui);
+    lf_style_crnt_widget_prop(ui, color, LF_WHITE); 
+    lf_style_crnt_widget_prop(ui, padding_right, 0.0f); 
+    lf_widget_set_layout(lf_crnt(ui), LayoutHorizontal);
+    lf_crnt(ui)->justify_type = JustifyEnd;
+
+    lf_button(ui);
+    lf_crnt(ui)->props = ui->theme->text_props;
+    lf_style_crnt_widget_prop(ui, color, LF_WHITE); 
+    lf_widget_submit_props(lf_crnt(ui));
+
+    lf_text_h3(ui, "x");
+    lf_style_crnt_widget_prop(ui, text_color, lf_color_from_hex(0x444444)); 
+
+      lf_button_end(ui);
+    lf_div_end(ui);
+  }
+ 
+  {
+    lf_div(ui);
+    lf_style_crnt_widget_prop(ui, color, LF_WHITE); 
+    lf_widget_set_alignment(lf_crnt(ui), AlignCenterHorizontal);
+    lf_text_h1(ui, "Start Today");
+    lf_style_crnt_widget_prop(ui, text_color, LF_BLACK); 
+    lf_style_crnt_widget_prop(ui, margin_bottom, 25.0f); 
+    
+    lf_text_p(ui, "Sample text. Click to select the text box. Click again or double click to start editing the text.");
+    lf_style_crnt_widget_prop(ui, text_color, lf_color_from_hex(0x444444));
+    lf_style_crnt_widget_prop(ui, margin_bottom, 25.0f); 
+
+    lf_button(ui);
+    lf_style_crnt_widget_prop(ui, color, lf_color_from_hex(0xd9535a));
+    lf_style_crnt_widget_prop(ui, text_color, LF_WHITE);
+    lf_style_crnt_widget_prop(ui, corner_radius, 18.0f);
+    lf_style_crnt_widget_prop(ui, padding_left, 30.0f);
+    lf_style_crnt_widget_prop(ui, padding_right, 30.0f);
+    lf_style_crnt_widget_prop(ui, margin_bottom, 25.0f); 
+
+    lf_text_h3(ui, "GET STARTED");
+
+    lf_button_end(ui);
+
+    lf_text_p(ui, "No thanks, I want to learn more about the product");
+    lf_style_crnt_widget_prop(ui, text_color, lf_color_from_hex(0x444444)); 
+
+
+    lf_div_end(ui);
+  }
   lf_div_end(ui);
 
 }
 
-void home_page(lf_ui_state_t* ui) {
-  lf_text_h1(ui, "Testing the Leif UI Framwork™");
-  lf_text_h4(ui, "This program is a capability test of the leif framework.");
-  lf_style_crnt_widget_prop(ui, text_color, lf_color_from_hex(0x777777));
-  lf_style_crnt_widget_prop(ui, margin_bottom, 20.0f); 
-
-  button(ui, "Start test", on_start_click);
-}
 
 void root_layout(lf_ui_state_t* ui) {
   lf_div(ui);
@@ -185,12 +221,52 @@ int main(void) {
   lf_window_t* win = lf_ui_core_create_window(1280, 720, "hello leif");
   s.ui = lf_ui_core_init(win);
 
-  lf_ui_core_set_font(s.ui, "/usr/share/fonts/OTF/Lora-Italic.otf");
-  
-  lf_ui_core_add_page(s.ui, home_page, "home");
-  lf_ui_core_add_page(s.ui, popup_test_page, "popup_test");
+  lf_ui_core_set_font(s.ui, "/usr/share/fonts/TTF/DejaVuSansMNerdFont-Regular.ttf");
 
-  lf_ui_core_set_root_layout(s.ui, root_layout); 
+  lf_style_crnt_widget_prop(s.ui, color, lf_color_from_hex(0x282828));
+
+  const char* icons[] = {
+    "",
+    "",
+    "󰀄"
+  };
+  const char* texts[] = {
+    "Home",
+    "Search",
+    "My Account"
+  };
+
+  lf_div(s.ui); 
+  lf_widget_set_layout(lf_crnt(s.ui), LayoutHorizontal);
+  lf_widget_set_margin(lf_crnt(s.ui), 0.0f);
+  lf_widget_set_padding(lf_crnt(s.ui), 0.0f);
+  lf_widget_set_fixed_height_percent(lf_crnt(s.ui), 100.0f);
+  lf_widget_set_fixed_width_percent(lf_crnt(s.ui), 100.0f);
+
+  lf_div(s.ui);
+  lf_style_crnt_widget_prop(s.ui, color, lf_color_from_hex(0x3c3836));
+
+  lf_widget_set_fixed_width(lf_crnt(s.ui), 200.0f);
+  lf_widget_set_fixed_height_percent(lf_crnt(s.ui), 100.0f);
+
+  for(uint32_t i = 0; i < 3; i++) {
+    lf_div(s.ui);
+      lf_widget_set_layout(lf_crnt(s.ui), LayoutHorizontal);
+      lf_widget_set_alignment(lf_crnt(s.ui), AlignCenterVertical);
+      lf_text_h4(s.ui, icons[i]);
+      lf_style_crnt_widget_prop(s.ui, margin_right, 15.0f);
+      lf_text_h4(s.ui, texts[i]);
+    lf_div_end(s.ui);
+  }
+
+  lf_div_end(s.ui);
+
+  lf_div(s.ui);
+  lf_text_h1(s.ui, "Hello, World!\n");
+  lf_div_end(s.ui);
+
+  lf_div_end(s.ui);
+
 
   while(s.ui->running) {
     lf_ui_core_next_event(s.ui);

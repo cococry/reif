@@ -75,9 +75,8 @@ lf_layout_vertical(lf_widget_t* widget) {
     vec2s effective_size = LF_WIDGET_SIZE_V2(child);
 
     total_height += effective_size.y;
-    if(i != 0)
-      total_height += child->props.margin_top + child->props.margin_bottom;
-    float child_width = effective_size.x;
+    total_height += child->props.margin_top + child->props.margin_bottom;
+    float child_width = effective_size.x + child->props.margin_left + child->props.margin_right; 
     if (child_width > max_width) {
       max_width = child_width;
     }
@@ -91,8 +90,7 @@ lf_layout_vertical(lf_widget_t* widget) {
   // Initial y position based on offset and padding
   float y_ptr = widget->container.pos.y + offset.y;
   if (widget->justify_type == JustifyEnd) {
-    y_ptr = widget->container.pos.y + widget->container.size.y -
-      widget->props.padding_top - total_height;
+    y_ptr = widget->container.pos.y + widget->container.size.y + widget->props.padding_bottom;
   } 
 
   // Position each child widget
@@ -107,7 +105,7 @@ lf_layout_vertical(lf_widget_t* widget) {
       offset.x = (lf_widget_width(widget) - effective_size.x) / 2.0f;
     }
 
-    child->container.pos.x = widget->container.pos.x + offset.x;
+    child->container.pos.x = widget->container.pos.x + offset.x + child->props.margin_left;
 
     // Set y position and advance pointer based on justify type
     if (widget->justify_type == JustifyEnd) {
@@ -115,8 +113,9 @@ lf_layout_vertical(lf_widget_t* widget) {
       child->container.pos.y = y_ptr;
       y_ptr -= child->props.margin_bottom;
     } else {
+      y_ptr += child->props.margin_top;
       child->container.pos.y = y_ptr; 
-      y_ptr += effective_size.y + child->props.margin_top + child->props.margin_bottom;
+      y_ptr += effective_size.y + child->props.margin_bottom;
     }
   }
 
@@ -146,20 +145,29 @@ lf_layout_horizontal(lf_widget_t* widget) {
     };
   float total_width = 0.0f, max_height = 0.0f;
 
+  
   // Calculate total width needed and max height of children
   for (uint32_t i = 0; i < widget->num_childs; i++) {
     lf_widget_t* child = widget->childs[i];
     if(!child->visible) continue;
+    //printf("Width before shaping: %f\n", child->container.size.x);
+    //printf("Width after shaping: %f\n", child->container.size.x);
     vec2s effective_size = LF_WIDGET_SIZE_V2(child);
 
     total_width += effective_size.x;
-    if( i > 0)
-      total_width += child->props.margin_left + child->props.margin_right;
+    total_width += child->props.margin_left;
+    if(i > 0) {
+      total_width += child->props.margin_right;
+    }
     float child_height = effective_size.y;
     if (child_height > max_height) {
       max_height = child_height;
     }
   }
+
+  if(widget->justify_type == JustifySpaceBetween) 
+    printf("Total width: %f (%i childs)\n", total_width, widget->num_childs);
+  float s = (widget->container.size.x - total_width) / (widget->num_childs - 1);  
 
   // Calculate centering offset, excluding padding for horizontal centering
   if (lf_flag_exists(&widget->alignment_flags, AlignCenterHorizontal) && 
@@ -195,7 +203,7 @@ lf_layout_horizontal(lf_widget_t* widget) {
       child->container.pos.x = x_ptr; 
       if(child->type == WidgetTypeDiv) {
       }
-      x_ptr += effective_size.x + child->props.margin_right + child->props.margin_left;
+      x_ptr += effective_size.x + child->props.margin_right + child->props.margin_left + (widget->justify_type == JustifySpaceBetween ?  s : 0.0f);
     }
   }
 

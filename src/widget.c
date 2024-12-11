@@ -121,6 +121,7 @@ lf_widget_t* get_first_intersecting_parent(lf_widget_t* widget) {
 void
 lf_widget_render(lf_ui_state_t* ui,  lf_widget_t* widget) {
   if(!widget->visible) return;
+  bool set_end_y = false;
   if(widget->render) {
     if(!lf_container_intersets_container(
       LF_WIDGET_CONTAINER(widget), ui->root->container)) {
@@ -128,6 +129,28 @@ lf_widget_render(lf_ui_state_t* ui,  lf_widget_t* widget) {
     }
 
     widget->render(ui, widget);
+#ifdef LF_RUNARA
+    if(widget->type == WidgetTypeDiv) {
+      rn_set_cull_end_x(
+        (RnState*)ui->render_state, 
+        widget->container.pos.x + lf_widget_width(widget) - 
+        widget->props.border_width);
+
+      float end_y = widget->container.pos.y + lf_widget_height(widget) - widget->props.border_width;
+      if(end_y < lf_widget_height(widget->parent)) {
+        rn_set_cull_end_y(
+          (RnState*)ui->render_state, 
+          end_y
+        );
+        set_end_y = true;
+      }
+      rn_set_cull_start_x(ui->render_state,
+                          widget->container.pos.x + widget->props.border_width); 
+      rn_set_cull_start_y(ui->render_state,
+                          widget->container.pos.y + widget->props.border_width); 
+    }
+
+#endif
   }    
 
   for(uint32_t i = 0; i < widget->num_childs; i++) {
@@ -135,7 +158,9 @@ lf_widget_render(lf_ui_state_t* ui,  lf_widget_t* widget) {
   }
 #ifdef LF_RUNARA
   rn_unset_cull_end_x((RnState*)ui->render_state);
-  rn_unset_cull_end_y((RnState*)ui->render_state);
+  if(set_end_y) {
+    rn_unset_cull_end_y((RnState*)ui->render_state);
+  }
   rn_unset_cull_start_x((RnState*)ui->render_state);
   rn_unset_cull_start_y((RnState*)ui->render_state);
 #endif
@@ -145,9 +170,8 @@ void lf_widget_shape(
   lf_ui_state_t* ui,
   lf_widget_t* widget) {
 
-  if (widget->shape != NULL) {
-    widget->shape(ui, widget);
-  }
+  if (!widget->shape) return;
+  widget->shape(ui, widget);
   for (uint32_t i = 0; i < widget->num_childs; i++) {
     lf_widget_shape(ui, widget->childs[i]);
   }

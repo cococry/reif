@@ -1,4 +1,5 @@
 #include "../../include/leif/widgets/text.h"
+#include <wctype.h>
 
 #ifdef LF_RUNARA
 #include <runara/runara.h>
@@ -9,12 +10,13 @@ _recalculate_label(
   lf_ui_state_t* ui,
   lf_text_t* text
 ) {
+  lf_widget_t* widget = &text->base;
   lf_text_dimension_t text_dimension = ui->render_get_paragraph_dimension(
     ui->render_state,
     text->label,
     text->font,
     (lf_paragraph_props_t){
-      .wrap = text->base.parent->container.pos.x + text->base.parent->container.size.x,
+      .wrap = widget->parent->container.pos.x + widget->parent->container.size.x + 10, 
       .align = ParagraphAlignmentLeft
     }
   );
@@ -22,6 +24,17 @@ _recalculate_label(
   text->base.container.size.y = text_dimension.height;
 
   text->_text_dimension = text_dimension;
+
+}
+
+void
+_text_shape(
+  lf_ui_state_t* ui, 
+  lf_widget_t* widget
+) {
+  if(widget->type != WidgetTypeText || !widget) return;
+  lf_text_t* text = (lf_text_t*)widget;
+  _recalculate_label(ui, text);
 }
 
 void
@@ -31,11 +44,10 @@ _text_render(
   if(!widget) return;
 
   lf_text_t* text = (lf_text_t*)widget;
-
   ui->render_rect(
     ui->render_state, 
-    widget->container.pos, 
-    LF_WIDGET_SIZE_V2(widget),
+    widget->container.pos,
+   LF_WIDGET_SIZE_V2(widget), 
     widget->props.color, widget->props.border_color,
     widget->props.border_width, widget->props.corner_radius);
 
@@ -52,7 +64,7 @@ _text_render(
       text_pos,
       widget->props.text_color,
       (lf_paragraph_props_t){
-        .wrap = widget->container.pos.x + widget->parent->container.size.x + widget->props.margin_left, 
+        .wrap = widget->parent->container.pos.x + widget->parent->container.size.x + widget->parent->props.padding_left, 
         .align = ParagraphAlignmentLeft
       }
     );
@@ -74,19 +86,20 @@ lf_text_t* _text_create(
     text->label,
     text->font,
     (lf_paragraph_props_t){
-      .wrap = parent->container.pos.x + lf_widget_width(parent), 
+        .wrap = parent->container.pos.x + parent->container.size.x + parent->props.padding_left,
       .align = ParagraphAlignmentLeft
     }
   );
   text->base.props.color = LF_GREEN;
 
+  text->_text_dimension = text_dimension;
   text->base = *lf_widget_create(
     WidgetTypeText,
     LF_SCALE_CONTAINER(text_dimension.width, text_dimension.height),
     ui->theme->text_props,
     _text_render, 
     NULL,
-    NULL
+   _text_shape
   );
 
   text->base.layout_type = LayoutNone;
