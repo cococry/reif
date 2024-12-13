@@ -2,6 +2,7 @@
 
 #include "layout.h"
 #include "ui_core.h"
+#include "util.h"
 #include "widgets/div.h"
 #include "widgets/button.h"
 #include "widgets/text.h"
@@ -34,5 +35,9 @@ lf_text_t* lf_text_h4(lf_ui_state_t* ui, const char* label);
 lf_text_t* lf_text_h5(lf_ui_state_t* ui, const char* label);
 
 lf_text_t* lf_text_h6(lf_ui_state_t* ui, const char* label);
+
+lf_text_t* lf_text_custom_font(lf_ui_state_t* ui, const char* label, lf_font_t font);
+
+lf_text_dimension_t lf_text_measure(lf_ui_state_t* ui, const char* text, lf_font_t font);
 
 lf_widget_t* lf_crnt(lf_ui_state_t* ui);

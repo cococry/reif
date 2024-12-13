@@ -85,6 +85,18 @@ lf_text_h6(lf_ui_state_t* ui, const char* label) {
   return txt;
 }
 
+lf_text_t* 
+lf_text_custom_font(lf_ui_state_t* ui, const char* label, lf_font_t font) {
+  lf_text_t* txt = lf_text_create_ex(ui, ui->_last_parent, label, font); 
+  ui->_current_widget = &txt->base;
+  return txt;
+}
+
+lf_text_dimension_t 
+lf_text_measure(lf_ui_state_t* ui, const char* text, lf_font_t font) {
+  return ui->render_get_text_dimension(ui->render_state, text, font);
+}
+
 lf_widget_t*
 lf_crnt(lf_ui_state_t* ui) {
   return ui->_current_widget;

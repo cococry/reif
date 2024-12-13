@@ -10,6 +10,8 @@ typedef void (*lf_timer_finish_func_t)(lf_ui_state_t* ui, lf_timer_t* timer);
 struct lf_timer_t {
   float elapsed;
   float duration;
+  bool expired, looping;
+  bool paused;
 
   lf_timer_finish_func_t finish_cb;
 };

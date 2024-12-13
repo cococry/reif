@@ -2,7 +2,7 @@ include config.mk
 
 CC 				= cc
 LIBS 			= -lrunara -lfreetype -lharfbuzz -lfontconfig -lm -lGL -lleif ${PLATFORM_SPECIFIC_LIBS} 
-CFLAGS		= ${WINDOWING} ${ADDITIONAL_FLAGS} -Wall -Wextra -Werror -pedantic -O3 -ffast-math -g
+CFLAGS		= ${WINDOWING} ${ADDITIONAL_FLAGS} -Wall -pedantic -O3 -ffast-math -g
 SRC_FILES = $(wildcard src/*.c src/widgets/*.c)
 SRC_FILES += $(PLATFORM_SPECIFIC)
 OBJ_FILES = $(SRC_FILES:.c=.o)

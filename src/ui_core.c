@@ -32,7 +32,6 @@ static void root_shape(lf_ui_state_t* ui, lf_widget_t* widget);
 static void root_resize(lf_ui_state_t* ui, lf_widget_t* widget, lf_event_t ev);
 static void win_close_callback(lf_ui_state_t* ui, void* window);
 static void win_refresh_callback(lf_ui_state_t* ui, void* window);
-static void commit_entire_render(lf_ui_state_t* ui);
 static void remove_marked_widgets(lf_widget_t* root);
 static void interrupt_all_animations_recursively(lf_widget_t* widget);
 static void default_root_layout_func(lf_ui_state_t* ui);
@@ -53,7 +52,7 @@ win_refresh_callback(lf_ui_state_t* ui, void* window) {
   (void)window;
   lf_widget_shape(ui, ui->root);
   ui->root_needs_render = true;
-  commit_entire_render(ui);
+  lf_ui_core_commit_entire_render(ui);
 }
 
 void 
@@ -62,21 +61,6 @@ reset_widget_props(lf_widget_t* widget) {
   for(uint32_t i = 0; i < widget->num_childs; i++) {
     reset_widget_props(widget->childs[i]);
   }
-}
-void
-commit_entire_render(lf_ui_state_t* ui) {
-  if(!ui) return;
-  if(!ui->root_needs_render) return;
-  vec2s win_size = lf_win_get_size(ui->win);
-  lf_container_t clear_area = LF_SCALE_CONTAINER(
-    win_size.x,
-    win_size.y);
-  ui->root->container = clear_area;
-  ui->render_resize_display(ui->render_state, win_size.x, win_size.y);
-  reset_widget_props(ui->root);
-  render_widget_and_submit(ui, ui->root, clear_area);
-  ui->root_needs_render = false;
-  lf_win_swap_buffers(ui->win);
 }
 
 void 
@@ -163,7 +147,7 @@ root_resize(lf_ui_state_t* ui, lf_widget_t* widget, lf_event_t ev) {
   if(widget->type != WidgetTypeRoot) return;
   lf_widget_shape(ui, ui->root);
   ui->root_needs_render = true;
-  commit_entire_render(ui);
+  lf_ui_core_commit_entire_render(ui);
 }
 
 lf_window_t*
@@ -421,17 +405,18 @@ lf_ui_core_next_event(lf_ui_state_t* ui) {
   }
   lf_windowing_next_event();
 
-  for(uint32_t i = 0; i < ui->timers.size; ) {
-    if(ui->timers.items[i].elapsed >= ui->timers.items[i].duration) {
-      lf_vector_remove_by_idx(&ui->timers, i);
-    } else {
-      i++;
+  for (uint32_t i = 0; i < ui->timers.size; i++) {
+    if(!ui->timers.items[i].paused)
+      lf_timer_tick(ui, &ui->timers.items[i], ui->delta_time, false);
+  }
+
+  // Mark expired timers for deletion
+  for (uint32_t i = 0; i < ui->timers.size; i++) {
+    if (ui->timers.items[i].elapsed >= ui->timers.items[i].duration && !ui->timers.items[i].paused) {
+      ui->timers.items[i].expired = true; 
     }
   }
 
-  for(uint32_t i = 0; i < ui->timers.size; i++) {
-    lf_timer_tick(ui, &ui->timers.items[i], ui->delta_time, false);
-  }
 
   if(ui->_dirty) {
     remove_marked_widgets(ui->root);
@@ -457,7 +442,7 @@ lf_ui_core_next_event(lf_ui_state_t* ui) {
 
   // Check if there is some widget to be rerendered
   if(ui->root_needs_render) { 
-    commit_entire_render(ui);
+    lf_ui_core_commit_entire_render(ui);
     rendered = true;
   }
 
@@ -467,6 +452,21 @@ lf_ui_core_next_event(lf_ui_state_t* ui) {
 
   lf_windowing_update();
 
+  // Remove expired timers
+  for (uint32_t i = 0; i < ui->timers.size;) {
+    if (ui->timers.items[i].expired && !ui->timers.items[i].looping && !ui->timers.items[i].paused) {
+      lf_vector_remove_by_idx(&ui->timers, i);
+    } else {
+      i++;
+    }
+  }
+  
+  for (uint32_t i = 0; i < ui->timers.size; i++) {
+    if(ui->timers.items[i].expired && ui->timers.items[i].looping && !ui->timers.items[i].paused) {
+      ui->timers.items[i].expired = false;
+      ui->timers.items[i].elapsed = 0.0f;
+    }
+  }
 }
 
 
@@ -632,12 +632,47 @@ lf_ui_core_set_root_layout(lf_ui_state_t* ui, lf_page_func_t layout_func) {
   ui->_root_layout_func = layout_func;
 }
 
-void
+lf_timer_t* 
 lf_ui_core_start_timer(lf_ui_state_t* ui, float duration, lf_timer_finish_func_t finish_cb) {
   lf_vector_append(
     &ui->timers, ((lf_timer_t){
       .duration = duration,
       .elapsed = 0.0f,
+      .paused = false,
+      .expired = false,
+      .looping = false,
       .finish_cb = finish_cb
     }));
+  return &ui->timers.items[ui->timers.size - 1];
+}
+
+lf_timer_t*
+lf_ui_core_start_timer_looped(lf_ui_state_t* ui, float duration, lf_timer_finish_func_t finish_cb) {
+ lf_vector_append(
+    &ui->timers, ((lf_timer_t){
+      .duration = duration,
+      .elapsed = 0.0f,
+      .paused = false,
+      .expired = false,
+      .looping = true,
+      .finish_cb = finish_cb
+    }));
+  return &ui->timers.items[ui->timers.size - 1];
+}
+
+void 
+lf_ui_core_commit_entire_render(lf_ui_state_t* ui) {
+  if(!ui) return;
+  if(!ui->root_needs_render) return;
+  vec2s win_size = lf_win_get_size(ui->win);
+  lf_container_t clear_area = LF_SCALE_CONTAINER(
+    win_size.x,
+    win_size.y);
+  ui->root->container = clear_area;
+  ui->render_resize_display(ui->render_state, win_size.x, win_size.y);
+  reset_widget_props(ui->root);
+  render_widget_and_submit(ui, ui->root, clear_area);
+  ui->root_needs_render = false;
+  lf_win_swap_buffers(ui->win);
+
 }

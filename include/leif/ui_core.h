@@ -156,4 +156,9 @@ void lf_ui_core_display_current_page(lf_ui_state_t* ui);
 
 void lf_ui_core_set_root_layout(lf_ui_state_t* ui, lf_page_func_t layout_func);
 
-void lf_ui_core_start_timer(lf_ui_state_t* ui, float duration, lf_timer_finish_func_t finish_cb);
+lf_timer_t* lf_ui_core_start_timer(lf_ui_state_t* ui, float duration, lf_timer_finish_func_t finish_cb);
+
+lf_timer_t* lf_ui_core_start_timer_looped(lf_ui_state_t* ui, float duration, lf_timer_finish_func_t finish_cb);
+
+void lf_ui_core_commit_entire_render(lf_ui_state_t* ui);
+
