@@ -179,7 +179,7 @@ lf_ui_core_init(lf_window_t* win) {
     (RnGLLoader)glfwGetProcAddress);
 #else 
   #error 
-#error "Invalid windowing system specified (valid windowing systems: LF_X11)"
+#error "Invalid windowing system specified (valid windowing systems: LF_GLFW)"
 #endif
 
   state->render_rect                = lf_rn_render_rect;
@@ -196,6 +196,9 @@ lf_ui_core_init(lf_window_t* win) {
   state->render_font_destroy        = lf_rn_render_font_destroy;
   state->render_font_file_from_name = lf_rn_render_font_file_from_name;
   state->render_font_get_size       = lf_rn_render_font_get_size;
+  state->render_load_texture        = lf_rn_render_load_texture;
+  state->render_delete_texture      = lf_rn_render_delete_texture;
+  state->render_texture             = lf_rn_render_texture;
 
 #endif
 
@@ -304,6 +307,22 @@ lf_ui_core_default_theme(void) {
     .border_color = LF_NO_COLOR,
   };
 
+  theme->img_props = (lf_widget_props_t){
+    .color = LF_WHITE, 
+    .text_color = LF_NO_COLOR,
+    .padding_left = 0,
+    .padding_right = 0,
+    .padding_top = 0,
+    .padding_bottom = 0,
+    .margin_left = global_margin,
+    .margin_right = global_margin,
+    .margin_top = global_margin,
+    .margin_bottom = global_margin,
+    .corner_radius = 0.0f, 
+    .border_width = 0.0f, 
+    .border_color = LF_NO_COLOR,
+  };
+
 
   return theme;
 }
@@ -333,7 +352,10 @@ lf_ui_state_t* lf_ui_core_init_ex(
     lf_render_font_create render_font_create,
     lf_render_font_destroy render_font_destroy,
     lf_render_font_file_from_name render_font_file_from_name,
-    lf_render_font_get_size render_font_get_size) {
+    lf_render_font_get_size render_font_get_size,
+    lf_render_load_texture render_load_texture,
+    lf_render_delete_texture render_delete_texture,
+    lf_render_texture render_texture) {
 
   lf_ui_state_t* state = malloc(sizeof(*state));
 
@@ -356,6 +378,9 @@ lf_ui_state_t* lf_ui_core_init_ex(
   state->render_font_destroy        = render_font_destroy;
   state->render_font_file_from_name = render_font_file_from_name;
   state->render_font_get_size       = render_font_get_size;
+  state->render_load_texture        = render_load_texture;
+  state->render_delete_texture      = render_delete_texture;
+  state->render_texture             = render_texture; 
 
   state->theme = lf_ui_core_default_theme();
 
@@ -422,6 +447,7 @@ lf_ui_core_next_event(lf_ui_state_t* ui) {
     remove_marked_widgets(ui->root);
     lf_widget_shape(ui, ui->root);
     if(ui->_root_never_shaped) {
+      lf_widget_shape(ui, ui->root);
       lf_widget_shape(ui, ui->root);
       ui->_root_never_shaped = false;
     }

@@ -13,6 +13,7 @@ typedef struct {
   lf_widget_props_t div_props;
   lf_widget_props_t button_props;
   lf_widget_props_t text_props;
+  lf_widget_props_t img_props;
   lf_color_t text_color, background_color;
 } lf_theme_t;
 
@@ -66,6 +67,9 @@ struct lf_ui_state_t {
   lf_render_font_destroy render_font_destroy;
   lf_render_font_file_from_name render_font_file_from_name;
   lf_render_font_get_size render_font_get_size;
+  lf_render_load_texture render_load_texture;
+  lf_render_delete_texture render_delete_texture;
+  lf_render_texture render_texture;
 
   void* render_state;
 
@@ -123,7 +127,10 @@ lf_ui_state_t* lf_ui_core_init_ex(
     lf_render_font_create render_font_create,
     lf_render_font_destroy render_font_destory,
     lf_render_font_file_from_name render_font_file_from_name,
-    lf_render_font_get_size render_font_get_size);
+    lf_render_font_get_size render_font_get_size,
+    lf_render_load_texture render_load_texture,
+    lf_render_delete_texture render_delete_texture,
+    lf_render_texture render_texture);
 
 void lf_ui_core_next_event(lf_ui_state_t* ui);
 

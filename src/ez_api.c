@@ -101,3 +101,8 @@ lf_widget_t*
 lf_crnt(lf_ui_state_t* ui) {
   return ui->_current_widget;
 }
+
+lf_image_t* 
+lf_image(lf_ui_state_t* ui, const char* filepath) {
+  return lf_image_create(ui, ui->_last_parent, filepath);
+}

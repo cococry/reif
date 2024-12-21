@@ -7,6 +7,7 @@
 #include <leif/widget.h>
 #include <leif/widgets/button.h>
 #include <leif/widgets/div.h>
+#include <leif/widgets/text.h>
 #include <leif/win.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -58,13 +59,23 @@ void on_timer(lf_ui_state_t* ui, lf_timer_t* timer) {
   ui->root_needs_render = true;
   lf_ui_core_commit_entire_render(ui);
 }
+
 void on_play(lf_ui_state_t* ui, lf_widget_t* widget) {
-  (void)widget;
+  if(!widget || widget->num_childs < 1) return;
   if(s.tick_timer) {
     s.tick_timer->paused = !s.tick_timer->paused;
   } else {
     s.tick_timer = lf_ui_core_start_timer_looped(ui, 1 / 60.0f, on_timer);
   }
+  ui->root_needs_render = true;
+  lf_ui_core_commit_entire_render(ui);
+}
+
+void on_restart(lf_ui_state_t* ui, lf_widget_t* widget) {
+  (void)widget;
+  if(!s.tick_timer) return;
+  s.tick_timer->elapsed = 0.0f;
+  lf_ui_core_submit(ui);
 }
 
 int main(void) {
@@ -79,96 +90,13 @@ int main(void) {
   lf_style_crnt_widget_prop(s.ui, color, LF_BLACK);
 
   lf_div(s.ui);
-  lf_widget_set_fixed_width_percent(lf_crnt(s.ui), 100.0f);
-  lf_widget_set_fixed_height_percent(lf_crnt(s.ui), 60.0f);
 
+  lf_text_h1(s.ui, "This is an image-rendering test.");
 
-  lf_font_t bigfont = lf_load_font(s.ui, "/usr/share/fonts/OTF/SF-Pro-Text-Bold.otf", 80);
-  lf_font_t icons = lf_load_font(s.ui, "/usr/share/fonts/TTF/IosevkaNerdFont-Regular.ttf", 40);
-
-  lf_div(s.ui);
-  lf_crnt(s.ui)->justify_type = JustifySpaceBetween;
-  lf_widget_set_layout(lf_crnt(s.ui), LayoutHorizontal);
-  lf_text_h2(s.ui, "Stopwatch");
-  lf_text_custom_font(s.ui, "", icons);
-  lf_div_end(s.ui);
-  
-  lf_div(s.ui);
-  lf_widget_set_alignment(lf_crnt(s.ui), AlignCenterHorizontal);
-  s.time_text = lf_text_custom_font(s.ui, "00:00:00", bigfont);
-  lf_style_crnt_widget_prop(s.ui, margin_top, 80.0f);
-  lf_style_crnt_widget_prop(s.ui, margin_bottom, 80.0f);
-  lf_div_end(s.ui);
-
-
-  lf_div(s.ui);
-  lf_widget_set_padding(lf_crnt(s.ui), 40.0f);
-  lf_widget_set_margin(lf_crnt(s.ui), 0.0f);
-  lf_widget_set_layout(lf_crnt(s.ui), LayoutHorizontal);
-  lf_widget_set_alignment(lf_crnt(s.ui), AlignCenterHorizontal | AlignCenterVertical);
-  
-  lf_button(s.ui);
-
-  lf_style_crnt_widget_prop(s.ui, color, lf_color_from_hex(0xFCFCFC));
-  lf_style_crnt_widget_prop(s.ui, border_color, lf_color_from_hex(0xFE7A7A));
-  lf_style_crnt_widget_prop(s.ui, border_width, 5.0f);
-  lf_style_crnt_widget_prop(s.ui, corner_radius, 40.0f);
-  lf_style_crnt_widget_prop(s.ui, margin_right, 30.0f);
-  lf_text_custom_font(s.ui, "", icons);
-  lf_widget_set_padding(lf_crnt(s.ui), 15.0f);
-  lf_style_crnt_widget_prop(s.ui, padding_right, 20.0f); 
-  lf_style_crnt_widget_prop(s.ui, text_color, LF_BLACK);
-
-  lf_button_end(s.ui);
-
-  lf_button(s.ui);
-  lf_style_crnt_widget_prop(s.ui, color, lf_color_from_hex(0xFE7A7A));
-  lf_style_crnt_widget_prop(s.ui, padding_left, 180.0f); 
-  lf_style_crnt_widget_prop(s.ui, padding_top, 100.0f); 
-  lf_style_crnt_widget_prop(s.ui, corner_radius, 20.0f);
-  lf_style_crnt_widget_prop(s.ui, margin_right, 30.0f);
-  ((lf_button_t*)lf_crnt(s.ui))->on_click = on_play;
-
-  lf_text_custom_font(s.ui, "", icons);
-  lf_style_crnt_widget_prop(s.ui, text_color, LF_BLACK);
-
-  lf_button_end(s.ui);
-
-  lf_button(s.ui);
-
-  lf_style_crnt_widget_prop(s.ui, color, lf_color_from_hex(0xFCFCFC));
-  lf_style_crnt_widget_prop(s.ui, border_color, lf_color_from_hex(0xFE7A7A));
-  lf_style_crnt_widget_prop(s.ui, border_width, 5.0f);
-  lf_style_crnt_widget_prop(s.ui, corner_radius, 40.0f);
-  lf_text_custom_font(s.ui, "󰑙", icons);
-  lf_widget_set_padding(lf_crnt(s.ui), 15.0f);
-  lf_style_crnt_widget_prop(s.ui, padding_left, 20.0f); 
-  lf_style_crnt_widget_prop(s.ui, padding_right, 20.0f); 
-  lf_style_crnt_widget_prop(s.ui, text_color, LF_BLACK);
-
-  lf_button_end(s.ui);
+  lf_image(s.ui, "/home/cococry/Downloads/nature.png");
 
   lf_div_end(s.ui);
-
-  lf_div(s.ui);
-  lf_style_crnt_widget_prop(s.ui, color, lf_color_from_hex(0xFDD6D6));
-  lf_widget_set_fixed_height_percent(lf_crnt(s.ui), 60.0f);
-  lf_widget_set_fixed_width_percent(lf_crnt(s.ui), 100.0f);
-  lf_widget_set_padding(lf_crnt(s.ui), 40.0f);
-  lf_style_crnt_widget_prop(s.ui, corner_radius, 35.0f);
-  lf_crnt(s.ui)->justify_type = JustifySpaceBetween;
-  lf_widget_set_layout(lf_crnt(s.ui), LayoutHorizontal);
-
-  lf_text_h3(s.ui, "#01 - Lap");
-  lf_style_crnt_widget_prop(s.ui, text_color, LF_BLACK);
-  lf_text_h3(s.ui, "- 00:00 +");
-  lf_style_crnt_widget_prop(s.ui, text_color, LF_BLACK);
-
-  lf_div_end(s.ui);
-
-
-  lf_div_end(s.ui);
-
+ 
   while(s.ui->running) {
     lf_ui_core_next_event(s.ui);
   }

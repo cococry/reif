@@ -9,6 +9,8 @@
 typedef struct lf_ui_state_t lf_ui_state_t;
 typedef struct lf_widget_t lf_widget_t;
 
+typedef unsigned int lf_texture_id;
+
 typedef struct {
   float width, height;
 } lf_text_dimension_t;
@@ -73,6 +75,22 @@ typedef const char* (*lf_render_font_file_from_name)(
     const char*);
 
 typedef uint32_t (*lf_render_font_get_size)(lf_font_t font);
+
+typedef void (*lf_render_load_texture)(
+    const char* filepath,
+  uint32_t* o_tex_id, 
+  uint32_t* o_tex_width, 
+  uint32_t* o_tex_height,
+  uint32_t filter);
+
+typedef void (*lf_render_delete_texture)(uint32_t tex_id);
+
+typedef void (*lf_render_texture)(
+    void* render_state,
+    vec2s pos, 
+    lf_color_t color,
+    lf_texture_id tex_id,
+    uint32_t tex_width, uint32_t tex_height);
 
 #ifdef LF_RUNARA
 
@@ -144,8 +162,21 @@ const char* lf_rn_render_font_file_from_name(const char* name);
 
 uint32_t lf_rn_render_font_get_size(lf_font_t font); 
 
+void lf_rn_render_load_texture(
+  const char* filepath, 
+  uint32_t* o_tex_id, 
+  uint32_t* o_tex_width, 
+  uint32_t* o_tex_height,
+  uint32_t filter);
+
+void lf_rn_render_delete_texture(uint32_t tex_id);
+
+void lf_rn_render_texture(
+    void* render_state,
+    vec2s pos, 
+    lf_color_t color,
+    lf_texture_id tex_id,
+    uint32_t tex_width, uint32_t tex_height);
+
 #endif 
 
-void lf_render_container(
-    lf_ui_state_t* ui, 
-    lf_widget_t* widget);

@@ -181,4 +181,31 @@ lf_rn_render_font_get_size(lf_font_t font) {
   return ((RnFont*)font)->size;
 }
 
+void
+lf_rn_render_load_texture(
+  const char* filepath, 
+  uint32_t* o_tex_id, 
+  uint32_t* o_tex_width, 
+  uint32_t* o_tex_height,
+  uint32_t filter) {
+  rn_load_texture_base_types(filepath, o_tex_id, o_tex_width, o_tex_height, filter);
+}
+
+void 
+lf_rn_render_delete_texture(uint32_t tex_id) {
+  rn_free_texture(&(RnTexture){.id = tex_id});
+}
+
+void lf_rn_render_texture(
+    void* render_state,
+    vec2s pos, 
+    lf_color_t color,
+    lf_texture_id tex_id,
+    uint32_t tex_width, uint32_t tex_height) {
+rn_image_render(
+  render_state,
+  pos, 
+  _lf_color_to_rn(color), 
+  (RnTexture){.id = tex_id, .width = tex_width, .height = tex_height});
+}
 #endif 

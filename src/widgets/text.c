@@ -90,7 +90,6 @@ lf_text_t* _text_create(
       .align = ParagraphAlignmentLeft
     }
   );
-  text->base.props.color = LF_GREEN;
 
   text->_text_dimension = text_dimension;
   text->base = *lf_widget_create(
