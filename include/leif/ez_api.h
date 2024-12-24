@@ -44,3 +44,5 @@ lf_text_dimension_t lf_text_measure(lf_ui_state_t* ui, const char* text, lf_font
 lf_widget_t* lf_crnt(lf_ui_state_t* ui);
 
 lf_image_t* lf_image(lf_ui_state_t* ui, const char* filepath);
+
+lf_image_t* lf_image_ex(lf_ui_state_t* ui, const char* filepath, uint32_t w, uint32_t h);

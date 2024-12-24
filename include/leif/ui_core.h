@@ -1,5 +1,6 @@
 #pragma once
 
+#include "asset_manager.h"
 #include "render.h"
 #include "timer.h"
 #include "util.h"
@@ -16,7 +17,6 @@ typedef struct {
   lf_widget_props_t img_props;
   lf_color_t text_color, background_color;
 } lf_theme_t;
-
 
 typedef enum {
   TextLevelH1         = 0,
@@ -52,6 +52,8 @@ struct lf_ui_state_t {
   lf_page_list_t pages;
   uint64_t crnt_page_id;
   bool root_needs_render;
+
+  lf_asset_manager_t* asset_manager;
 
   lf_render_rect_func_t render_rect;
   lf_render_text_func_t render_text;

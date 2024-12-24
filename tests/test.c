@@ -85,17 +85,23 @@ int main(void) {
   lf_window_t* win = lf_ui_core_create_window(500, 815, "hello leif");
   s.ui = lf_ui_core_init(win);
 
-  lf_ui_core_set_font(s.ui, "/usr/share/fonts/OTF/SF-Pro-Text-Bold.otf");
+  lf_ui_core_set_font(s.ui, "/usr/share/fonts/OTF/Lora-MediumItalic.otf");
 
-  lf_style_crnt_widget_prop(s.ui, color, LF_BLACK);
+  lf_style_crnt_widget_prop(s.ui, color, LF_WHITE);
 
   lf_div(s.ui);
+    lf_widget_set_padding(lf_crnt(s.ui), 20);
+    lf_widget_set_fixed_height_percent(lf_crnt(s.ui), 100.0f);
 
-  lf_text_h1(s.ui, "This is an image-rendering test.");
+  lf_text_h1(s.ui, "Für");
+  lf_style_crnt_widget_prop(s.ui, text_color, LF_BLACK);
+  lf_text_h1(s.ui, "Mama");
+  lf_style_crnt_widget_prop(s.ui, text_color, LF_BLACK);
 
-  lf_image(s.ui, "/home/cococry/Downloads/nature.png");
-
+    
   lf_div_end(s.ui);
+
+
  
   while(s.ui->running) {
     lf_ui_core_next_event(s.ui);

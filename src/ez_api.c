@@ -106,3 +106,8 @@ lf_image_t*
 lf_image(lf_ui_state_t* ui, const char* filepath) {
   return lf_image_create(ui, ui->_last_parent, filepath);
 }
+
+lf_image_t* 
+lf_image_ex(lf_ui_state_t* ui, const char* filepath, uint32_t w, uint32_t h) {
+  return lf_image_create_ex(ui, ui->_last_parent, filepath, w, h);
+}

@@ -219,6 +219,8 @@ lf_ui_core_init(lf_window_t* win) {
   lf_vector_init(&state->pages);
   lf_vector_init(&state->timers);
 
+  state->asset_manager = lf_asset_manager_init();
+
   state->crnt_page_id = 0;
 
   lf_ui_core_set_root_layout(state, default_root_layout_func);
@@ -390,6 +392,8 @@ lf_ui_state_t* lf_ui_core_init_ex(
 
   lf_vector_init(&state->pages);
   lf_vector_init(&state->timers);
+
+  state->asset_manager = lf_asset_manager_init();
 
   state->crnt_page_id = 0;
 

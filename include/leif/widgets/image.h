@@ -18,3 +18,8 @@ lf_image_t* lf_image_create(
     lf_widget_t* parent,
     const char* filepath);
 
+lf_image_t* lf_image_create_ex(
+    lf_ui_state_t* ui,
+    lf_widget_t* parent,
+    const char* filepath,
+    uint32_t w, uint32_t h);

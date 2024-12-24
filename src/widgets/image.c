@@ -7,8 +7,6 @@ void _img_render(
 ) {
   if(!widget || !ui) return;
   lf_image_t* img = (lf_image_t*)widget;
-  printf("Rendering image: %i, %ix%i!\n", img->tex_id, img->width, img->height);
-  printf("Position: %fx%f!\n", widget->container.pos.x, widget->container.pos.y); 
   ui->render_texture(ui->render_state, widget->container.pos,
                     widget->props.color, img->tex_id, img->width, img->height);
 }
@@ -16,13 +14,21 @@ void _img_render(
 lf_image_t* _img_create(
   lf_ui_state_t* ui,
   lf_widget_t* parent,
-  const char* filepath) {
+  const char* filepath,
+  uint32_t w, uint32_t h) {
   if(!parent) return NULL;
   lf_image_t* img = (lf_image_t*)malloc(sizeof(lf_image_t));
 
   img->filepath = strdup(filepath);
-  ui->render_load_texture(filepath, &img->tex_id, &img->width, &img->height, 0);
-  printf("Loaded image: %s, %i, %i\n", filepath, img->width, img->height);
+  lf_mapped_texture_t tex = lf_asset_manager_request_texture(ui, ui->asset_manager, img->filepath);
+  img->tex_id = tex.id;
+  img->width = tex.width;
+  img->height = tex.height;
+
+  if(w != 0 && h != 0) {
+    img->width = w;
+    img->height = h;
+  }
 
   img->base = *lf_widget_create(
     WidgetTypeImage,
@@ -42,6 +48,13 @@ lf_image_t* lf_image_create(
     lf_ui_state_t* ui,
     lf_widget_t* parent,
     const char* filepath) {
-  return _img_create(ui, parent, filepath);
+  return _img_create(ui, parent, filepath, 0, 0);
 }
 
+lf_image_t* lf_image_create_ex(
+    lf_ui_state_t* ui,
+    lf_widget_t* parent,
+    const char* filepath,
+    uint32_t w, uint32_t h) {
+  return _img_create(ui, parent, filepath, w, h);
+}

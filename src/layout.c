@@ -190,7 +190,7 @@ lf_layout_horizontal(lf_widget_t* widget) {
       offset.y = (lf_widget_height(widget) - effective_size.y) / 2.0f;
     }
 
-    child->container.pos.y = widget->container.pos.y + offset.y;
+    child->container.pos.y = widget->container.pos.y + offset.y + child->props.margin_top;
 
     // Set x position and advance pointer based on justify type
     if (widget->justify_type == JustifyEnd) {
