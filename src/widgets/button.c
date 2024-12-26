@@ -52,7 +52,8 @@ _button_handle_event(
   lf_ui_state_t* ui, 
   lf_widget_t* widget, 
   lf_event_t event) {
-  if(event.button != LeftMouse) return;
+
+  if(event.button != LeftMouse && event.type != WinEventMouseMove) return;
   if(!lf_container_intersets_container(
     widget->container, ui->root->container)) {
     return;

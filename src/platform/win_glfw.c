@@ -26,6 +26,8 @@ static uint32_t n_windows = 0;
 static lf_ui_state_t* ui;
 static lf_event_type_t current_event;
 
+static lf_window_t* create_window(uint32_t width, uint32_t height, const char* title, uint32_t flags);
+
 static void glfw_mouse_button_callback(
   GLFWwindow* window, 
   int32_t button, 
@@ -42,22 +44,54 @@ static void glfw_close_callback(
 static void glfw_mouse_move_callback(
   GLFWwindow* window, double xpos, double ypos);
 
+static void glfw_refresh_callback(GLFWwindow* window);
+
+lf_window_t*
+create_window(uint32_t width, uint32_t height, const char* title, uint32_t flags) {
+  (void)flags;
+  GLFWwindow* win = glfwCreateWindow(
+    width, height, 
+    title,
+    NULL, NULL);
+
+  if(n_windows + 1 <= MAX_WINDOWS) {
+    window_callbacks[n_windows].win = win;
+    window_callbacks[n_windows].ev_mouse_press_cb = NULL;
+    window_callbacks[n_windows].ev_mouse_release_cb = NULL;
+    window_callbacks[n_windows].ev_close_cb = NULL;
+    window_callbacks[n_windows].ev_refresh_cb = NULL;
+    ++n_windows;
+    glfwSetMouseButtonCallback(win, glfw_mouse_button_callback);
+    glfwSetWindowCloseCallback(win, glfw_close_callback);
+    glfwSetFramebufferSizeCallback(win, glfw_resize_callback);
+    glfwSetWindowRefreshCallback(win, glfw_refresh_callback);
+    glfwSetCursorPosCallback(win, glfw_mouse_move_callback);
+  }
+  else {
+    fprintf(stderr, "warning: reached maximum amount of windows to define callbacks for.\n");
+  }
+
+  glfwSwapInterval(1);
+
+  return win;
+}
+
 void 
 glfw_mouse_button_callback(
   GLFWwindow* window, 
   int32_t button, 
   int32_t action, 
   int32_t mods) {
+  double x, y;
   (void)window;
   (void)mods;
   lf_event_t ev;
   ev.button = button;
   ev.type = (action != GLFW_RELEASE) ? WinEventMousePress : WinEventMouseRelease;
 
-  double x, y;
   glfwGetCursorPos(window, &x, &y);
-  ev.x = (int16_t)x; 
   ev.y = (int16_t)y; 
+  ev.x = (int16_t)x; 
   lf_widget_handle_event(ui, ui->root, ev);
   
   if(action != GLFW_RELEASE) {
@@ -171,35 +205,15 @@ void*
 lf_win_get_display(void) {
   return NULL;
 }
-
 lf_window_t* 
 lf_win_create(uint32_t width, uint32_t height, const char* title) {
+  return create_window(width, height, title, 0);
+}
 
-  GLFWwindow* win = glfwCreateWindow(
-    width, height, 
-    title,
-    NULL, NULL);
-
-  if(n_windows + 1 <= MAX_WINDOWS) {
-    window_callbacks[n_windows].win = win;
-    window_callbacks[n_windows].ev_mouse_press_cb = NULL;
-    window_callbacks[n_windows].ev_mouse_release_cb = NULL;
-    window_callbacks[n_windows].ev_close_cb = NULL;
-    window_callbacks[n_windows].ev_refresh_cb = NULL;
-    ++n_windows;
-    glfwSetMouseButtonCallback(win, glfw_mouse_button_callback);
-    glfwSetWindowCloseCallback(win, glfw_close_callback);
-    glfwSetFramebufferSizeCallback(win, glfw_resize_callback);
-    glfwSetWindowRefreshCallback(win, glfw_refresh_callback);
-    glfwSetCursorPosCallback(win, glfw_mouse_move_callback);
-  }
-  else {
-    fprintf(stderr, "warning: reached maximum amount of windows to define callbacks for.\n");
-  }
-
-  glfwSwapInterval(1);
-
-  return win;
+lf_window_t* 
+lf_win_create_ex(uint32_t width, uint32_t height, const char* title, uint32_t flags) {
+  (void)flags;
+  return create_window(width, height, title, flags);
 }
 
 void 

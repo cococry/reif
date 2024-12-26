@@ -4,11 +4,17 @@
 #include <cglm/types-struct.h>
 #ifdef LF_GLFW 
 #include "platform/win_glfw.h"
+#elif defined(LF_X11)
+#include "platform/win_x11.h"
 #else
-#error "Invalid windowing system specified (valid windowing systems: LF_GLFW)"
+#error "Invalid windowing system specified (valid windowing systems: LF_GLFW, LF_X11)"
 #endif
 
 typedef struct lf_ui_state_t lf_ui_state_t;
+
+typedef enum {
+  LF_WINDOWING_X11_OVERRIDE_REDIRECT = 1 << 0,
+} lf_windowing_flags;
 
 typedef void (*lf_win_close_func)(
     lf_ui_state_t*,
@@ -56,6 +62,8 @@ void lf_windowing_next_event(void);
 void* lf_win_get_display(void);
 
 lf_window_t* lf_win_create(uint32_t width, uint32_t height, const char* title);
+
+lf_window_t* lf_win_create_ex(uint32_t width, uint32_t height, const char* title, uint32_t flags);
 
 void lf_win_set_title(lf_window_t* win, const char* title);
 

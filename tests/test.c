@@ -26,82 +26,37 @@ typedef struct {
 
 static state_t s;
 
-static float elapsed = 0.0f;
-
-
-char* format_time(float time_in_seconds) {
-    char* formatted_time = (char*)malloc(10 * sizeof(char)); 
-    if (!formatted_time) {
-        return NULL; 
-    }
-
-    if (time_in_seconds < 0) {
-        time_in_seconds = 0;
-    }
-    int total_seconds = (int)time_in_seconds;
-    int minutes = total_seconds / 60;
-    int seconds = total_seconds % 60;
-    int milliseconds = (int)((time_in_seconds - total_seconds) * 100);
-
-    snprintf(formatted_time, 10, "%02d:%02d,%02d", minutes, seconds, milliseconds);
-
-    return formatted_time;
-}
-
-
-void on_timer(lf_ui_state_t* ui, lf_timer_t* timer) {
-  (void)timer;
-  (void)ui;
-  elapsed += timer->elapsed;
-  char* time = format_time(elapsed);
-  lf_text_set_label(ui, s.time_text, time);
-  free(time);
-  ui->root_needs_render = true;
-  lf_ui_core_commit_entire_render(ui);
-}
-
-void on_play(lf_ui_state_t* ui, lf_widget_t* widget) {
-  if(!widget || widget->num_childs < 1) return;
-  if(s.tick_timer) {
-    s.tick_timer->paused = !s.tick_timer->paused;
-  } else {
-    s.tick_timer = lf_ui_core_start_timer_looped(ui, 1 / 60.0f, on_timer);
-  }
-  ui->root_needs_render = true;
-  lf_ui_core_commit_entire_render(ui);
-}
-
-void on_restart(lf_ui_state_t* ui, lf_widget_t* widget) {
+void on_click(lf_ui_state_t* ui, lf_widget_t* widget) {
   (void)widget;
-  if(!s.tick_timer) return;
-  s.tick_timer->elapsed = 0.0f;
-  lf_ui_core_submit(ui);
+  (void)ui;
+  printf("Clicked button!\n");
 }
+
 
 int main(void) {
 
   if(lf_windowing_init() != 0) return EXIT_FAILURE;
 
-  lf_window_t* win = lf_ui_core_create_window(500, 815, "hello leif");
+  lf_ui_core_set_window_flags(LF_WINDOWING_X11_OVERRIDE_REDIRECT);
+  lf_window_t* win = lf_ui_core_create_window(500, 500, "hello leif");
   s.ui = lf_ui_core_init(win);
 
-  lf_ui_core_set_font(s.ui, "/usr/share/fonts/OTF/Lora-MediumItalic.otf");
-
-  lf_style_crnt_widget_prop(s.ui, color, LF_WHITE);
-
   lf_div(s.ui);
-    lf_widget_set_padding(lf_crnt(s.ui), 20);
-    lf_widget_set_fixed_height_percent(lf_crnt(s.ui), 100.0f);
+  lf_crnt(s.ui)->sizing_type = SizingFitToContent;
+  lf_style_crnt_widget_prop(s.ui, color, LF_RED);
+  lf_widget_set_margin(lf_crnt(s.ui), 20);
 
-  lf_text_h1(s.ui, "Für");
-  lf_style_crnt_widget_prop(s.ui, text_color, LF_BLACK);
-  lf_text_h1(s.ui, "Mama");
+  lf_text_h1(s.ui, "Hello, World!");
+
+  lf_button(s.ui);
+  ((lf_button_t*)lf_crnt(s.ui))->on_click = on_click; 
+
+  lf_text_h1(s.ui, "Click me");
   lf_style_crnt_widget_prop(s.ui, text_color, LF_BLACK);
 
-    
+  lf_button_end(s.ui);
+
   lf_div_end(s.ui);
-
-
  
   while(s.ui->running) {
     lf_ui_core_next_event(s.ui);

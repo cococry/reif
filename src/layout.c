@@ -159,7 +159,7 @@ lf_layout_horizontal(lf_widget_t* widget) {
     if(i > 0) {
       total_width += child->props.margin_right;
     }
-    float child_height = effective_size.y;
+    float child_height = effective_size.y + child->props.margin_top + child->props.margin_bottom;
     if (child_height > max_height) {
       max_height = child_height;
     }
@@ -186,11 +186,12 @@ lf_layout_horizontal(lf_widget_t* widget) {
     vec2s effective_size = LF_WIDGET_SIZE_V2(child);
 
     // Vertical centering if enabled
-    if (lf_flag_exists(&widget->alignment_flags, AlignCenterVertical)) {
+    bool centered_vertical = lf_flag_exists(&widget->alignment_flags, AlignCenterVertical);
+    if (centered_vertical) {
       offset.y = (lf_widget_height(widget) - effective_size.y) / 2.0f;
     }
 
-    child->container.pos.y = widget->container.pos.y + offset.y + child->props.margin_top;
+    child->container.pos.y = widget->container.pos.y + offset.y + ((!centered_vertical) ? child->props.margin_top : 0.0f);
 
     // Set x position and advance pointer based on justify type
     if (widget->justify_type == JustifyEnd) {

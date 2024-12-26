@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <time.h>
 #include <unistd.h>
+#include <time.h>
 #include <stdlib.h>
 
 #ifdef LF_GLFW
@@ -16,12 +17,20 @@
 #ifdef LF_RUNARA
 #include <runara/runara.h>
 #endif
+#ifdef LF_X11 
+#include <GL/glx.h>
+#endif
+
+struct timespec init_time;
+
 
 #define OVERDRAW_CORNER_RADIUS 2 
 #define MAX_CONCURRENT_TIMERS 16
 
 
 static void init_fonts(lf_ui_state_t* ui);
+
+static float get_elapsed_time(void);
 
 static void render_widget_and_submit(
   lf_ui_state_t* ui, 
@@ -39,6 +48,8 @@ static void default_root_layout_func(lf_ui_state_t* ui);
 static uint32_t font_sizes[] = {
   36, 28, 22, 18, 15, 13, 16
 };
+
+static uint32_t window_flags = 0;
 
 
 void 
@@ -102,6 +113,15 @@ init_fonts(lf_ui_state_t* ui) {
   lf_ui_core_set_font(ui, ui->render_font_file_from_name("Inter"));
 }
 
+float 
+get_elapsed_time(void) {
+    struct timespec now;
+    clock_gettime(CLOCK_MONOTONIC, &now);
+    float elapsed_time = (now.tv_sec - init_time.tv_sec) +
+                         (now.tv_nsec - init_time.tv_nsec) / 1e9f;
+    return elapsed_time;
+}
+
 void 
 render_widget_and_submit(
   lf_ui_state_t* ui, 
@@ -150,12 +170,17 @@ root_resize(lf_ui_state_t* ui, lf_widget_t* widget, lf_event_t ev) {
   lf_ui_core_commit_entire_render(ui);
 }
 
+void 
+lf_ui_core_set_window_flags(uint32_t flags) {
+  window_flags = flags;
+}
+
 lf_window_t*
 lf_ui_core_create_window(
   uint32_t width, 
   uint32_t height, 
   const char* title) {
-  lf_window_t* win = lf_win_create(width, height, title);
+  lf_window_t* win = lf_win_create_ex(width, height, title, window_flags);
 
   lf_win_set_close_cb(win, win_close_callback);
   lf_win_set_refresh_cb(win, win_refresh_callback);
@@ -171,7 +196,7 @@ lf_ui_core_init(lf_window_t* win) {
 #ifdef LF_RUNARA
 #ifdef LF_X11
   state->render_state = rn_init(
-    win->width, win->height,
+    lf_win_get_size(win).x, lf_win_get_size(win).y,
     (RnGLLoader)glXGetProcAddressARB);
 #elif defined LF_GLFW
   state->render_state = rn_init(
@@ -179,7 +204,7 @@ lf_ui_core_init(lf_window_t* win) {
     (RnGLLoader)glfwGetProcAddress);
 #else 
   #error 
-#error "Invalid windowing system specified (valid windowing systems: LF_GLFW)"
+#error "Invalid windowing system specified (valid windowing systems: LF_GLFW, LF_X11)"
 #endif
 
   state->render_rect                = lf_rn_render_rect;
@@ -247,6 +272,8 @@ lf_ui_core_init(lf_window_t* win) {
   
   state->_last_parent = state->root;
   state->_current_widget = state->root;
+  
+  clock_gettime(CLOCK_MONOTONIC, &init_time);
 
   return state;
 }
@@ -459,7 +486,7 @@ lf_ui_core_next_event(lf_ui_state_t* ui) {
     ui->_dirty = false;
   }
 
-  float cur_time = glfwGetTime();
+  float cur_time = get_elapsed_time();
   ui->delta_time = cur_time - ui->_last_time;
   ui->_last_time = cur_time;
 
@@ -704,5 +731,4 @@ lf_ui_core_commit_entire_render(lf_ui_state_t* ui) {
   render_widget_and_submit(ui, ui->root, clear_area);
   ui->root_needs_render = false;
   lf_win_swap_buffers(ui->win);
-
 }

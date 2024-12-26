@@ -102,6 +102,8 @@ struct lf_page_t {
   uint64_t id;
 } ;
 
+void lf_ui_core_set_window_flags(uint32_t flags);
+
 lf_window_t* lf_ui_core_create_window(
     uint32_t width, 
     uint32_t height, 
