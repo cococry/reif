@@ -4,6 +4,7 @@
 #include "event.h"
 #include "animation.h"
 #include "ez_api.h"
+#include "layout.h"
 
 #include "widgets/div.h"
 #include "widgets/button.h"

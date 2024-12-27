@@ -41,6 +41,7 @@ typedef struct {
   uint32_t cap, size;
 } lf_timer_list_t;
 
+
 typedef void (*lf_page_func_t)(
       lf_ui_state_t* ui);
 
@@ -50,6 +51,8 @@ struct lf_ui_state_t {
   lf_widget_t* root;
 
   lf_page_list_t pages;
+  lf_timer_list_t timers;
+
   uint64_t crnt_page_id;
   bool root_needs_render;
 
@@ -94,7 +97,6 @@ struct lf_ui_state_t {
 
   lf_page_func_t _root_layout_func;
 
-  lf_timer_list_t timers;
 };
 
 struct lf_page_t {
@@ -103,6 +105,8 @@ struct lf_page_t {
 } ;
 
 void lf_ui_core_set_window_flags(uint32_t flags);
+
+void lf_ui_core_set_window_hint(lf_window_hint_t hint, uint32_t value);
 
 lf_window_t* lf_ui_core_create_window(
     uint32_t width, 

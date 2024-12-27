@@ -26,7 +26,13 @@ static uint32_t n_windows = 0;
 static lf_ui_state_t* ui;
 static lf_event_type_t current_event;
 
-static lf_window_t* create_window(uint32_t width, uint32_t height, const char* title, uint32_t flags);
+static lf_window_t* create_window(
+  uint32_t width, 
+  uint32_t height, 
+  const char* title, 
+  uint32_t flags, 
+  lf_windowing_hint_kv_t* hints, 
+  uint32_t nhints);
 
 static void glfw_mouse_button_callback(
   GLFWwindow* window, 
@@ -47,13 +53,30 @@ static void glfw_mouse_move_callback(
 static void glfw_refresh_callback(GLFWwindow* window);
 
 lf_window_t*
-create_window(uint32_t width, uint32_t height, const char* title, uint32_t flags) {
+create_window(
+  uint32_t width, 
+  uint32_t height, 
+  const char* title, 
+  uint32_t flags, 
+  lf_windowing_hint_kv_t* hints, 
+  uint32_t nhints) {
   (void)flags;
   GLFWwindow* win = glfwCreateWindow(
     width, height, 
     title,
     NULL, NULL);
 
+
+  int32_t win_x, win_y;
+  glfwGetWindowPos(win, &win_x, &win_y);
+  for(uint32_t i = 0; i < nhints; i++) {
+    if(hints[i].key == LF_WINDOWING_HINT_POS_X) {
+      glfwSetWindowPos(win, hints[i].value, win_y);
+    }
+    if(hints[i].key == LF_WINDOWING_HINT_POS_Y) {
+      glfwSetWindowPos(win, win_x, hints[i].value);
+    }
+  }
   if(n_windows + 1 <= MAX_WINDOWS) {
     window_callbacks[n_windows].win = win;
     window_callbacks[n_windows].ev_mouse_press_cb = NULL;
@@ -207,13 +230,14 @@ lf_win_get_display(void) {
 }
 lf_window_t* 
 lf_win_create(uint32_t width, uint32_t height, const char* title) {
-  return create_window(width, height, title, 0);
+  return create_window(width, height, title, 0, NULL, 0);
 }
 
 lf_window_t* 
-lf_win_create_ex(uint32_t width, uint32_t height, const char* title, uint32_t flags) {
+lf_win_create_ex(uint32_t width, uint32_t height, const char* title, uint32_t flags, 
+                 lf_windowing_hint_kv_t* hints, uint32_t nhints) {
   (void)flags;
-  return create_window(width, height, title, flags);
+  return create_window(width, height, title, flags, hints, nhints);
 }
 
 void 

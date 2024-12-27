@@ -21,8 +21,11 @@
 #include <GL/glx.h>
 #endif
 
-struct timespec init_time;
 
+typedef struct {
+  lf_windowing_hint_kv_t* items;
+  uint32_t cap, size;
+} lf_windowing_hints_list_t;
 
 #define OVERDRAW_CORNER_RADIUS 2 
 #define MAX_CONCURRENT_TIMERS 16
@@ -50,6 +53,9 @@ static uint32_t font_sizes[] = {
 };
 
 static uint32_t window_flags = 0;
+struct timespec init_time;
+
+static lf_windowing_hints_list_t windowing_hints;
 
 
 void 
@@ -175,12 +181,23 @@ lf_ui_core_set_window_flags(uint32_t flags) {
   window_flags = flags;
 }
 
+void 
+lf_ui_core_set_window_hint(lf_window_hint_t hint, uint32_t value) {
+  lf_vector_append(&windowing_hints, ((lf_windowing_hint_kv_t)
+    {.key = hint, 
+    .value = value}));
+}
+
 lf_window_t*
 lf_ui_core_create_window(
   uint32_t width, 
   uint32_t height, 
   const char* title) {
-  lf_window_t* win = lf_win_create_ex(width, height, title, window_flags);
+  lf_window_t* win = lf_win_create_ex(
+    width, height, 
+    title, 
+    window_flags, 
+    windowing_hints.items, windowing_hints.size);
 
   lf_win_set_close_cb(win, win_close_callback);
   lf_win_set_refresh_cb(win, win_refresh_callback);
@@ -243,6 +260,7 @@ lf_ui_core_init(lf_window_t* win) {
   init_fonts(state);
   lf_vector_init(&state->pages);
   lf_vector_init(&state->timers);
+  lf_vector_init(&windowing_hints);
 
   state->asset_manager = lf_asset_manager_init();
 
@@ -419,6 +437,7 @@ lf_ui_state_t* lf_ui_core_init_ex(
 
   lf_vector_init(&state->pages);
   lf_vector_init(&state->timers);
+  lf_vector_init(&windowing_hints);
 
   state->asset_manager = lf_asset_manager_init();
 

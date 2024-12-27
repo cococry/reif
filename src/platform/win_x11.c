@@ -38,7 +38,7 @@ static GLXContext glcontext;
 
 static void handle_event(XEvent *event);
 
-static lf_window_t* create_window(uint32_t width, uint32_t height, const char* title, uint32_t flags);
+static lf_window_t* create_window(uint32_t width, uint32_t height, const char* title, uint32_t flags, lf_windowing_hint_kv_t* hints, uint32_t nhints);
 
 
 void 
@@ -124,11 +124,27 @@ handle_event(XEvent *event) {
 }
 
 lf_window_t*
-create_window(uint32_t width, uint32_t height, const char* title, uint32_t flags) {
+create_window(
+  uint32_t width, 
+  uint32_t height, 
+  const char* title,
+  uint32_t flags, 
+  lf_windowing_hint_kv_t* hints,
+  uint32_t nhints) {
   Window root = DefaultRootWindow(display);
   int screen = DefaultScreen(display);
 
-  Window win = XCreateSimpleWindow(display, root, 0, 0, width, height, 1,
+  uint32_t winpos_x = 0, winpos_y = 0;
+
+  for(uint32_t i = 0; i < nhints; i++) {
+    if(hints[i].key == LF_WINDOWING_HINT_POS_X) {
+      winpos_x = hints[i].value;
+    }
+    else if(hints[i].key == LF_WINDOWING_HINT_POS_Y) {
+      winpos_y = hints[i].value;
+    }
+  }
+  Window win = XCreateSimpleWindow(display, root, winpos_x, winpos_y, width, height, 1,
                                    BlackPixel(display, screen), BlackPixel(display, screen));
 
   if(lf_flag_exists(&flags, LF_WINDOWING_X11_OVERRIDE_REDIRECT)) {
@@ -219,12 +235,16 @@ lf_win_get_display(void) {
 
 lf_window_t* 
 lf_win_create(uint32_t width, uint32_t height, const char* title) {
-  return create_window(width, height, title, 0); 
+  return create_window(width, height, title, 0, NULL, 0); 
 }
 
 lf_window_t* 
-lf_win_create_ex(uint32_t width, uint32_t height, const char* title, uint32_t flags) {
-  return create_window(width, height, title, flags); 
+lf_win_create_ex(
+  uint32_t width, uint32_t height, 
+  const char* title, 
+  uint32_t flags, 
+  lf_windowing_hint_kv_t* hints, uint32_t nhints) {
+  return create_window(width, height, title, flags, hints, nhints); 
 }
 
 

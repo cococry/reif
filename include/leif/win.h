@@ -14,7 +14,17 @@ typedef struct lf_ui_state_t lf_ui_state_t;
 
 typedef enum {
   LF_WINDOWING_X11_OVERRIDE_REDIRECT = 1 << 0,
-} lf_windowing_flags;
+} lf_windowing_flags_t;
+
+typedef enum {
+  LF_WINDOWING_HINT_POS_X = 0,
+  LF_WINDOWING_HINT_POS_Y
+} lf_window_hint_t;
+
+typedef struct {
+  lf_window_hint_t key;
+  uint32_t value;
+} lf_windowing_hint_kv_t;
 
 typedef void (*lf_win_close_func)(
     lf_ui_state_t*,
@@ -63,7 +73,13 @@ void* lf_win_get_display(void);
 
 lf_window_t* lf_win_create(uint32_t width, uint32_t height, const char* title);
 
-lf_window_t* lf_win_create_ex(uint32_t width, uint32_t height, const char* title, uint32_t flags);
+lf_window_t* lf_win_create_ex(
+    uint32_t width, 
+    uint32_t height, 
+    const char* title, 
+    uint32_t flags, 
+    lf_windowing_hint_kv_t* hints,
+    uint32_t nhints);
 
 void lf_win_set_title(lf_window_t* win, const char* title);
 
