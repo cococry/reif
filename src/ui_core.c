@@ -42,8 +42,8 @@ static void render_widget_and_submit(
 
 static void root_shape(lf_ui_state_t* ui, lf_widget_t* widget);
 static void root_resize(lf_ui_state_t* ui, lf_widget_t* widget, lf_event_t ev);
-static void win_close_callback(lf_ui_state_t* ui, void* window);
-static void win_refresh_callback(lf_ui_state_t* ui, void* window);
+static void win_close_callback(lf_ui_state_t* ui, lf_window_t window);
+static void win_refresh_callback(lf_ui_state_t* ui, lf_window_t window);
 static void remove_marked_widgets(lf_widget_t* root);
 static void interrupt_all_animations_recursively(lf_widget_t* widget);
 static void default_root_layout_func(lf_ui_state_t* ui);
@@ -59,13 +59,13 @@ static lf_windowing_hints_list_t windowing_hints;
 
 
 void 
-win_close_callback(lf_ui_state_t* ui, void* window) {
+win_close_callback(lf_ui_state_t* ui, lf_window_t window) {
   (void)window;
   ui->running = false;
 }
 
 void 
-win_refresh_callback(lf_ui_state_t* ui, void* window) {
+win_refresh_callback(lf_ui_state_t* ui, lf_window_t window) {
   (void)window;
   lf_widget_shape(ui, ui->root);
   ui->root_needs_render = true;
@@ -188,12 +188,12 @@ lf_ui_core_set_window_hint(lf_window_hint_t hint, uint32_t value) {
     .value = value}));
 }
 
-lf_window_t*
+lf_window_t
 lf_ui_core_create_window(
   uint32_t width, 
   uint32_t height, 
   const char* title) {
-  lf_window_t* win = lf_win_create_ex(
+  lf_window_t win = lf_win_create_ex(
     width, height, 
     title, 
     window_flags, 
@@ -208,7 +208,7 @@ lf_ui_core_create_window(
 }
 
 lf_ui_state_t*
-lf_ui_core_init(lf_window_t* win) {
+lf_ui_core_init(lf_window_t win) {
   lf_ui_state_t* state = malloc(sizeof(*state));
 #ifdef LF_RUNARA
 #ifdef LF_X11
@@ -384,7 +384,7 @@ lf_ui_core_set_theme(
 }
 
 lf_ui_state_t* lf_ui_core_init_ex(
-    lf_window_t* win, 
+    lf_window_t win, 
     void* render_state,
     lf_render_rect_func_t render_rect,
     lf_render_text_func_t render_text,

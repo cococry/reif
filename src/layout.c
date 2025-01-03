@@ -1,6 +1,7 @@
 #include "../include/leif/layout.h"
 #include "../include/leif/widget.h"
 #include "../include/leif/widgets/div.h"
+#include "../include/leif/widgets/text.h"
 #include "../include/leif/util.h"
 
 static void adjust_widget_size(lf_widget_t* widget, bool* o_fixed_w, bool* o_fixed_h, bool horizontal);
@@ -10,23 +11,17 @@ void
 adjust_widget_size(lf_widget_t* widget, bool* o_fixed_w, bool* o_fixed_h, bool horizontal) {
   bool resizable = (!widget->_fixed_width && horizontal) || (!widget->_fixed_height && !horizontal);
   if(widget->parent && resizable && widget->sizing_type == SizingFitToParent) {
-    if(horizontal) {
-      widget->container.size.x = (widget->parent->container.size.x - (widget->parent->container.pos.x -  widget->container.pos.x)) - 
-        widget->props.padding_right - widget->props.padding_left - widget->parent->props.padding_right; 
-    } else {
-      widget->container.size.y = (widget->parent->container.size.y - (widget->parent->container.pos.y -  widget->container.pos.y)) - 
-        widget->props.padding_bottom - widget->props.padding_top - widget->parent->props.padding_bottom; 
-    }
+  widget->container.size.x = widget->parent->container.size.x - widget->parent->props.padding_right - widget->parent->props.padding_left;
   }
-
   if(widget->parent && widget->_fixed_width && widget->_width_percent != 0.0f) {
-      widget->container.size.x = widget->parent->container.size.x * widget->_width_percent 
+    widget->container.size.x = widget->parent->container.size.x * widget->_width_percent 
       - (widget->props.padding_left + widget->props.padding_right); 
   }
   if(widget->parent && widget->_fixed_height && widget->_height_percent != 0.0f) {
-      widget->container.size.y = widget->parent->container.size.y * widget->_height_percent 
+    widget->container.size.y = widget->parent->container.size.y * widget->_height_percent 
       - (widget->props.padding_top + widget->props.padding_bottom); 
   }
+
 
   if(o_fixed_w) {
     *o_fixed_w = 
@@ -56,6 +51,7 @@ void
 lf_layout_vertical(lf_widget_t* widget) {
   bool fixed_w = false, fixed_h = false;
   adjust_widget_size(widget, &fixed_w, &fixed_h, true);
+  lf_widget_apply_size_hints(widget);
 
   for (uint32_t i = 0; i < widget->num_childs; i++) {
     widget->childs[i]->props = widget->childs[i]->_initial_props;
@@ -128,6 +124,7 @@ lf_layout_vertical(lf_widget_t* widget) {
   if (!fixed_h) {
     widget->container.size.y = total_height;
   } 
+  lf_widget_apply_size_hints(widget);
 }
 
 
@@ -135,6 +132,7 @@ void
 lf_layout_horizontal(lf_widget_t* widget) {
   bool fixed_w = false, fixed_h = false;
   adjust_widget_size(widget, &fixed_w, &fixed_h, true);
+  lf_widget_apply_size_hints(widget);
 
   for (uint32_t i = 0; i < widget->num_childs; i++) {
     widget->childs[i]->props = widget->childs[i]->_initial_props;
@@ -147,6 +145,8 @@ lf_layout_horizontal(lf_widget_t* widget) {
     };
   float total_width = 0.0f, max_height = 0.0f;
 
+  bool centered_horz = lf_flag_exists(&widget->alignment_flags, AlignCenterHorizontal) && 
+    widget->justify_type != JustifyEnd;
   
   // Calculate total width needed and max height of children
   for (uint32_t i = 0; i < widget->num_childs; i++) {
@@ -155,7 +155,8 @@ lf_layout_horizontal(lf_widget_t* widget) {
     vec2s effective_size = LF_WIDGET_SIZE_V2(child);
 
     total_width += effective_size.x;
-    total_width += child->props.margin_left;
+    if(!centered_horz)
+      total_width += child->props.margin_left;
     if(i > 0) {
       total_width += child->props.margin_right;
     }
@@ -168,8 +169,10 @@ lf_layout_horizontal(lf_widget_t* widget) {
   float s = (widget->container.size.x - total_width) / (widget->num_childs - 1);  
 
   // Calculate centering offset, excluding padding for horizontal centering
-  if (lf_flag_exists(&widget->alignment_flags, AlignCenterHorizontal) && 
-    widget->justify_type != JustifyEnd) {
+  if (centered_horz) {
+    if(widget->type == WidgetTypeButton) {
+      printf("Centering button (Width: %f, Min Width: %f)\n", lf_widget_width(widget), widget->_min_size.x);
+    }
     offset.x = (lf_widget_width(widget) - total_width) / 2.0f;
   }
 
@@ -212,7 +215,8 @@ lf_layout_horizontal(lf_widget_t* widget) {
   }
   if (!fixed_h) {
     widget->container.size.y = max_height;
-  } 
+  }
+  lf_widget_apply_size_hints(widget);
 } 
 /*void
 lf_layout_vertical(lf_widget_t* widget) {

@@ -1,5 +1,5 @@
 #include "../../include/leif/widgets/text.h"
-#include <wctype.h>
+#include <cglm/types-struct.h>
 
 #ifdef LF_RUNARA
 #include <runara/runara.h>
@@ -11,18 +11,23 @@ _recalculate_label(
   lf_text_t* text
 ) {
   lf_widget_t* widget = &text->base;
+  vec2s text_pos = (vec2s){
+    .x = widget->container.pos.x + widget->props.padding_left, 
+    .y =  widget->container.pos.y + widget->props.padding_top 
+  };
+
   lf_text_dimension_t text_dimension = ui->render_get_paragraph_dimension(
     ui->render_state,
     text->label,
+    text_pos,
     text->font,
     (lf_paragraph_props_t){
-      .wrap = widget->parent->container.pos.x + widget->parent->container.size.x + 10, 
+      .wrap = widget->parent->container.pos.x + widget->parent->container.size.x, 
       .align = ParagraphAlignmentLeft
     }
   );
   text->base.container.size.x = text_dimension.width;
   text->base.container.size.y = text_dimension.height;
-
   text->_text_dimension = text_dimension;
 
 }
@@ -47,27 +52,30 @@ _text_render(
   ui->render_rect(
     ui->render_state, 
     widget->container.pos,
-   LF_WIDGET_SIZE_V2(widget), 
+   LF_WIDGET_SIZE_V2(&text->base), 
     widget->props.color, widget->props.border_color,
     widget->props.border_width, widget->props.corner_radius);
 
   if(text->label) {
-    vec2s text_pos =(vec2s){
+    vec2s text_pos = (vec2s){
       .x = widget->container.pos.x + widget->props.padding_left, 
       .y =  widget->container.pos.y + widget->props.padding_top 
     };
 
-    ui->render_paragraph(
+    lf_text_dimension_t text_dimension = ui->render_paragraph(
       ui->render_state,
       text->label,
       text->font,
       text_pos,
       widget->props.text_color,
       (lf_paragraph_props_t){
-        .wrap = widget->parent->container.pos.x + widget->parent->container.size.x + widget->parent->props.padding_left, 
+        .wrap = widget->parent->container.pos.x + widget->parent->container.size.x, 
         .align = ParagraphAlignmentLeft
       }
     );
+    text->base.container.size.x = text_dimension.width;
+    text->base.container.size.y = text_dimension.height;
+    text->_text_dimension = text_dimension;
   }
 }
 
@@ -84,9 +92,10 @@ lf_text_t* _text_create(
   lf_text_dimension_t text_dimension = ui->render_get_paragraph_dimension(
     ui->render_state,
     text->label,
+    parent->container.pos,
     text->font,
     (lf_paragraph_props_t){
-        .wrap = parent->container.pos.x + parent->container.size.x + parent->props.padding_left,
+        .wrap = parent->container.pos.x + parent->container.size.x, 
       .align = ParagraphAlignmentLeft
     }
   );

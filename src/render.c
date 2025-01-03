@@ -94,14 +94,16 @@ lf_rn_render_get_text_dimension(
 
 lf_text_dimension_t 
 lf_rn_render_get_text_dimension_paragraph(
-      void* render_state,
-      const char* text,
-      lf_font_t font,
-      lf_paragraph_props_t props) {
+  void* render_state,
+  const char* text,
+  vec2s pos,
+  lf_font_t font,
+  lf_paragraph_props_t props) {
 
   RnTextProps text_props = rn_text_props_paragraph(
     (RnState*)render_state, 
-    text, 
+    text,
+    pos,
     (RnFont*)font,
     (RnParagraphProps){
       .wrap = props.wrap,
@@ -117,7 +119,7 @@ lf_rn_render_get_text_dimension_paragraph(
 
 void 
 lf_rn_render_clear_color(
-    lf_color_t color) {
+  lf_color_t color) {
 
   rn_clear_color(_lf_color_to_rn(color));
 }

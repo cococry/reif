@@ -4,4 +4,4 @@
 
 #include "input_glfw.h"
 
-typedef struct GLFWwindow lf_window_t;
+typedef GLFWwindow* lf_window_t;

@@ -64,6 +64,8 @@ do {                                                                            
   (vec)->items[(vec)->size++] = (item);                                           \
 } while (0)
 
+#define lf_clamp(value, min, max) ((value) < (min) ? (min) : ((value) > (max) ? (max) : (value)))
+
 typedef struct {
   vec2s pos, size;
 } lf_container_t;

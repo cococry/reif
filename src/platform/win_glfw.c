@@ -26,7 +26,7 @@ static uint32_t n_windows = 0;
 static lf_ui_state_t* ui;
 static lf_event_type_t current_event;
 
-static lf_window_t* create_window(
+static lf_window_t create_window(
   uint32_t width, 
   uint32_t height, 
   const char* title, 
@@ -52,7 +52,7 @@ static void glfw_mouse_move_callback(
 
 static void glfw_refresh_callback(GLFWwindow* window);
 
-lf_window_t*
+lf_window_t
 create_window(
   uint32_t width, 
   uint32_t height, 
@@ -228,12 +228,12 @@ void*
 lf_win_get_display(void) {
   return NULL;
 }
-lf_window_t* 
+lf_window_t 
 lf_win_create(uint32_t width, uint32_t height, const char* title) {
   return create_window(width, height, title, 0, NULL, 0);
 }
 
-lf_window_t* 
+lf_window_t 
 lf_win_create_ex(uint32_t width, uint32_t height, const char* title, uint32_t flags, 
                  lf_windowing_hint_kv_t* hints, uint32_t nhints) {
   (void)flags;
@@ -241,29 +241,29 @@ lf_win_create_ex(uint32_t width, uint32_t height, const char* title, uint32_t fl
 }
 
 void 
-lf_win_set_title(lf_window_t* win, const char* title) {
+lf_win_set_title(lf_window_t win, const char* title) {
   glfwSetWindowTitle(win, title); 
 }
 
 int32_t 
-lf_win_make_gl_context(lf_window_t* win) {
+lf_win_make_gl_context(lf_window_t win) {
   glfwMakeContextCurrent(win);
   return 0;
 }
 
 void 
-lf_win_swap_buffers(lf_window_t* win) {
+lf_win_swap_buffers(lf_window_t win) {
   glfwSwapBuffers(win);
 }
 
 void 
-lf_win_destroy(lf_window_t* win) {
+lf_win_destroy(lf_window_t win) {
   glfwDestroyWindow(win);
   glfwPostEmptyEvent();
 }
 
 vec2s 
-lf_win_cursor_pos(lf_window_t* win) {
+lf_win_cursor_pos(lf_window_t win) {
   double x, y;
   glfwGetCursorPos(win, &x, &y);
   vec2s cursor = (vec2s){
@@ -273,7 +273,7 @@ lf_win_cursor_pos(lf_window_t* win) {
 }
 
 void 
-lf_win_set_close_cb(lf_window_t* win, lf_win_close_func close_cb) {
+lf_win_set_close_cb(lf_window_t win, lf_win_close_func close_cb) {
   for (uint32_t i = 0; i < n_windows; ++i) {
     if (window_callbacks[i].win == win) {
       window_callbacks[i].ev_close_cb = close_cb;
@@ -283,7 +283,7 @@ lf_win_set_close_cb(lf_window_t* win, lf_win_close_func close_cb) {
 }
 
 void 
-lf_win_set_refresh_cb(lf_window_t* win, lf_win_refresh_func refresh_cb) {
+lf_win_set_refresh_cb(lf_window_t win, lf_win_refresh_func refresh_cb) {
   for (uint32_t i = 0; i < n_windows; ++i) {
     if (window_callbacks[i].win == win) {
       window_callbacks[i].ev_refresh_cb = refresh_cb;
@@ -293,7 +293,7 @@ lf_win_set_refresh_cb(lf_window_t* win, lf_win_refresh_func refresh_cb) {
 }
 
 void 
-lf_win_set_resize_cb(lf_window_t* win, lf_win_resize_func resize_cb) {
+lf_win_set_resize_cb(lf_window_t win, lf_win_resize_func resize_cb) {
   for (uint32_t i = 0; i < n_windows; ++i) {
     if (window_callbacks[i].win == win) {
       window_callbacks[i].ev_resize_cb = resize_cb;
@@ -303,7 +303,7 @@ lf_win_set_resize_cb(lf_window_t* win, lf_win_resize_func resize_cb) {
 }
 
 void 
-lf_win_set_mouse_press_cb(lf_window_t* win, lf_win_mouse_press_func mouse_press_cb) {
+lf_win_set_mouse_press_cb(lf_window_t win, lf_win_mouse_press_func mouse_press_cb) {
   for (uint32_t i = 0; i < n_windows; ++i) {
     if (window_callbacks[i].win == win) {
       window_callbacks[i].ev_mouse_press_cb = mouse_press_cb;
@@ -313,7 +313,7 @@ lf_win_set_mouse_press_cb(lf_window_t* win, lf_win_mouse_press_func mouse_press_
 }
 
 void 
-lf_win_set_mouse_release_cb(lf_window_t* win, lf_win_mouse_release_func mouse_release_cb) {
+lf_win_set_mouse_release_cb(lf_window_t win, lf_win_mouse_release_func mouse_release_cb) {
   for (uint32_t i = 0; i < n_windows; ++i) {
     if (window_callbacks[i].win == win) {
       window_callbacks[i].ev_mouse_release_cb = mouse_release_cb;
@@ -323,7 +323,7 @@ lf_win_set_mouse_release_cb(lf_window_t* win, lf_win_mouse_release_func mouse_re
 }
 
 void 
-lf_win_set_mouse_move_cb(lf_window_t* win, lf_win_mouse_move_func mouse_move_cb) {
+lf_win_set_mouse_move_cb(lf_window_t win, lf_win_mouse_move_func mouse_move_cb) {
  for (uint32_t i = 0; i < n_windows; ++i) {
     if (window_callbacks[i].win == win) {
       window_callbacks[i].ev_move_cb = mouse_move_cb;
@@ -332,7 +332,7 @@ lf_win_set_mouse_move_cb(lf_window_t* win, lf_win_mouse_move_func mouse_move_cb)
   }
 }
 vec2s 
-lf_win_get_size(lf_window_t* win) {
+lf_win_get_size(lf_window_t win) {
   int32_t width, height;
   glfwGetWindowSize(win, &width, &height);
   return (vec2s){
@@ -342,7 +342,7 @@ lf_win_get_size(lf_window_t* win) {
 }
 
 int32_t 
-lf_win_get_refresh_rate(lf_window_t* win) {
+lf_win_get_refresh_rate(lf_window_t win) {
     int window_x, window_y;
     glfwGetWindowPos(win, &window_x, &window_y);
 

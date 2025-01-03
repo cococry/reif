@@ -37,24 +37,17 @@ int main(void) {
 
   if(lf_windowing_init() != 0) return EXIT_FAILURE;
 
-  lf_ui_core_set_window_flags(LF_WINDOWING_X11_OVERRIDE_REDIRECT);
-  lf_window_t* win = lf_ui_core_create_window(500, 500, "hello leif");
+  lf_window_t win = lf_ui_core_create_window(1280, 720, "hello leif");
   s.ui = lf_ui_core_init(win);
 
+  lf_style_widget_prop(s.ui, lf_crnt(s.ui), color, lf_color_from_hex(0x282828));
+  lf_widget_set_padding(lf_crnt(s.ui), 40);
+
+
   lf_div(s.ui);
-  lf_crnt(s.ui)->sizing_type = SizingFitToContent;
-  lf_style_crnt_widget_prop(s.ui, color, LF_RED);
-  lf_widget_set_margin(lf_crnt(s.ui), 20);
-
-  lf_text_h1(s.ui, "Hello, World!");
-
-  lf_button(s.ui);
-  ((lf_button_t*)lf_crnt(s.ui))->on_click = on_click; 
-
-  lf_text_h1(s.ui, "Click me");
-  lf_style_crnt_widget_prop(s.ui, text_color, LF_BLACK);
-
-  lf_button_end(s.ui);
+  lf_style_widget_prop(s.ui, lf_crnt(s.ui), color, LF_BLACK);
+  lf_widget_set_layout(lf_crnt(s.ui), LayoutHorizontal);
+  lf_text_h1(s.ui, "The audio update within the rendering loop normally consists of telling OpenAL the current locations of the sources and listener, updating the environment settings, and managing buffers.");
 
   lf_div_end(s.ui);
  

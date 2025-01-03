@@ -2,6 +2,7 @@
 #include "../include/leif/ui_core.h"
 #include "../include/leif/layout.h"
 #include "../include/leif/animation.h"
+#include "../include/leif/widgets/text.h"
 #include <string.h>
 #include <time.h>
 
@@ -104,6 +105,9 @@ lf_widget_create(
 
   widget->_width_percent = 0.0f;
   widget->_height_percent = 0.0f;
+  
+  widget->_min_size = (vec2s){.x = -1.0f, .y = -1.0f};
+  widget->_max_size = (vec2s){.x = -1.0f, .y = -1.0f};
 
   return widget;
 }
@@ -118,32 +122,52 @@ lf_widget_t* get_first_intersecting_parent(lf_widget_t* widget) {
   }
   return NULL; // Return NULL if no intersecting parent is found
 }
+
+static float widget_get_cull_end_y(lf_widget_t* widget) {
+  return 
+        widget->container.pos.y + 
+        widget->props.padding_top + 
+        widget->container.size.y - 
+        widget->props.border_width;
+} 
+
+static float widget_get_cull_end_x(lf_widget_t* widget) {
+  return 
+        widget->container.pos.x + 
+        widget->props.padding_left + 
+        widget->container.size.x - 
+        widget->props.border_width;
+} 
+
 void
 lf_widget_render(lf_ui_state_t* ui,  lf_widget_t* widget) {
   if(!widget->visible) return;
-  bool set_end_y = false;
   if(widget->render) {
     if(!lf_container_intersets_container(
-      LF_WIDGET_CONTAINER(widget), ui->root->container)) {
+      LF_WIDGET_CONTAINER(widget), ui->root->container) || !lf_container_intersets_container(LF_WIDGET_CONTAINER(widget), LF_WIDGET_CONTAINER(widget->parent))) {
       return;
     }
 
     widget->render(ui, widget);
 #ifdef LF_RUNARA
     if(widget->type == WidgetTypeDiv) {
-      rn_set_cull_end_x(
-        (RnState*)ui->render_state, 
-        widget->container.pos.x + lf_widget_width(widget) - 
-        widget->props.border_width);
 
-      float end_y = widget->container.pos.y + lf_widget_height(widget) - widget->props.border_width;
-      if(end_y < lf_widget_height(widget->parent)) {
-        rn_set_cull_end_y(
-          (RnState*)ui->render_state, 
-          end_y
-        );
-        set_end_y = true;
-      }
+      float parent_end_x = widget_get_cull_end_x(widget->parent); 
+      float widget_end_x = widget_get_cull_end_x(widget); 
+      float end_x = MIN(widget_end_x, parent_end_x);
+
+      float parent_end_y = widget_get_cull_end_y(widget->parent); 
+      float widget_end_y = widget_get_cull_end_y(widget); 
+      float end_y = MIN(widget_end_y, parent_end_y);
+
+      rn_set_cull_end_x(
+        (RnState*)ui->render_state,
+        end_x);
+
+      rn_set_cull_end_y(
+        (RnState*)ui->render_state, 
+        end_y
+      );
       rn_set_cull_start_x(ui->render_state,
                           widget->container.pos.x + widget->props.border_width); 
       rn_set_cull_start_y(ui->render_state,
@@ -158,9 +182,7 @@ lf_widget_render(lf_ui_state_t* ui,  lf_widget_t* widget) {
   }
 #ifdef LF_RUNARA
   rn_unset_cull_end_x((RnState*)ui->render_state);
-  if(set_end_y) {
     rn_unset_cull_end_y((RnState*)ui->render_state);
-  }
   rn_unset_cull_start_x((RnState*)ui->render_state);
   rn_unset_cull_start_y((RnState*)ui->render_state);
 #endif
@@ -536,4 +558,44 @@ lf_widget_set_fixed_height_percent(lf_widget_t* widget, float percent) {
 
 void lf_widget_set_alignment(lf_widget_t* widget, uint32_t flags) {
   lf_flag_set(&widget->alignment_flags, flags);
+}
+
+void 
+lf_widget_apply_size_hints(lf_widget_t* widget) {
+  if(widget->_min_size.x != -1.0f) {
+    widget->container.size.x = widget->container.size.x < widget->_min_size.x ? widget->_min_size.x : widget->container.size.x; 
+  }
+  if(widget->_max_size.x != -1.0f) {
+    widget->container.size.x = widget->container.size.x > widget->_max_size.x ? widget->_max_size.x : widget->container.size.x; 
+  }
+  if(widget->_min_size.y != -1.0f) {
+    widget->container.size.y = widget->container.size.y < widget->_min_size.y ? widget->_min_size.y : widget->container.size.y; 
+  }
+  if(widget->_max_size.y != -1.0f) {
+    widget->container.size.y = widget->container.size.y > widget->_max_size.y ? widget->_max_size.y : widget->container.size.y; 
+  }
+}
+
+void 
+lf_widget_set_min_width(lf_widget_t* widget, float width) {
+  widget->_min_size.x = width;
+  lf_widget_apply_size_hints(widget);
+}
+
+void 
+lf_widget_set_max_width(lf_widget_t* widget, float width) {
+  widget->_max_size.x = width;
+  lf_widget_apply_size_hints(widget);
+}
+
+void 
+lf_widget_set_min_height(lf_widget_t* widget, float height) {
+  widget->_min_size.y = height;
+  lf_widget_apply_size_hints(widget);
+}
+
+void 
+lf_widget_set_max_height(lf_widget_t* widget, float height) {
+  widget->_max_size.y = height;
+  lf_widget_apply_size_hints(widget);
 }

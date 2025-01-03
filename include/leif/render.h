@@ -50,7 +50,8 @@ typedef lf_text_dimension_t (*lf_render_get_text_dimension_func_t)(
 
 typedef lf_text_dimension_t (*lf_render_get_paragraph_dimension_func_t)(
       void*,
-      const char*, 
+      const char*,
+      vec2s,
       lf_font_t,
       lf_paragraph_props_t props); 
 
@@ -126,6 +127,7 @@ lf_text_dimension_t lf_rn_render_get_text_dimension(
 lf_text_dimension_t lf_rn_render_get_text_dimension_paragraph(
       void* render_state,
       const char* text,
+      vec2s pos,
       lf_font_t font,
       lf_paragraph_props_t props); 
 

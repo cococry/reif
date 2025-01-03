@@ -46,7 +46,7 @@ typedef void (*lf_page_func_t)(
       lf_ui_state_t* ui);
 
 struct lf_ui_state_t {
-  lf_window_t* win;
+  lf_window_t win;
 
   lf_widget_t* root;
 
@@ -108,19 +108,19 @@ void lf_ui_core_set_window_flags(uint32_t flags);
 
 void lf_ui_core_set_window_hint(lf_window_hint_t hint, uint32_t value);
 
-lf_window_t* lf_ui_core_create_window(
+lf_window_t lf_ui_core_create_window(
     uint32_t width, 
     uint32_t height, 
     const char* title);
 
-lf_ui_state_t* lf_ui_core_init(lf_window_t* win);
+lf_ui_state_t* lf_ui_core_init(lf_window_t win);
 
 lf_theme_t* lf_ui_core_default_theme(void);
 
 void lf_ui_core_set_theme(lf_ui_state_t* ui, lf_theme_t* theme);
 
 lf_ui_state_t* lf_ui_core_init_ex(
-    lf_window_t* win, 
+    lf_window_t win, 
     void* render_state,
     lf_render_rect_func_t render_rect,
     lf_render_text_func_t render_text,

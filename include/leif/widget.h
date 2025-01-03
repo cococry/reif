@@ -67,6 +67,8 @@ struct lf_widget_t {
   float _height_percent;
   
   bool _marked_for_removal;
+
+  vec2s _min_size, _max_size;
 };
 
 lf_widget_t* lf_widget_create(
@@ -198,3 +200,12 @@ void lf_widget_set_fixed_height_percent(lf_widget_t* widget, float percent);
 
 void lf_widget_set_alignment(lf_widget_t* widget, uint32_t flags);
 
+void lf_widget_apply_size_hints(lf_widget_t* widget);
+
+void lf_widget_set_min_width(lf_widget_t* widget, float width);
+
+void lf_widget_set_max_width(lf_widget_t* widget, float width);
+
+void lf_widget_set_min_height(lf_widget_t* widget, float height);
+
+void lf_widget_set_max_height(lf_widget_t* widget, float height);
