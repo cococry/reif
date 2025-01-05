@@ -16,13 +16,17 @@ _recalculate_label(
     .y =  widget->container.pos.y + widget->props.padding_top 
   };
 
+  float wrap = widget->parent->container.pos.x + widget->parent->container.size.x - 5;
+  if(widget->parent->sizing_type == SizingFitToContent) {
+    wrap = -1.0f;
+  }
   lf_text_dimension_t text_dimension = ui->render_get_paragraph_dimension(
     ui->render_state,
     text->label,
     text_pos,
     text->font,
     (lf_paragraph_props_t){
-      .wrap = widget->parent->container.pos.x + widget->parent->container.size.x, 
+      .wrap = wrap, 
       .align = ParagraphAlignmentLeft
     }
   );
@@ -49,6 +53,7 @@ _text_render(
   if(!widget) return;
 
   lf_text_t* text = (lf_text_t*)widget;
+  _recalculate_label(ui, text);
   ui->render_rect(
     ui->render_state, 
     widget->container.pos,
@@ -61,7 +66,10 @@ _text_render(
       .x = widget->container.pos.x + widget->props.padding_left, 
       .y =  widget->container.pos.y + widget->props.padding_top 
     };
-
+    float wrap = widget->parent->container.pos.x + widget->parent->container.size.x - 5;
+    if(widget->parent->sizing_type == SizingFitToContent) {
+      wrap = -1.0f;
+    }
     lf_text_dimension_t text_dimension = ui->render_paragraph(
       ui->render_state,
       text->label,
@@ -69,7 +77,7 @@ _text_render(
       text_pos,
       widget->props.text_color,
       (lf_paragraph_props_t){
-        .wrap = widget->parent->container.pos.x + widget->parent->container.size.x, 
+        .wrap = wrap, 
         .align = ParagraphAlignmentLeft
       }
     );
@@ -89,13 +97,14 @@ lf_text_t* _text_create(
 
   text->label = (char*)label;
   text->font = font;
+
   lf_text_dimension_t text_dimension = ui->render_get_paragraph_dimension(
     ui->render_state,
     text->label,
     parent->container.pos,
     text->font,
     (lf_paragraph_props_t){
-        .wrap = parent->container.pos.x + parent->container.size.x, 
+      .wrap = parent->container.pos.x + parent->container.size.x, 
       .align = ParagraphAlignmentLeft
     }
   );

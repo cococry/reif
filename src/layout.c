@@ -11,7 +11,7 @@ void
 adjust_widget_size(lf_widget_t* widget, bool* o_fixed_w, bool* o_fixed_h, bool horizontal) {
   bool resizable = (!widget->_fixed_width && horizontal) || (!widget->_fixed_height && !horizontal);
   if(widget->parent && resizable && widget->sizing_type == SizingFitToParent) {
-  widget->container.size.x = widget->parent->container.size.x - widget->parent->props.padding_right - widget->parent->props.padding_left;
+  widget->container.size.x = widget->parent->container.size.x - widget->parent->props.padding_right * 2 - widget->parent->props.padding_left;
   }
   if(widget->parent && widget->_fixed_width && widget->_width_percent != 0.0f) {
     widget->container.size.x = widget->parent->container.size.x * widget->_width_percent 
