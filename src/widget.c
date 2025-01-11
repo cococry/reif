@@ -181,17 +181,18 @@ lf_widget_render(lf_ui_state_t* ui,  lf_widget_t* widget) {
     lf_widget_render(ui, widget->childs[i]);
   }
 #ifdef LF_RUNARA
+  if(widget->type == WidgetTypeDiv) {
   rn_unset_cull_end_x((RnState*)ui->render_state);
     rn_unset_cull_end_y((RnState*)ui->render_state);
   rn_unset_cull_start_x((RnState*)ui->render_state);
   rn_unset_cull_start_y((RnState*)ui->render_state);
+  }
 #endif
 }
 
 void lf_widget_shape(
   lf_ui_state_t* ui,
   lf_widget_t* widget) {
-
   if (!widget->shape) return;
   widget->shape(ui, widget);
   for (uint32_t i = 0; i < widget->num_childs; i++) {

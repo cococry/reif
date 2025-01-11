@@ -495,12 +495,6 @@ lf_ui_core_next_event(lf_ui_state_t* ui) {
 
   if(ui->_dirty) {
     remove_marked_widgets(ui->root);
-    lf_widget_shape(ui, ui->root);
-    if(ui->_root_never_shaped) {
-      lf_widget_shape(ui, ui->root);
-      lf_widget_shape(ui, ui->root);
-      ui->_root_never_shaped = false;
-    }
     ui->root_needs_render = true;
     ui->_dirty = false;
   }
@@ -518,6 +512,10 @@ lf_ui_core_next_event(lf_ui_state_t* ui) {
 
   // Check if there is some widget to be rerendered
   if(ui->root_needs_render) { 
+    if(ui->_root_never_shaped) {
+      lf_widget_shape(ui, ui->root);
+      ui->_root_never_shaped= false;
+    }
     lf_ui_core_commit_entire_render(ui);
     rendered = true;
   }

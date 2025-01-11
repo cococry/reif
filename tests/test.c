@@ -34,51 +34,18 @@ void on_click(lf_ui_state_t* ui, lf_widget_t* widget) {
   printf("Clicked button!\n");
 }
 
-void option(const char* buchstabe, const char* text) {
-    lf_div(s.ui);
-      lf_widget_set_layout(lf_crnt(s.ui), LayoutHorizontal);
-      lf_style_crnt_widget_prop(s.ui, corner_radius, 4);
-      lf_style_crnt_widget_prop(s.ui, margin_bottom, 15);
-      lf_widget_set_alignment(lf_crnt(s.ui), AlignCenterVertical);
-      lf_style_crnt_widget_prop(s.ui, color, lf_color_from_hex(0xEFEFEF));
-      lf_widget_set_padding(lf_crnt(s.ui), 0);
 
-      lf_div(s.ui);
-        lf_widget_set_padding(lf_crnt(s.ui), 10);
-        lf_crnt(s.ui)->sizing_type = SizingFitToContent;
-        lf_style_crnt_widget_prop(s.ui, color, lf_color_from_hex(0x005DA8));
-
-          lf_text_custom_font(s.ui, buchstabe, heading_chars);
-      lf_div_end(s.ui);
-
-  lf_div(s.ui);
-  //lf_style_crnt_widget_prop(s.ui, color, LF_RED);
-  lf_widget_set_padding(lf_crnt(s.ui), 10);
-
-  lf_text_h4(s.ui, text);
-  lf_style_crnt_widget_prop(s.ui, text_color, LF_BLACK);
-
-  lf_div_end(s.ui);
-
-
-    lf_div_end(s.ui);
-
-}
 
 void button(const char* text) {
   lf_button(s.ui);
-  lf_style_crnt_widget_prop(s.ui, padding_left, 20);
-  lf_style_crnt_widget_prop(s.ui, padding_right, 20);
-  lf_style_crnt_widget_prop(s.ui, padding_top, 5);
-  lf_style_crnt_widget_prop(s.ui, padding_bottom, 5);
-  lf_style_crnt_widget_prop(s.ui, color, lf_color_from_hex(0x8D8B8A));
-  lf_style_crnt_widget_prop(s.ui, text_color, LF_WHITE); 
-  lf_style_crnt_widget_prop(s.ui, corner_radius, 4.0f); 
+  lf_style_crnt_widget_prop(s.ui, color, lf_color_from_hex(0x222222));
+  lf_style_crnt_widget_prop(s.ui, corner_radius, 10);
+  lf_widget_set_fixed_height(lf_crnt(s.ui), 12);
 
-  lf_text_h4(s.ui, text); 
+  lf_text_h4(s.ui, text);
+  lf_style_crnt_widget_prop(s.ui, text_color, LF_WHITE);
 
   lf_button_end(s.ui);
-
 }
 
 int main(void) {
@@ -88,18 +55,71 @@ int main(void) {
   lf_window_t win = lf_ui_core_create_window(1280, 720, "hello leif");
   s.ui = lf_ui_core_init(win);
 
-  lf_style_widget_prop(s.ui, lf_crnt(s.ui), color, lf_color_from_hex(0x222222));
+  lf_style_crnt_widget_prop(s.ui, color, lf_color_from_hex(0x202125));
+
+  lf_ui_core_set_font(s.ui, "/usr/share/fonts/TTF/LilexNerdFont-Regular.ttf");
 
   lf_div(s.ui);
-  lf_widget_set_padding(lf_crnt(s.ui), 0);
-  lf_crnt(s.ui)->sizing_type = SizingFitToContent;
-  lf_style_widget_prop(s.ui, lf_crnt(s.ui), color, LF_RED); 
+  lf_style_crnt_widget_prop(s.ui, color, lf_color_from_hex(0x111111));
+  lf_style_crnt_widget_prop(s.ui, corner_radius, 10);
+  lf_widget_set_padding(lf_crnt(s.ui), 20);
+  lf_widget_set_layout(lf_crnt(s.ui), LayoutHorizontal);
+  lf_widget_set_margin(lf_crnt(s.ui), 20);
+  lf_widget_set_alignment(lf_crnt(s.ui), AlignCenterVertical);
+
+  button("File");
+  button("Edit");
+  button("Open");
+
+  lf_div_end(s.ui);
 
   lf_div(s.ui);
-  lf_widget_set_padding(lf_crnt(s.ui), 0);
-  lf_crnt(s.ui)->sizing_type = SizingFitToContent;
-  lf_style_widget_prop(s.ui, lf_crnt(s.ui), color, LF_BLUE);
-  lf_text_h1(s.ui, "hello, world!");
+  lf_style_crnt_widget_prop(s.ui, color, lf_color_from_hex(0x111111));
+  lf_widget_set_layout(lf_crnt(s.ui), LayoutHorizontal);
+  lf_crnt(s.ui)->sizing_type = SizingGrow;
+  lf_widget_set_margin(lf_crnt(s.ui), 20);
+  lf_style_crnt_widget_prop(s.ui, margin_top, 0);
+  lf_widget_set_padding(lf_crnt(s.ui), 10);
+  lf_style_crnt_widget_prop(s.ui, corner_radius, 10);
+
+  lf_div(s.ui);
+  lf_crnt(s.ui)->sizing_type = SizingGrow;
+  lf_style_crnt_widget_prop(s.ui, color, lf_color_from_hex(0x333333));
+  lf_widget_set_margin(lf_crnt(s.ui), 20);
+  lf_widget_set_padding(lf_crnt(s.ui), 10);
+  lf_style_crnt_widget_prop(s.ui, corner_radius, 10);
+  lf_widget_set_fixed_width(lf_crnt(s.ui), 350);
+ 
+
+  lf_div(s.ui);
+  lf_style_crnt_widget_prop(s.ui, color, lf_color_from_hex(0x555555));
+  lf_style_crnt_widget_prop(s.ui, corner_radius, 5);
+  lf_text_h4(s.ui, " Industrial Society");
+  lf_div_end(s.ui);
+  lf_div(s.ui);
+  lf_text_h4(s.ui, " Comunist Manifesto");
+  lf_div_end(s.ui);
+  lf_div(s.ui);
+  lf_text_h4(s.ui, " Gott ist tot");
+  lf_div_end(s.ui);
+  lf_div(s.ui);
+  lf_text_h4(s.ui, " Friedrich Nietzsche");
+  lf_div_end(s.ui);
+
+  lf_div_end(s.ui);
+
+  lf_div(s.ui);
+  lf_style_crnt_widget_prop(s.ui, color, lf_color_from_hex(0x333333));
+  lf_crnt(s.ui)->sizing_type = SizingGrow;
+  lf_widget_set_margin(lf_crnt(s.ui), 20);
+  lf_widget_set_padding(lf_crnt(s.ui), 10);
+  lf_style_crnt_widget_prop(s.ui, corner_radius, 10);
+
+  lf_text_h2(s.ui, "INDUSTRIAL SOCIETY AND ITS FUTURE");
+  lf_style_crnt_widget_prop(s.ui, margin_bottom, 15);
+
+  lf_text_h4(s.ui, "The Industrial Revolution and its consequences have been a disaster for the human race. They have greatly increased the life-expectancy of those of us who live in “advanced” countries, but they have destabilized society, have made life unfulfilling, have subjected human beings to indignities, have led to widespread psychological suffering (in the Third World to physical suffering as well) and have inflicted severe damage on the natural world. The continued development of technology will worsen the situation. It will certainly subject human beings to greater indignities and inflict greater damage on the natural world, it will probably lead to greater social disruption and psychological suffering, and it may lead to increased physical suffering even in “advanced” countries.");
+
   lf_div_end(s.ui);
 
   lf_div_end(s.ui);
