@@ -406,15 +406,15 @@ lf_widget_set_layout(lf_widget_t* widget, lf_layout_type_t layout) {
 }
 
 void 
-lf_widget_apply_layout(lf_widget_t* widget) {
+lf_widget_apply_layout(lf_ui_state_t* ui, lf_widget_t* widget) {
   if(widget->layout_type == LayoutVertical) {
-    lf_layout_vertical(widget);
+    lf_layout_vertical(ui, widget);
   }
   if(widget->layout_type == LayoutHorizontal) {
-    lf_layout_horizontal(widget);
+    lf_layout_horizontal(ui, widget);
   }
   if(widget->layout_type == LayoutResponsiveGrid) {
-    lf_layout_responsive_grid(widget);
+    lf_layout_responsive_grid(ui, widget);
   }
 }
 

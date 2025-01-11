@@ -44,7 +44,7 @@ _button_shape(lf_ui_state_t* ui, lf_widget_t* widget) {
   (void)ui;
   if(!widget) return;
   if(widget->type != WidgetTypeButton) return;
-  lf_widget_apply_layout(widget);
+  lf_widget_apply_layout(ui, widget);
 }
 
 void 

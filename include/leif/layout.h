@@ -25,12 +25,13 @@ typedef enum {
 
 typedef enum {
   SizingFitToParent = 0,
-  SizingFitToContent 
+  SizingFitToContent,
+  SizingGrow
 } lf_sizing_type_t;
 
-void lf_layout_vertical(lf_widget_t* widget);
+void lf_layout_vertical(lf_ui_state_t* ui, lf_widget_t* widget);
 
-void lf_layout_horizontal(lf_widget_t* widget);
+void lf_layout_horizontal(lf_ui_state_t* ui, lf_widget_t* widget);
 
-void lf_layout_responsive_grid(lf_widget_t* widget);
+void lf_layout_responsive_grid(lf_ui_state_t* ui, lf_widget_t* widget);
 

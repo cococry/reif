@@ -140,7 +140,7 @@ void lf_widget_set_corner_radius(
 
 void lf_widget_set_layout(lf_widget_t* widget, lf_layout_type_t layout);
 
-void lf_widget_apply_layout(lf_widget_t* widget);
+void lf_widget_apply_layout(lf_ui_state_t* ui, lf_widget_t* widget);
 
 void lf_widget_listen_for(lf_widget_t* widget, uint32_t events);
 

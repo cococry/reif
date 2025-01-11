@@ -16,7 +16,7 @@ _recalculate_label(
     .y =  widget->container.pos.y + widget->props.padding_top 
   };
 
-  float wrap = widget->parent->container.pos.x + widget->parent->container.size.x - 5;
+  float wrap = widget->parent->container.pos.x + widget->parent->container.size.x - widget->parent->props.padding_right;
   if(widget->parent->sizing_type == SizingFitToContent) {
     wrap = -1.0f;
   }
@@ -30,7 +30,7 @@ _recalculate_label(
       .align = ParagraphAlignmentLeft
     }
   );
-  text->base.container.size.x = text_dimension.width;
+  text->base.container.size.x = text_dimension.width; 
   text->base.container.size.y = text_dimension.height;
   text->_text_dimension = text_dimension;
 
@@ -53,7 +53,6 @@ _text_render(
   if(!widget) return;
 
   lf_text_t* text = (lf_text_t*)widget;
-  _recalculate_label(ui, text);
   ui->render_rect(
     ui->render_state, 
     widget->container.pos,
@@ -66,11 +65,11 @@ _text_render(
       .x = widget->container.pos.x + widget->props.padding_left, 
       .y =  widget->container.pos.y + widget->props.padding_top 
     };
-    float wrap = widget->parent->container.pos.x + widget->parent->container.size.x - 5;
+    float wrap = widget->parent->container.pos.x + widget->parent->container.size.x - widget->parent->props.padding_right;
     if(widget->parent->sizing_type == SizingFitToContent) {
       wrap = -1.0f;
     }
-    lf_text_dimension_t text_dimension = ui->render_paragraph(
+    ui->render_paragraph(
       ui->render_state,
       text->label,
       text->font,
@@ -81,9 +80,6 @@ _text_render(
         .align = ParagraphAlignmentLeft
       }
     );
-    text->base.container.size.x = text_dimension.width;
-    text->base.container.size.y = text_dimension.height;
-    text->_text_dimension = text_dimension;
   }
 }
 

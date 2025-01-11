@@ -163,7 +163,7 @@ void
 root_shape(lf_ui_state_t* ui, lf_widget_t* widget) {
   if(!widget) return;
   if(widget->type != WidgetTypeRoot) return;
-  lf_widget_apply_layout(ui->root);
+  lf_widget_apply_layout(ui, ui->root);
 }
 
 void 

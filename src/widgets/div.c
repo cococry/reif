@@ -8,7 +8,7 @@ static void _div_shape(lf_ui_state_t* ui, lf_widget_t* widget);
 void 
 _div_render(lf_ui_state_t* ui, lf_widget_t* widget) {
   lf_div_t* div = (lf_div_t*)widget;
-  lf_widget_apply_layout(widget);
+  lf_widget_apply_layout(ui, widget);
   ui->render_rect(
     ui->render_state, div->base.container.pos,
     LF_WIDGET_SIZE_V2(widget),
@@ -22,7 +22,7 @@ _div_shape(lf_ui_state_t* ui, lf_widget_t* widget) {
   (void)ui;
   if(!widget) return;
   if(widget->type != WidgetTypeDiv) return;
-  lf_widget_apply_layout(widget);
+  lf_widget_apply_layout(ui, widget);
 }
 
 lf_div_t* 
