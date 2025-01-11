@@ -107,6 +107,7 @@ lf_text_t* _text_create(
 
   text->_text_dimension = text_dimension;
   text->base = *lf_widget_create(
+    ui->crnt_widget_id++,
     WidgetTypeText,
     LF_SCALE_CONTAINER(text_dimension.width, text_dimension.height),
     ui->theme->text_props,

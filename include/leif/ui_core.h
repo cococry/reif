@@ -56,6 +56,8 @@ struct lf_ui_state_t {
   uint64_t crnt_page_id;
   bool root_needs_render;
 
+  uint32_t crnt_widget_id;
+
   lf_asset_manager_t* asset_manager;
 
   lf_render_rect_func_t render_rect;

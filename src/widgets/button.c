@@ -117,6 +117,7 @@ lf_button_create(
 
   lf_widget_props_t props = ui->theme->button_props;
   button->base = *lf_widget_create(
+    ui->crnt_widget_id++,
     WidgetTypeButton,
     LF_SCALE_CONTAINER(
       150, 

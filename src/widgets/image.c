@@ -31,6 +31,7 @@ lf_image_t* _img_create(
   }
 
   img->base = *lf_widget_create(
+    ui->crnt_widget_id++,
     WidgetTypeImage,
     LF_SCALE_CONTAINER(img->width, img->height),
     ui->theme->img_props,

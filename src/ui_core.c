@@ -265,10 +265,12 @@ lf_ui_core_init(lf_window_t win) {
   state->asset_manager = lf_asset_manager_init();
 
   state->crnt_page_id = 0;
+  state->crnt_widget_id = 0;
 
   lf_ui_core_set_root_layout(state, default_root_layout_func);
 
   state->root = lf_widget_create(
+    state->crnt_widget_id++,
     WidgetTypeRoot,
     LF_SCALE_CONTAINER(lf_win_get_size(win).x, lf_win_get_size(win).y),
     (lf_widget_props_t){0},
@@ -442,10 +444,12 @@ lf_ui_state_t* lf_ui_core_init_ex(
   state->asset_manager = lf_asset_manager_init();
 
   state->crnt_page_id = 0;
+  state->crnt_widget_id = 0;
 
   lf_ui_core_set_root_layout(state, default_root_layout_func);
 
   state->root = lf_widget_create(
+    state->crnt_widget_id++,
     WidgetTypeRoot,
     LF_SCALE_CONTAINER((float)lf_win_get_size(win).x, lf_win_get_size(win).y),
     (lf_widget_props_t){0},

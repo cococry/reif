@@ -68,6 +68,7 @@ count_anims(lf_animation_t* head) {
 }
 lf_widget_t* 
 lf_widget_create(
+  uint32_t id,
   lf_widget_type_t type,
   lf_container_t fallback_container,
   lf_widget_props_t props,
@@ -80,6 +81,7 @@ lf_widget_create(
   widget->childs = NULL;
   widget->cap_childs = 0;
   widget->num_childs = 0;
+  widget->id = id;
   widget->visible = true;
   widget->_marked_for_removal = false;
 
@@ -194,7 +196,15 @@ void lf_widget_shape(
   lf_ui_state_t* ui,
   lf_widget_t* widget) {
   if (!widget->shape) return;
+  if(widget->parent) {
+    if(!lf_container_intersets_container(
+      LF_WIDGET_CONTAINER(widget), ui->root->container) || 
+      !lf_container_intersets_container(LF_WIDGET_CONTAINER(widget), LF_WIDGET_CONTAINER(widget->parent))) {
+      return;
+    }
+  }
   widget->shape(ui, widget);
+  printf("shaping widget %i\n", widget->id);
   for (uint32_t i = 0; i < widget->num_childs; i++) {
     lf_widget_shape(ui, widget->childs[i]);
   }
@@ -222,13 +232,12 @@ void
 lf_widget_handle_event(lf_ui_state_t* ui, lf_widget_t* widget, lf_event_t event) {
   if(!widget) return;
   if(widget->handle_event && lf_widget_is_listening(widget, event.type)) {
-    widget->handle_event(ui, widget, event); // Removes the button
+    widget->handle_event(ui, widget, event); 
   }
 
   if(!widget) {
     return;
   }
-  // Handles the events of the childs (Segfaults)
   for(uint32_t i = 0; i < widget->num_childs; i++) {
     lf_widget_handle_event(ui, widget->childs[i], event);
   }
@@ -244,6 +253,7 @@ lf_widget_add_child(lf_widget_t* parent, lf_widget_t* child) {
   }
   parent->childs[parent->num_childs++] = child;
   child->parent = parent;
+  
   return 0;
 }
 

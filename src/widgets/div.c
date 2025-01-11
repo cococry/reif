@@ -34,12 +34,15 @@ lf_div_create(
   lf_div_t* div = malloc(sizeof(*div));
 
   div->base = *lf_widget_create(
+    ui->crnt_widget_id++,
     WidgetTypeDiv,
     LF_SCALE_CONTAINER(parent->container.size.x,0),
     ui->theme->div_props,
     _div_render,
     NULL,
     _div_shape);
+
+  ui->crnt_widget_id++;
 
   lf_widget_add_child(parent, (lf_widget_t*)div);
 

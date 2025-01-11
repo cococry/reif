@@ -36,6 +36,7 @@ struct lf_widget_t {
   lf_widget_t* parent;
   lf_widget_t** childs;
   uint32_t num_childs, cap_childs;
+  uint32_t id;
 
   lf_container_t container;
 
@@ -72,6 +73,7 @@ struct lf_widget_t {
 };
 
 lf_widget_t* lf_widget_create(
+    uint32_t id,
     lf_widget_type_t type,
     lf_container_t fallback_container,
     lf_widget_props_t props,

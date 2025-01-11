@@ -14,9 +14,6 @@ lf_div(lf_ui_state_t* ui) {
   lf_div_t* div = lf_div_create(ui, ui->_last_parent);
   ui->_last_parent = &div->base;
   ui->_current_widget = &div->base;
-  if(!div->base.parent) {
-    printf("NO PARENT.\n");
-  }
   return div;
 }
 
