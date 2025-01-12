@@ -150,6 +150,7 @@ lf_widget_render(lf_ui_state_t* ui,  lf_widget_t* widget) {
       return;
     }
 
+    printf("rendering widget: %i\n", widget->id);
     widget->render(ui, widget);
 #ifdef LF_RUNARA
     if(widget->type == WidgetTypeDiv) {
@@ -204,7 +205,6 @@ void lf_widget_shape(
     }
   }
   widget->shape(ui, widget);
-  printf("shaping widget %i\n", widget->id);
   for (uint32_t i = 0; i < widget->num_childs; i++) {
     lf_widget_shape(ui, widget->childs[i]);
   }
