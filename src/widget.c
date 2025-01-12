@@ -118,17 +118,18 @@ lf_widget_t* get_first_intersecting_parent(lf_widget_t* widget) {
   lf_widget_t* current = widget->parent;
   while (current != NULL) {
     if (lf_container_intersets_container(LF_WIDGET_CONTAINER(widget), LF_WIDGET_CONTAINER(current))) {
-      return current; // Return the first intersecting parent found
+      return current; 
     }
-    current = current->parent; // Move up to the next parent in the hierarchy
+    current = current->parent; 
   }
-  return NULL; // Return NULL if no intersecting parent is found
+  return NULL; 
 }
 
 static float widget_get_cull_end_y(lf_widget_t* widget) {
   return 
         widget->container.pos.y + 
-        widget->props.padding_top + 
+        widget->props.padding_top +
+        widget->props.padding_bottom +
         widget->container.size.y - 
         widget->props.border_width;
 } 
@@ -137,6 +138,7 @@ static float widget_get_cull_end_x(lf_widget_t* widget) {
   return 
         widget->container.pos.x + 
         widget->props.padding_left + 
+        widget->props.padding_right + 
         widget->container.size.x - 
         widget->props.border_width;
 } 
@@ -150,7 +152,6 @@ lf_widget_render(lf_ui_state_t* ui,  lf_widget_t* widget) {
       return;
     }
 
-    printf("rendering widget: %i\n", widget->id);
     widget->render(ui, widget);
 #ifdef LF_RUNARA
     if(widget->type == WidgetTypeDiv) {

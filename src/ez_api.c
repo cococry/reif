@@ -104,10 +104,29 @@ lf_crnt(lf_ui_state_t* ui) {
 
 lf_image_t* 
 lf_image(lf_ui_state_t* ui, const char* filepath) {
-  return lf_image_create(ui, ui->_last_parent, filepath);
+  lf_image_t* img = lf_image_create(ui, ui->_last_parent, filepath);
+  ui->_current_widget = &img->base;
+  return img; 
 }
 
 lf_image_t* 
-lf_image_ex(lf_ui_state_t* ui, const char* filepath, uint32_t w, uint32_t h) {
-  return lf_image_create_ex(ui, ui->_last_parent, filepath, w, h);
+lf_image_sized(lf_ui_state_t* ui, const char* filepath, uint32_t w, uint32_t h) {
+  lf_image_t* img = lf_image_create_ex(ui, ui->_last_parent, filepath, w, h);
+  ui->_current_widget = &img->base;
+  return img; 
+}
+
+lf_image_t* 
+lf_image_sized_w(lf_ui_state_t* ui, const char* filepath, uint32_t w) {
+  lf_image_t* img = lf_image_create_ex_w(ui, ui->_last_parent, filepath, w);
+  ui->_current_widget = &img->base;
+  return img; 
+}
+
+
+lf_image_t* 
+lf_image_sized_h(lf_ui_state_t* ui, const char* filepath, uint32_t h) {
+  lf_image_t* img = lf_image_create_ex_h(ui, ui->_last_parent, filepath, h);
+  ui->_current_widget = &img->base;
+  return img; 
 }

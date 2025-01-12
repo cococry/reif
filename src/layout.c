@@ -6,7 +6,6 @@
 
 static void adjust_widget_size(lf_ui_state_t* ui, lf_widget_t* widget, bool* o_fixed_w, bool* o_fixed_h, bool horizontal);
 static vec2s effective_widget_size(lf_widget_t* widget);
-static void widget_fit_into_parent(lf_widget_t* widget);
 static void reset_widget_props(lf_widget_t* widget);
 
 void adjust_widget_size(lf_ui_state_t* ui, lf_widget_t* widget, bool* o_fixed_w, bool* o_fixed_h, bool horizontal) {
@@ -101,7 +100,7 @@ vec2s measure_children(lf_widget_t* widget, vec2s* o_max) {
   return size;
 }
 
-void 
+/*void 
 widget_fit_into_parent(lf_widget_t* widget) {
   if(!widget->parent) return;
   if(widget->container.pos.x + lf_widget_width(widget) > widget->parent->container.pos.x + 
@@ -116,7 +115,7 @@ widget_fit_into_parent(lf_widget_t* widget) {
     widget->container.size.y = widget->parent->container.pos.y + lf_widget_height(widget->parent) - widget->container.pos.y
       - widget->parent->props.padding_bottom;
   }
-}
+}*/
 
 void 
 reset_widget_props(lf_widget_t* widget) {
@@ -277,7 +276,7 @@ void lf_layout_horizontal(lf_ui_state_t* ui, lf_widget_t* widget) {
   if(!widget->_fixed_height && widget->sizing_type != SizingGrow) {
     widget->container.size.y = max.y; 
   }
-  widget_fit_into_parent(widget);
+  //widget_fit_into_parent(widget);
   lf_widget_apply_size_hints(widget);
 
   vec2s offset = (vec2s){

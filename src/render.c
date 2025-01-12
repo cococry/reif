@@ -199,15 +199,22 @@ lf_rn_render_delete_texture(uint32_t tex_id) {
 }
 
 void lf_rn_render_texture(
-    void* render_state,
-    vec2s pos, 
-    lf_color_t color,
-    lf_texture_id tex_id,
-    uint32_t tex_width, uint32_t tex_height) {
-rn_image_render(
+  void* render_state,
+  vec2s pos, 
+  lf_color_t color,
+  lf_texture_id tex_id,
+  uint32_t tex_width, uint32_t tex_height,
+  float corner_radius,
+  float border_width,
+  lf_color_t border_color) {
+rn_image_render_ex(
   render_state,
   pos, 
+  0.0f,
   _lf_color_to_rn(color), 
-  (RnTexture){.id = tex_id, .width = tex_width, .height = tex_height});
+  (RnTexture){.id = tex_id, .width = tex_width, .height = tex_height},
+  _lf_color_to_rn(border_color),
+  border_width,
+  corner_radius);
 }
 #endif 

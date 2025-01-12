@@ -91,7 +91,11 @@ typedef void (*lf_render_texture)(
     vec2s pos, 
     lf_color_t color,
     lf_texture_id tex_id,
-    uint32_t tex_width, uint32_t tex_height);
+    uint32_t tex_width, uint32_t tex_height,
+    float corner_radius,
+    float border_width,
+    lf_color_t border_color
+    );
 
 #ifdef LF_RUNARA
 
@@ -178,7 +182,10 @@ void lf_rn_render_texture(
     vec2s pos, 
     lf_color_t color,
     lf_texture_id tex_id,
-    uint32_t tex_width, uint32_t tex_height);
+    uint32_t tex_width, uint32_t tex_height,
+    float corner_radius,
+    float border_width,
+    lf_color_t border_color);
 
 #endif 
 

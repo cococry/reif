@@ -1,6 +1,6 @@
 sudo make install 
-make
+make -j4
 sudo make install 
 cd tests 
-make 
+make -j4
 ./bin/test
