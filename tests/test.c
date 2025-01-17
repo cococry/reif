@@ -58,15 +58,14 @@ int main(void) {
 
   lf_style_crnt_widget_prop(s.ui, color, lf_color_from_hex(0x282828));
 
-  lf_ui_core_set_font(s.ui, "/usr/share/fonts/OTF/Lora-Italic.otf");
+  lf_ui_core_set_font(s.ui, s.ui->render_font_file_from_name("Inter"));
 
-  lf_widget_set_alignment(lf_crnt(s.ui), AlignCenterHorizontal);
-
-  lf_text_h1(s.ui, "INDUSTRIAL SOCIETY AND ITS FUTURE");
-  lf_style_crnt_widget_prop(s.ui, margin_bottom, 15);
-
-  lf_text_h2(s.ui, "The Industrial Revolution and its consequences have been a disaster for the human race. They have greatly increased the life-expectancy of those of us who live in “advanced” countries, but they have destabilized society, have made life unfulfilling, have subjected human beings to indignities, have led to widespread psychological suffering (in the Third World to physical suffering as well) and have inflicted severe damage on the natural world. The continued development of technology will worsen the situation. It will certainly subject human beings to greater indignities and inflict greater damage on the natural world, it will probably lead to greater social disruption and psychological suffering, and it may lead to increased physical suffering even in “advanced” countries.");
-
+  lf_div(s.ui);
+  lf_style_crnt_widget_prop(s.ui, color, LF_RED);
+  lf_widget_set_max_width(lf_crnt(s.ui), 300);
+  lf_text_h1(s.ui, "Warum ich Funk abgesagt habe und kein bock mehr habe bruder"); 
+  lf_style_crnt_widget_prop(s.ui, color, LF_BLUE);
+  lf_div_end(s.ui);
  
   while(s.ui->running) {
     lf_ui_core_next_event(s.ui);

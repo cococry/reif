@@ -74,6 +74,11 @@ typedef struct {
 typedef RnFont* lf_font_t;
 #endif
 
+typedef enum {
+  ParagraphAlignmentLeft,
+  ParagraphAlignmentRight,
+  ParagraphAlignmentCenter,
+} lf_paragraph_alignment_t;
 typedef struct {
   lf_color_t color;
   lf_color_t text_color;
@@ -87,6 +92,8 @@ typedef struct {
   float corner_radius, border_width;
 
   lf_color_t border_color;
+
+  lf_paragraph_alignment_t text_align;
 
 } lf_widget_props_t;
 

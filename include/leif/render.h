@@ -13,13 +13,10 @@ typedef unsigned int lf_texture_id;
 
 typedef struct {
   float width, height;
+
+  vec2s paragraph_pos;
 } lf_text_dimension_t;
 
-typedef enum {
-  ParagraphAlignmentLeft,
-  ParagraphAlignmentRight,
-  ParagraphAlignmentCenter,
-} lf_paragraph_alignment_t;
 
 typedef struct {
   float wrap;
@@ -92,6 +89,7 @@ typedef void (*lf_render_texture)(
     lf_color_t color,
     lf_texture_id tex_id,
     uint32_t tex_width, uint32_t tex_height,
+
     float corner_radius,
     float border_width,
     lf_color_t border_color

@@ -321,7 +321,8 @@ lf_ui_core_default_theme(void) {
     .margin_bottom = 0,
     .corner_radius = 0.0f, 
     .border_width = 0.0f, 
-    .border_color = LF_NO_COLOR, 
+    .border_color = LF_NO_COLOR,
+    .text_align = ParagraphAlignmentLeft
   };
 
   theme->button_props = (lf_widget_props_t){
@@ -338,6 +339,7 @@ lf_ui_core_default_theme(void) {
     .corner_radius = 0.0f, 
     .border_width = 0.0f, 
     .border_color = LF_NO_COLOR,
+    .text_align = ParagraphAlignmentLeft
   };
 
   theme->text_props = (lf_widget_props_t){
@@ -354,6 +356,7 @@ lf_ui_core_default_theme(void) {
     .corner_radius = 0.0f, 
     .border_width = 0.0f, 
     .border_color = LF_NO_COLOR,
+    .text_align = ParagraphAlignmentLeft
   };
 
   theme->img_props = (lf_widget_props_t){
@@ -370,6 +373,7 @@ lf_ui_core_default_theme(void) {
     .corner_radius = 0.0f, 
     .border_width = 0.0f, 
     .border_color = LF_NO_COLOR,
+    .text_align = ParagraphAlignmentLeft
   };
 
 

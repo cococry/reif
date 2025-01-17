@@ -45,7 +45,8 @@ lf_text_dimension_t lf_rn_render_text(
 
   return (lf_text_dimension_t){
     .width  = props.width,
-    .height = props.height
+    .height = props.height, 
+    .paragraph_pos = props.paragraph_pos
   };
 }
 
@@ -70,7 +71,8 @@ lf_rn_render_text_paragraph(
 
   return (lf_text_dimension_t){
     .width  = text_props.width,
-    .height = text_props.height
+    .height = text_props.height,
+    .paragraph_pos = text_props.paragraph_pos
   };
 
 }
@@ -88,7 +90,8 @@ lf_rn_render_get_text_dimension(
 
   return (lf_text_dimension_t){
     .width  = props.width,
-    .height = props.height
+    .height = props.height,
+    .paragraph_pos = props.paragraph_pos
   };
 }
 
@@ -112,7 +115,8 @@ lf_rn_render_get_text_dimension_paragraph(
 
   return (lf_text_dimension_t){
     .width  = text_props.width,
-    .height = text_props.height
+    .height = text_props.height,
+    .paragraph_pos = text_props.paragraph_pos
   };
 
 }
