@@ -27,7 +27,7 @@ _recalculate_label(
     text->font,
     (lf_paragraph_props_t){
       .wrap = wrap, 
-      .align = 1 
+      .align = widget->props.text_align
     }
   );
   text->base.container.size.x = text_dimension.width; 
@@ -59,20 +59,24 @@ _text_render(
     .y =  widget->container.pos.y + widget->props.padding_top 
   };
 
-  float wrap = widget->parent->container.pos.x + widget->parent->container.size.x - widget->parent->props.padding_right;
+  float wrap = widget->parent->container.pos.x + 
+   widget->parent->container.size.x - widget->parent->props.padding_right;
+   
   if(widget->parent->sizing_type == SizingFitToContent) {
     wrap = -1.0f;
   }
-  widget->container.pos.x = ui->render_get_paragraph_dimension(
-    ui->render_state,
-    text->label,
-    text_pos,
-    text->font,
-    (lf_paragraph_props_t){
-      .wrap = wrap, 
-      .align = 1 
-    }
-  ).paragraph_pos.x;
+  /*if(widget->props.text_align != ParagraphAlignmentLeft) {
+    widget->container.pos.x = ui->render_get_paragraph_dimension(
+      ui->render_state,
+      text->label,
+      text_pos,
+      text->font,
+      (lf_paragraph_props_t){
+        .wrap = wrap, 
+        .align = widget->props.text_align
+      }
+    ).paragraph_pos.x; 
+  }*/
   ui->render_rect(
     ui->render_state, 
     widget->container.pos,
@@ -89,7 +93,7 @@ _text_render(
       widget->props.text_color,
       (lf_paragraph_props_t){
         .wrap = wrap, 
-        .align = 1 
+        .align = widget->props.text_align
       }
     );
   }

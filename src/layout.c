@@ -230,8 +230,8 @@ lf_layout_vertical(lf_ui_state_t* ui, lf_widget_t* widget) {
       ptr.y -= size.y + child->props.margin_bottom;
 
     bool centered_horizontal = lf_flag_exists(&widget->alignment_flags, AlignCenterHorizontal);
-      child->container.pos.x = ptr.x + ((centered_horizontal) ? (lf_widget_width(widget) - size.x) / 2.0f : 
-     child->props.margin_left); 
+    child->container.pos.x = ptr.x + ((centered_horizontal) ? (lf_widget_width(widget) - size.x) / 2.0f : 
+      child->props.margin_left); 
     child->container.pos.y = ptr.y;
 
     if(widget->justify_type == JustifyStart)

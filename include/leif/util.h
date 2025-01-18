@@ -75,9 +75,9 @@ typedef RnFont* lf_font_t;
 #endif
 
 typedef enum {
-  ParagraphAlignmentLeft,
-  ParagraphAlignmentRight,
+  ParagraphAlignmentLeft = 0,
   ParagraphAlignmentCenter,
+  ParagraphAlignmentRight,
 } lf_paragraph_alignment_t;
 typedef struct {
   lf_color_t color;
