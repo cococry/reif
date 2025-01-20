@@ -100,22 +100,6 @@ vec2s measure_children(lf_widget_t* widget, vec2s* o_max) {
   return size;
 }
 
-/*void 
-widget_fit_into_parent(lf_widget_t* widget) {
-  if(!widget->parent) return;
-  if(widget->container.pos.x + lf_widget_width(widget) > widget->parent->container.pos.x + 
-    lf_widget_width(widget->parent) - widget->parent->props.padding_right && 
-    !widget->_fixed_width) {
-    widget->container.size.x = widget->parent->container.pos.x + lf_widget_width(widget->parent) - widget->container.pos.x
-      - widget->parent->props.padding_right;
-  }
-  if(widget->container.pos.y + lf_widget_height(widget) > widget->parent->container.pos.y + 
-    lf_widget_height(widget->parent) - widget->parent->props.padding_bottom && 
-    !widget->_fixed_height) {
-    widget->container.size.y = widget->parent->container.pos.y + lf_widget_height(widget->parent) - widget->container.pos.y
-      - widget->parent->props.padding_bottom;
-  }
-}*/
 
 void 
 reset_widget_props(lf_widget_t* widget) {

@@ -65,18 +65,6 @@ _text_render(
   if(widget->parent->sizing_type == SizingFitToContent) {
     wrap = -1.0f;
   }
-  /*if(widget->props.text_align != ParagraphAlignmentLeft) {
-    widget->container.pos.x = ui->render_get_paragraph_dimension(
-      ui->render_state,
-      text->label,
-      text_pos,
-      text->font,
-      (lf_paragraph_props_t){
-        .wrap = wrap, 
-        .align = widget->props.text_align
-      }
-    ).paragraph_pos.x; 
-  }*/
   ui->render_rect(
     ui->render_state, 
     widget->container.pos,
@@ -84,6 +72,8 @@ _text_render(
     widget->props.color, widget->props.border_color,
     widget->props.border_width, widget->props.corner_radius);
 
+  if(widget->props.text_align == ParagraphAlignmentCenter) {
+     }
   if(text->label) {
     text->_text_dimension = ui->render_paragraph(
       ui->render_state,
@@ -107,7 +97,7 @@ lf_text_t* _text_create(
   if(!parent) return NULL;
   lf_text_t* text = (lf_text_t*)malloc(sizeof(lf_text_t));
 
-  text->label = (char*)label;
+  text->label = strdup(label);
   text->font = font;
 
   lf_text_dimension_t text_dimension = ui->render_get_paragraph_dimension(
