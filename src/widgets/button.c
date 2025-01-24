@@ -26,17 +26,20 @@ _button_render(
   lf_button_t* button = (lf_button_t*)widget;
   
   if(button->_held) {
-    widget->props.color =  lf_color_dim(button->base._initial_props.color, 0.8f);
+    widget->_rendered_props.color =  lf_color_dim(button->base._initial_props.color, 0.8f);
   } else if(button->_hovered) {
-    widget->props.color =  lf_color_dim(button->base._initial_props.color, 0.9f);
+    widget->_rendered_props.color =  lf_color_dim(button->base._initial_props.color, 0.9f);
   }
 
   ui->render_rect(
     ui->render_state, 
-    widget->container.pos, 
-    LF_WIDGET_SIZE_V2(widget),
-    widget->props.color, widget->props.border_color,
-    widget->props.border_width, widget->props.corner_radius);
+    widget->container.pos,
+    (vec2s){
+      .x = widget->container.size.x + widget->_rendered_props.padding_left + widget->_rendered_props.padding_right,
+      .y = widget->container.size.y + widget->_rendered_props.padding_top + widget->_rendered_props.padding_bottom
+    },
+    widget->_rendered_props.color, widget->props.border_color,
+    widget->_rendered_props.border_width, widget->props.corner_radius);
 }
 
 void 

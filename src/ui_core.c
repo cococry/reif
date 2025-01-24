@@ -511,9 +511,10 @@ lf_ui_core_next_event(lf_ui_state_t* ui) {
   ui->delta_time = cur_time - ui->_last_time;
   ui->_last_time = cur_time;
 
-  if(lf_widget_animate(ui, ui->root)) {
+  lf_widget_t* shape = NULL;
+  if(lf_widget_animate(ui, ui->root, &shape)) {
     ui->root_needs_render = true;
-    lf_widget_shape(ui, ui->root);
+    lf_widget_shape(ui, shape);
   }
 
   bool rendered = lf_windowing_get_current_event() == WinEventRefresh;

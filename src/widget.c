@@ -89,6 +89,7 @@ lf_widget_create(
   widget->container = fallback_container;
   widget->props = props;
   widget->_initial_props = props;
+  widget->_rendered_props = props;
   widget->justify_type = JustifyStart;
   widget->sizing_type = SizingFitToParent;
 
@@ -206,6 +207,8 @@ void lf_widget_shape(
     }
   }
   widget->shape(ui, widget);
+  if(widget == ui->root)
+    printf("SHaped root!\n");
   for (uint32_t i = 0; i < widget->num_childs; i++) {
     lf_widget_shape(ui, widget->childs[i]);
   }
@@ -213,20 +216,32 @@ void lf_widget_shape(
 
 bool lf_widget_animate(
   lf_ui_state_t* ui,
-  lf_widget_t* widget) {
+  lf_widget_t* widget,
+  lf_widget_t** o_shape) {  
   bool animated = false;
 
   uint32_t n_anims = count_anims(widget->anims);
   if (n_anims != 0) {
     widget_animate(ui, widget);
-    animated = true;  
+    animated = true;
+    if (*o_shape == NULL) {
+      *o_shape = widget;
+    }
   } 
+
   for (uint32_t i = 0; i < widget->num_childs; i++) {
-    if (lf_widget_animate(ui, widget->childs[i])) {
-      animated = true;  
+    if (lf_widget_animate(ui, widget->childs[i], o_shape)) {
+      animated = true;
     }
   }
+
   return animated;
+}
+
+
+bool 
+lf_widget_is_animating(lf_widget_t* widget) {
+  return count_anims(widget->anims) != 0; 
 }
 
 void
@@ -316,16 +331,26 @@ void lf_widget_remove_child_from_memory(lf_widget_t* parent, uint32_t child_idx)
 
 float 
 lf_widget_width(lf_widget_t* widget) {
-  return widget->container.size.x + 
-  widget->props.padding_left      +
-  widget->props.padding_right;
+  return lf_widget_width_ex(widget, widget->props); 
 }
 
 float 
 lf_widget_height(lf_widget_t* widget) {
+  return lf_widget_height_ex(widget, widget->props); 
+}
+
+float 
+lf_widget_width_ex(lf_widget_t* widget, lf_widget_props_t props) {
+  return widget->container.size.x + 
+  props.padding_left      +
+  props.padding_right;
+}
+
+float 
+lf_widget_height_ex(lf_widget_t* widget, lf_widget_props_t props) {
   return widget->container.size.y + 
-  widget->props.padding_top       +
-  widget->props.padding_bottom;
+  props.padding_top       +
+  props.padding_bottom;
 }
 
 void lf_widget_set_padding(
@@ -342,10 +367,7 @@ void lf_widget_set_padding(
   widget->props.padding_left = padding; 
   widget->props.padding_right = padding;
 
-  widget->_initial_props.padding_top = padding;
-  widget->_initial_props.padding_bottom = padding;
-  widget->_initial_props.padding_left = padding; 
-  widget->_initial_props.padding_right = padding;
+  lf_widget_submit_props(widget);
 }
 
 void lf_widget_set_margin(
@@ -542,6 +564,7 @@ void lf_widget_interrupt_all_animations(
 void 
 lf_widget_submit_props(lf_widget_t* widget) {
   widget->_initial_props = widget->props;
+  widget->_rendered_props = widget->props;
 }
 
 void 

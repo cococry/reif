@@ -40,7 +40,7 @@ struct lf_widget_t {
 
   lf_container_t container;
 
-  lf_widget_props_t props, _initial_props;
+  lf_widget_props_t props, _initial_props, _rendered_props;
 
   lf_widget_render_cb render;
   lf_widget_handle_event_cb handle_event;
@@ -100,11 +100,18 @@ void lf_widget_shape(
 
 bool lf_widget_animate(
     lf_ui_state_t* ui,
-    lf_widget_t* widget);
+    lf_widget_t* widget,
+    lf_widget_t** o_shape);
+
+bool lf_widget_is_animating(lf_widget_t* widget);
 
 float lf_widget_width(lf_widget_t* widget);
 
 float lf_widget_height(lf_widget_t* widget);
+
+float lf_widget_width_ex(lf_widget_t* widget, lf_widget_props_t props);
+
+float lf_widget_height_ex(lf_widget_t* widget, lf_widget_props_t props);
 
 void lf_widget_remove(lf_widget_t* widget);
 

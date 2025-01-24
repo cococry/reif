@@ -112,11 +112,15 @@ lf_text_t* _text_create(
   );
 
   text->_text_dimension = text_dimension;
+
+  lf_widget_props_t props = ui->theme->text_props;
+  props.text_color = parent->props.text_color; 
+
   text->base = *lf_widget_create(
     ui->crnt_widget_id++,
     WidgetTypeText,
     LF_SCALE_CONTAINER(text_dimension.width, text_dimension.height),
-    ui->theme->text_props,
+    props,
     _text_render, 
     NULL,
    _text_shape
