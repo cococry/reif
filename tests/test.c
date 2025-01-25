@@ -108,16 +108,8 @@ int main(void) {
   lf_ui_core_set_font(s.ui, s.ui->render_font_file_from_name("JetBrains Mono Nerd Font"));
 
   lf_div(s.ui);
-  lf_widget_set_layout(lf_crnt(s.ui), LayoutHorizontal);
-  lf_crnt(s.ui)->sizing_type = SizingFitToContent;
+  lf_widget_set_alignment(lf_crnt(s.ui), AlignCenterHorizontal);
   lf_style_crnt_widget_prop(s.ui, color, LF_GREEN);
-
-  lf_div(s.ui);
-  lf_widget_set_fixed_width(lf_crnt(s.ui), 50.0f);
-  lf_widget_set_fixed_height(lf_crnt(s.ui), 50.0f);
-  lf_style_crnt_widget_prop(s.ui, color, LF_RED);
-
-  lf_div_end(s.ui);
 
   button("Click me", NULL);
 

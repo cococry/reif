@@ -207,8 +207,6 @@ void lf_widget_shape(
     }
   }
   widget->shape(ui, widget);
-  if(widget == ui->root)
-    printf("SHaped root!\n");
   for (uint32_t i = 0; i < widget->num_childs; i++) {
     lf_widget_shape(ui, widget->childs[i]);
   }

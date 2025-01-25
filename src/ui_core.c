@@ -514,7 +514,7 @@ lf_ui_core_next_event(lf_ui_state_t* ui) {
   lf_widget_t* shape = NULL;
   if(lf_widget_animate(ui, ui->root, &shape)) {
     ui->root_needs_render = true;
-    lf_widget_shape(ui, shape);
+    lf_widget_shape(ui, shape->parent);
   }
 
   bool rendered = lf_windowing_get_current_event() == WinEventRefresh;
@@ -522,8 +522,10 @@ lf_ui_core_next_event(lf_ui_state_t* ui) {
   // Check if there is some widget to be rerendered
   if(ui->root_needs_render) { 
     if(ui->_root_never_shaped) {
-      lf_widget_shape(ui, ui->root);
-      ui->_root_never_shaped= false;
+      // Dirty double shape
+      for(uint32_t i = 0; i < 2; i++)
+        lf_widget_shape(ui, ui->root);
+      ui->_root_never_shaped = false;
     }
     lf_ui_core_commit_entire_render(ui);
     rendered = true;

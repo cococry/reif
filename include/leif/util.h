@@ -23,7 +23,11 @@ typedef struct lf_ui_state_t lf_ui_state_t;
 
 #define LF_WIDGET_SIZE_V2(widget) ((vec2s){                   \
     .x = lf_widget_width((widget)),                           \
-    .y = lf_widget_height(widget)})                           \
+    .y = lf_widget_height((widget))})                          \
+
+#define LF_WIDGET_SIZE_RENDERED_V2(widget) ((vec2s){                    \
+    .x = lf_widget_width_ex(widget, widget->_rendered_props),         \
+    .y = lf_widget_height_ex(widget, widget->_rendered_props)})         \
 
 #define LF_WIDGET_CONTAINER(widget) ((lf_container_t){        \
     .pos = (widget)->container.pos,                           \
