@@ -261,6 +261,11 @@ int32_t
 lf_widget_add_child(lf_widget_t* parent, lf_widget_t* child) {
   if(!parent || !child) return 1;
 
+  child->props.text_color = parent->props.text_color;
+  child->font_style   = parent->font_style;
+  child->font_size    = parent->font_size;
+  child->font_family  = parent->font_family;
+
   if(parent->num_childs >= parent->cap_childs) {
     uint32_t new_cap = parent->cap_childs == 0 ? 2 : parent->cap_childs * 2;
     widget_resize_children(parent, new_cap);
@@ -631,4 +636,14 @@ void
 lf_widget_set_max_height(lf_widget_t* widget, float height) {
   widget->_max_size.y = height;
   lf_widget_apply_size_hints(widget);
+}
+
+void 
+lf_widget_set_font_style(lf_ui_state_t* ui, lf_widget_t* widget, lf_font_style_t style) {
+  if(widget->type == WidgetTypeText) {
+    lf_text_set_font(ui, (lf_text_t*)widget, widget->font_family, style, ((lf_text_t*)widget)->font.pixel_size);
+  }
+  for(uint32_t i = 0; i < widget->num_childs; i++) {
+    lf_widget_set_font_style(ui, widget->childs[i], style);
+  }
 }

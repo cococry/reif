@@ -24,53 +24,60 @@ typedef struct {
 } lf_paragraph_props_t;
 
 typedef void (*lf_render_rect_func_t)(
-      void*, vec2s, vec2s, 
-      lf_color_t, lf_color_t, 
-      float, float);
+      void* render_state,
+      vec2s pos,
+      vec2s size, 
+      lf_color_t color,
+      lf_color_t border_color, 
+      float border_width, 
+      float corner_radius);
 
 typedef lf_text_dimension_t (*lf_render_text_func_t)(
-      void*, const char*,
-      lf_font_t, 
-      vec2s, lf_color_t);
+      void* render_state, 
+      const char* text,
+      lf_font_t font, 
+      vec2s pos,
+      lf_color_t color);
 
 typedef lf_text_dimension_t (*lf_render_text_paragraph_func_t)(
-      void*, 
-      const char*,
-      lf_font_t, 
-      vec2s, 
-      lf_color_t,
-      lf_paragraph_props_t);
+      void* render_state, 
+      const char* paragraph,
+      lf_font_t font, 
+      vec2s pos, 
+      lf_color_t color,
+      lf_paragraph_props_t props);
 
 typedef lf_text_dimension_t (*lf_render_get_text_dimension_func_t)(
-      void*,
-      const char*, lf_font_t); 
+      void* render_state,
+      const char* text, 
+      lf_font_t font); 
 
 typedef lf_text_dimension_t (*lf_render_get_paragraph_dimension_func_t)(
-      void*,
-      const char*,
-      vec2s,
-      lf_font_t,
+      void* render_state,
+      const char* text,
+      vec2s paragraph_pos,
+      lf_font_t font,
       lf_paragraph_props_t props); 
 
-typedef void (*lf_render_clear_color_func_t)(lf_color_t); 
+typedef void (*lf_render_clear_color_func_t)(lf_color_t color); 
 
-typedef void (*lf_render_clear_color_area_func_t)(lf_color_t, lf_container_t, uint32_t); 
+typedef void (*lf_render_clear_color_area_func_t)(lf_color_t color, lf_container_t area, uint32_t render_height); 
 
-typedef void (*lf_render_begin_func_t)(void*); 
+typedef void (*lf_render_begin_func_t)(void* render_state); 
 
-typedef void (*lf_render_end_func_t)(void*); 
+typedef void (*lf_render_end_func_t)(void* render_State); 
 
 typedef void (*lf_render_resize_display_func_t)(
-    void*, uint32_t, uint32_t);
+    void* render_state, uint32_t w, uint32_t h);
 
 typedef lf_font_t (*lf_render_font_create)(
-    void*, const char*, uint32_t);
+    void* render_state, const char* filepath, uint32_t pixel_size);
+
+typedef lf_font_t (*lf_render_font_create_from_face)(
+    void* render_state, const char* filepath, uint32_t pixel_size, uint32_t face_idx);
 
 typedef void (*lf_render_font_destroy)(
-    void*, lf_font_t);
-
-typedef const char* (*lf_render_font_file_from_name)(
-    const char*);
+    void* render_state, lf_font_t font);
 
 typedef uint32_t (*lf_render_font_get_size)(lf_font_t font);
 
@@ -157,6 +164,12 @@ lf_font_t lf_rn_render_font_create(
     void* render_state, 
     const char* filepath, 
     uint32_t size);
+
+lf_font_t lf_rn_render_font_create_from_face(
+    void* render_state, 
+    const char* filepath, 
+    uint32_t size,
+    uint32_t face_idx);
 
 void lf_rn_render_font_destroy(
     void* render_state, 

@@ -29,10 +29,6 @@ lf_font_t
 lf_load_font(lf_ui_state_t* ui, const char* filepath, uint32_t size) {
   return ui->render_font_create(ui->render_state, filepath, size);
 }
-lf_font_t 
-lf_load_font_from_name(lf_ui_state_t* ui, const char* font_name, uint32_t size) {
-  return ui->render_font_create(ui->render_state, ui->render_font_file_from_name(font_name), size);
-}
 
 void 
 lf_font_resize(lf_ui_state_t* ui, lf_font_t font, uint32_t size) {

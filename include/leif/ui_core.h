@@ -18,17 +18,6 @@ typedef struct {
   lf_color_t text_color, background_color;
 } lf_theme_t;
 
-typedef enum {
-  TextLevelH1         = 0,
-  TextLevelH2         = 1,
-  TextLevelH3         = 2,
-  TextLevelH4         = 3,
-  TextLevelH5         = 4,
-  TextLevelH6         = 5,
-  TextLevelParagraph  = 6,
-  TextLevelMax        = 7
-} lf_text_level;
-
 typedef struct lf_page_t lf_page_t;
 
 typedef struct {
@@ -71,16 +60,14 @@ struct lf_ui_state_t {
   lf_render_end_func_t render_end;
   lf_render_resize_display_func_t render_resize_display;
   lf_render_font_create render_font_create;
+  lf_render_font_create_from_face render_font_create_from_face;
   lf_render_font_destroy render_font_destroy;
-  lf_render_font_file_from_name render_font_file_from_name;
   lf_render_font_get_size render_font_get_size;
   lf_render_load_texture render_load_texture;
   lf_render_delete_texture render_delete_texture;
   lf_render_texture render_texture;
 
   void* render_state;
-
-  lf_font_t* fonts; 
 
   lf_theme_t* theme;
 
@@ -90,15 +77,13 @@ struct lf_ui_state_t {
   float _frame_duration;
 
   float delta_time, _last_time;
-
-  lf_widget_t* _last_parent, *_current_widget;
-
   bool _root_never_shaped, _dirty;
 
   const char* fontpath;
 
   lf_page_func_t _root_layout_func;
 
+  lf_ez_state_t _ez;
 };
 
 struct lf_page_t {
@@ -135,8 +120,8 @@ lf_ui_state_t* lf_ui_core_init_ex(
     lf_render_end_func_t render_end,
     lf_render_resize_display_func_t render_resize_display,
     lf_render_font_create render_font_create,
+    lf_render_font_create_from_face render_font_create_from_face,
     lf_render_font_destroy render_font_destory,
-    lf_render_font_file_from_name render_font_file_from_name,
     lf_render_font_get_size render_font_get_size,
     lf_render_load_texture render_load_texture,
     lf_render_delete_texture render_delete_texture,
@@ -157,7 +142,6 @@ void lf_ui_core_end_render(lf_ui_state_t* ui);
 
 void lf_ui_core_terminate(lf_ui_state_t* ui);
 
-void lf_ui_core_set_font(lf_ui_state_t* ui, const char* fontpath);
 
 void lf_ui_core_remove_all_widgets(lf_ui_state_t* ui);
 

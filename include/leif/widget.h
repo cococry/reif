@@ -48,7 +48,6 @@ struct lf_widget_t {
   
   bool visible;
 
-
   lf_widget_type_t type;
   lf_layout_type_t layout_type;
   lf_justify_type_t justify_type;
@@ -70,6 +69,10 @@ struct lf_widget_t {
   bool _marked_for_removal;
 
   vec2s _min_size, _max_size;
+
+  const char* font_family;
+  int32_t font_size;
+  lf_font_style_t font_style;
 };
 
 lf_widget_t* lf_widget_create(
@@ -218,3 +221,5 @@ void lf_widget_set_max_width(lf_widget_t* widget, float width);
 void lf_widget_set_min_height(lf_widget_t* widget, float height);
 
 void lf_widget_set_max_height(lf_widget_t* widget, float height);
+
+void lf_widget_set_font_style(lf_ui_state_t* ui, lf_widget_t* widget, lf_font_style_t style);

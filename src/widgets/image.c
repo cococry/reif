@@ -23,7 +23,8 @@ lf_image_t* _img_create(
   lf_image_t* img = (lf_image_t*)malloc(sizeof(lf_image_t));
 
   img->filepath = strdup(filepath);
-  lf_mapped_texture_t tex = lf_asset_manager_request_texture(ui, ui->asset_manager, img->filepath);
+  lf_mapped_texture_t tex = lf_asset_manager_request_texture(ui, img->filepath);
+
   img->tex_id = tex.id;
   img->width = tex.width;
   img->height = tex.height;
@@ -72,7 +73,7 @@ lf_image_t* lf_image_create_ex_w(
   lf_image_t* img = (lf_image_t*)malloc(sizeof(lf_image_t));
 
   img->filepath = strdup(filepath);
-  lf_mapped_texture_t tex = lf_asset_manager_request_texture(ui, ui->asset_manager, img->filepath);
+  lf_mapped_texture_t tex = lf_asset_manager_request_texture(ui, img->filepath);
   img->tex_id = tex.id;
   
   img->width = w; 
@@ -104,7 +105,7 @@ lf_image_t* lf_image_create_ex_h(
   lf_image_t* img = (lf_image_t*)malloc(sizeof(lf_image_t));
 
   img->filepath = strdup(filepath);
-  lf_mapped_texture_t tex = lf_asset_manager_request_texture(ui, ui->asset_manager, img->filepath);
+  lf_mapped_texture_t tex = lf_asset_manager_request_texture(ui, img->filepath);
   img->tex_id = tex.id;
   
   img->width = (h * tex.width) / tex.height;

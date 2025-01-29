@@ -70,6 +70,56 @@ do {                                                                            
 
 #define lf_clamp(value, min, max) ((value) < (min) ? (min) : ((value) > (max) ? (max) : (value)))
 
+typedef enum {
+  LF_FONT_STYLE_REGULAR, 
+  LF_FONT_STYLE_ITALIC,
+  LF_FONT_STYLE_OBLIQUE,
+  LF_FONT_STYLE_BOLD,
+  LF_FONT_STYLE_BOLD_ITALIC,
+  LF_FONT_STYLE_SEMI_BOLD,
+  LF_FONT_STYLE_SEMI_BOLD_ITALIC,
+  LF_FONT_STYLE_LIGHT,
+  LF_FONT_STYLE_LIGHT_ITALIC,
+  LF_FONT_STYLE_EXTRA_LIGHT,
+  LF_FONT_STYLE_EXTRA_LIGHT_ITALIC,
+  LF_FONT_STYLE_MEDIUM,
+  LF_FONT_STYLE_MEDIUM_ITALIC,
+  LF_FONT_STYLE_THIN,
+  LF_FONT_STYLE_THIN_ITALIC,
+  LF_FONT_STYLE_EXTRA_BOLD,
+  LF_FONT_STYLE_EXTRA_BOLD_ITALIC,
+  LF_FONT_STYLE_CONDENSED,
+  LF_FONT_STYLE_CONDENSED_ITALIC,
+  LF_FONT_STYLE_EXPANDED,
+  LF_FONT_STYLE_EXPANDED_ITALIC,
+  LF_FONT_STYLE_COUNT
+} lf_font_style_t;
+
+#define LF_FONT_STYLE_TO_STRING(style) \
+    ((style) == LF_FONT_STYLE_REGULAR ? "Regular" : \
+    (style) == LF_FONT_STYLE_ITALIC ? "Italic" : \
+    (style) == LF_FONT_STYLE_OBLIQUE ? "Oblique" : \
+    (style) == LF_FONT_STYLE_BOLD ? "Bold" : \
+    (style) == LF_FONT_STYLE_BOLD_ITALIC ? "Bold Italic" : \
+    (style) == LF_FONT_STYLE_SEMI_BOLD ? "SemiBold" : \
+    (style) == LF_FONT_STYLE_SEMI_BOLD_ITALIC ? "SemiBold Italic" : \
+    (style) == LF_FONT_STYLE_LIGHT ? "Light" : \
+    (style) == LF_FONT_STYLE_LIGHT_ITALIC ? "Light Italic" : \
+    (style) == LF_FONT_STYLE_EXTRA_LIGHT ? "ExtraLight" : \
+    (style) == LF_FONT_STYLE_EXTRA_LIGHT_ITALIC ? "ExtraLight Italic" : \
+    (style) == LF_FONT_STYLE_MEDIUM ? "Medium" : \
+    (style) == LF_FONT_STYLE_MEDIUM_ITALIC ? "Medium Italic" : \
+    (style) == LF_FONT_STYLE_THIN ? "Thin" : \
+    (style) == LF_FONT_STYLE_THIN_ITALIC ? "Thin Italic" : \
+    (style) == LF_FONT_STYLE_EXTRA_BOLD ? "ExtraBold" : \
+    (style) == LF_FONT_STYLE_EXTRA_BOLD_ITALIC ? "ExtraBold Italic" : \
+    (style) == LF_FONT_STYLE_CONDENSED ? "Condensed" : \
+    (style) == LF_FONT_STYLE_CONDENSED_ITALIC ? "Condensed Italic" : \
+    (style) == LF_FONT_STYLE_EXPANDED ? "Expanded" : \
+    (style) == LF_FONT_STYLE_EXPANDED_ITALIC ? "Expanded Italic" : "Unknown")
+
+typedef struct lf_widget_t lf_widget_t;
+
 typedef struct {
   vec2s pos, size;
 } lf_container_t;
@@ -83,6 +133,7 @@ typedef enum {
   ParagraphAlignmentCenter,
   ParagraphAlignmentRight,
 } lf_paragraph_alignment_t;
+
 typedef struct {
   lf_color_t color;
   lf_color_t text_color;
@@ -98,8 +149,11 @@ typedef struct {
   lf_color_t border_color;
 
   lf_paragraph_alignment_t text_align;
-
 } lf_widget_props_t;
+
+typedef struct {
+  lf_widget_t* last_parent, *current_widget;
+} lf_ez_state_t;
 
 bool lf_point_intersets_container(vec2s point, lf_container_t container);
 
@@ -108,8 +162,6 @@ bool lf_container_intersets_container(lf_container_t a, lf_container_t b);
 float lf_container_area(lf_container_t container);
 
 lf_font_t lf_load_font(lf_ui_state_t* ui, const char* filepath, uint32_t size);
-
-lf_font_t lf_load_font_from_name(lf_ui_state_t* ui, const char* font_name, uint32_t size);
 
 void lf_font_resize(lf_ui_state_t* ui, lf_font_t font, uint32_t size);
 

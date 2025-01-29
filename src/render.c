@@ -169,17 +169,20 @@ lf_rn_render_font_create(
   return (lf_font_t)rn_load_font((RnState*)render_state, filepath, size);
 }
 
+lf_font_t lf_rn_render_font_create_from_face(
+    void* render_state, 
+    const char* filepath, 
+    uint32_t size,
+    uint32_t face_idx) {
+  return (lf_font_t)rn_load_font_from_face((RnState*)render_state, filepath, size, face_idx);
+}
+
 void
 lf_rn_render_font_destroy(
     void* render_state, 
     lf_font_t font) {
 
   rn_free_font((RnState*)render_state, (RnFont*)font);
-}
-
-const char*
-lf_rn_render_font_file_from_name(const char* name) {
-  return rn_font_file_from_name(name);
 }
 
 uint32_t 

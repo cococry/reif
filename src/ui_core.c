@@ -2,8 +2,10 @@
 #include "../include/leif/widget.h"
 #include "../include/leif/render.h"
 #include "../include/leif/util.h"
+#include "../include/leif/ez_api.h"
 
 #include <cglm/types-struct.h>
+#include <fontconfig/fontconfig.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <time.h>
@@ -31,8 +33,6 @@ typedef struct {
 #define MAX_CONCURRENT_TIMERS 16
 
 
-static void init_fonts(lf_ui_state_t* ui);
-
 static float get_elapsed_time(void);
 
 static void render_widget_and_submit(
@@ -47,16 +47,12 @@ static void win_refresh_callback(lf_ui_state_t* ui, lf_window_t window);
 static void remove_marked_widgets(lf_widget_t* root);
 static void interrupt_all_animations_recursively(lf_widget_t* widget);
 static void default_root_layout_func(lf_ui_state_t* ui);
-
-static uint32_t font_sizes[] = {
-  36, 28, 22, 18, 15, 13, 16
-};
+static void init_state(lf_ui_state_t* state, lf_window_t win);
 
 static uint32_t window_flags = 0;
 struct timespec init_time;
 
 static lf_windowing_hints_list_t windowing_hints;
-
 
 void 
 win_close_callback(lf_ui_state_t* ui, lf_window_t window) {
@@ -82,7 +78,7 @@ reset_widget_props(lf_widget_t* widget) {
 
 void 
 remove_marked_widgets(lf_widget_t* root) {
- if (!root) return;
+  if (!root) return;
 
   for (uint32_t i = 0; i < root->num_childs; ) {
     lf_widget_t* child = root->childs[i];
@@ -114,18 +110,64 @@ default_root_layout_func(lf_ui_state_t* ui) {
 }
 
 void 
-init_fonts(lf_ui_state_t* ui) {
-  if(!ui) return;
-  lf_ui_core_set_font(ui, ui->render_font_file_from_name("Inter"));
+init_state(lf_ui_state_t* state, lf_window_t win) {
+  state->win = win;
+  state->refresh_rate = lf_win_get_refresh_rate(win);
+  state->_frame_duration = 1.0f / state->refresh_rate;
+
+  state->theme = lf_ui_core_default_theme();
+
+  state->fontpath = NULL;
+
+  lf_vector_init(&state->pages);
+  lf_vector_init(&state->timers);
+  lf_vector_init(&windowing_hints);
+
+  state->asset_manager = lf_asset_manager_init();
+
+  state->crnt_page_id = 0;
+  state->crnt_widget_id = 0;
+
+  lf_ui_core_set_root_layout(state, default_root_layout_func);
+
+  state->root = lf_widget_create(
+    state->crnt_widget_id++,
+    WidgetTypeRoot,
+    LF_SCALE_CONTAINER(lf_win_get_size(win).x, lf_win_get_size(win).y),
+    (lf_widget_props_t){0},
+    NULL, NULL, root_shape);
+
+  state->root->font_family = "Inter";
+  state->root->font_style = LF_FONT_STYLE_REGULAR;
+  state->root->font_size = -1;
+
+  lf_widget_set_listener(state->root, root_resize, WinEventResize);
+
+  lf_windowing_set_ui_state(state);
+
+  state->root->props.color = state->theme->background_color;
+  state->root->layout_type = LayoutVertical;
+  state->root->_fixed_width = true;
+  state->root->_fixed_height = true;
+
+  state->running = true;
+
+  state->_root_never_shaped = true;
+  state->_dirty = true;
+
+  state->_ez = lf_ez_api_init(state); 
+
+  clock_gettime(CLOCK_MONOTONIC, &init_time);
+
 }
 
 float 
 get_elapsed_time(void) {
-    struct timespec now;
-    clock_gettime(CLOCK_MONOTONIC, &now);
-    float elapsed_time = (now.tv_sec - init_time.tv_sec) +
-                         (now.tv_nsec - init_time.tv_nsec) / 1e9f;
-    return elapsed_time;
+  struct timespec now;
+  clock_gettime(CLOCK_MONOTONIC, &now);
+  float elapsed_time = (now.tv_sec - init_time.tv_sec) +
+    (now.tv_nsec - init_time.tv_nsec) / 1e9f;
+  return elapsed_time;
 }
 
 void 
@@ -185,7 +227,7 @@ void
 lf_ui_core_set_window_hint(lf_window_hint_t hint, uint32_t value) {
   lf_vector_append(&windowing_hints, ((lf_windowing_hint_kv_t)
     {.key = hint, 
-    .value = value}));
+      .value = value}));
 }
 
 lf_window_t
@@ -235,8 +277,8 @@ lf_ui_core_init(lf_window_t win) {
   state->render_end                 = lf_rn_render_end;
   state->render_resize_display      = lf_rn_render_resize_display;
   state->render_font_create         = lf_rn_render_font_create;
+  state->render_font_create_from_face = lf_rn_render_font_create_from_face;
   state->render_font_destroy        = lf_rn_render_font_destroy;
-  state->render_font_file_from_name = lf_rn_render_font_file_from_name;
   state->render_font_get_size       = lf_rn_render_font_get_size;
   state->render_load_texture        = lf_rn_render_load_texture;
   state->render_delete_texture      = lf_rn_render_delete_texture;
@@ -244,56 +286,7 @@ lf_ui_core_init(lf_window_t win) {
 
 #endif
 
-  state->win = win;
-  state->refresh_rate = lf_win_get_refresh_rate(win);
-  state->_frame_duration = 1.0f / state->refresh_rate;
-
-  state->theme = lf_ui_core_default_theme();
-
-  state->fonts = malloc(sizeof(lf_font_t) * TextLevelMax);
-  for(uint32_t i = 0; i < TextLevelMax; i++) {
-    state->fonts[i] = NULL; 
-  }
-
-  state->fontpath = NULL;
-
-  init_fonts(state);
-  lf_vector_init(&state->pages);
-  lf_vector_init(&state->timers);
-  lf_vector_init(&windowing_hints);
-
-  state->asset_manager = lf_asset_manager_init();
-
-  state->crnt_page_id = 0;
-  state->crnt_widget_id = 0;
-
-  lf_ui_core_set_root_layout(state, default_root_layout_func);
-
-  state->root = lf_widget_create(
-    state->crnt_widget_id++,
-    WidgetTypeRoot,
-    LF_SCALE_CONTAINER(lf_win_get_size(win).x, lf_win_get_size(win).y),
-    (lf_widget_props_t){0},
-    NULL, NULL, root_shape);
-
-  lf_widget_set_listener(state->root, root_resize, WinEventResize);
-
-  lf_windowing_set_ui_state(state);
-
-  state->root->props.color = state->theme->background_color;
-  state->root->layout_type = LayoutVertical;
-  state->root->_fixed_width = true;
-  state->root->_fixed_height = true;
-
-  state->running = true;
-  
-  state->_root_never_shaped = true;
-  state->_dirty = true;
-  
-  state->_last_parent = state->root;
-  state->_current_widget = state->root;
-  
-  clock_gettime(CLOCK_MONOTONIC, &init_time);
+  init_state(state, win);
 
   return state;
 }
@@ -322,7 +315,7 @@ lf_ui_core_default_theme(void) {
     .corner_radius = 0.0f, 
     .border_width = 0.0f, 
     .border_color = LF_NO_COLOR,
-    .text_align = ParagraphAlignmentLeft
+    .text_align = ParagraphAlignmentLeft, 
   };
 
   theme->button_props = (lf_widget_props_t){
@@ -339,7 +332,7 @@ lf_ui_core_default_theme(void) {
     .corner_radius = 0.0f, 
     .border_width = 0.0f, 
     .border_color = LF_NO_COLOR,
-    .text_align = ParagraphAlignmentLeft
+    .text_align = ParagraphAlignmentLeft,
   };
 
   theme->text_props = (lf_widget_props_t){
@@ -356,7 +349,7 @@ lf_ui_core_default_theme(void) {
     .corner_radius = 0.0f, 
     .border_width = 0.0f, 
     .border_color = LF_NO_COLOR,
-    .text_align = ParagraphAlignmentLeft
+    .text_align = ParagraphAlignmentLeft,
   };
 
   theme->img_props = (lf_widget_props_t){
@@ -373,7 +366,7 @@ lf_ui_core_default_theme(void) {
     .corner_radius = 0.0f, 
     .border_width = 0.0f, 
     .border_color = LF_NO_COLOR,
-    .text_align = ParagraphAlignmentLeft
+    .text_align = ParagraphAlignmentLeft,
   };
 
 
@@ -390,32 +383,27 @@ lf_ui_core_set_theme(
 }
 
 lf_ui_state_t* lf_ui_core_init_ex(
-    lf_window_t win, 
-    void* render_state,
-    lf_render_rect_func_t render_rect,
-    lf_render_text_func_t render_text,
-    lf_render_text_paragraph_func_t render_paragraph,
-    lf_render_get_text_dimension_func_t render_get_text_dimension,
-    lf_render_get_paragraph_dimension_func_t render_get_paragraph_dimension,
-    lf_render_clear_color_func_t render_clear_color,
-    lf_render_clear_color_area_func_t render_clear_color_area,
-    lf_render_begin_func_t render_begin,
-    lf_render_end_func_t render_end,
-    lf_render_resize_display_func_t render_resize_display,
-    lf_render_font_create render_font_create,
-    lf_render_font_destroy render_font_destroy,
-    lf_render_font_file_from_name render_font_file_from_name,
-    lf_render_font_get_size render_font_get_size,
-    lf_render_load_texture render_load_texture,
-    lf_render_delete_texture render_delete_texture,
-    lf_render_texture render_texture) {
+  lf_window_t win, 
+  void* render_state,
+  lf_render_rect_func_t render_rect,
+  lf_render_text_func_t render_text,
+  lf_render_text_paragraph_func_t render_paragraph,
+  lf_render_get_text_dimension_func_t render_get_text_dimension,
+  lf_render_get_paragraph_dimension_func_t render_get_paragraph_dimension,
+  lf_render_clear_color_func_t render_clear_color,
+  lf_render_clear_color_area_func_t render_clear_color_area,
+  lf_render_begin_func_t render_begin,
+  lf_render_end_func_t render_end,
+  lf_render_resize_display_func_t render_resize_display,
+  lf_render_font_create render_font_create,
+  lf_render_font_create_from_face render_font_create_from_face,
+  lf_render_font_destroy render_font_destroy,
+  lf_render_font_get_size render_font_get_size,
+  lf_render_load_texture render_load_texture,
+  lf_render_delete_texture render_delete_texture,
+  lf_render_texture render_texture) {
 
   lf_ui_state_t* state = malloc(sizeof(*state));
-
-  state->win = win;
-  state->refresh_rate = lf_win_get_refresh_rate(win);
-  state->_frame_duration = 1.0f / state->refresh_rate;
-
   state->render_state = render_state;
   state->render_rect                = render_rect;
   state->render_text                = render_text;
@@ -428,54 +416,14 @@ lf_ui_state_t* lf_ui_core_init_ex(
   state->render_end                 = render_end;
   state->render_resize_display      = render_resize_display;
   state->render_font_create         = render_font_create;
+  state->render_font_create_from_face = render_font_create_from_face;
   state->render_font_destroy        = render_font_destroy;
-  state->render_font_file_from_name = render_font_file_from_name;
   state->render_font_get_size       = render_font_get_size;
   state->render_load_texture        = render_load_texture;
   state->render_delete_texture      = render_delete_texture;
   state->render_texture             = render_texture; 
 
-  state->theme = lf_ui_core_default_theme();
-
-  state->fonts = malloc(sizeof(lf_font_t) * TextLevelMax);
-  state->fontpath = NULL;
-  init_fonts(state);
-
-  lf_vector_init(&state->pages);
-  lf_vector_init(&state->timers);
-  lf_vector_init(&windowing_hints);
-
-  state->asset_manager = lf_asset_manager_init();
-
-  state->crnt_page_id = 0;
-  state->crnt_widget_id = 0;
-
-  lf_ui_core_set_root_layout(state, default_root_layout_func);
-
-  state->root = lf_widget_create(
-    state->crnt_widget_id++,
-    WidgetTypeRoot,
-    LF_SCALE_CONTAINER((float)lf_win_get_size(win).x, lf_win_get_size(win).y),
-    (lf_widget_props_t){0},
-    NULL, NULL, root_shape);
-  
-  lf_widget_set_listener(state->root, root_resize, WinEventResize);
-
-  state->root->type = WidgetTypeRoot;
-
-  state->root->props.color = state->theme->background_color;
-  state->root->layout_type = LayoutVertical;
-  state->root->_fixed_width = true;
-  state->root->_fixed_height = true;
-
-  state->running = true;
-
-  state->_root_never_shaped = true;
-  state->_dirty = true;
-  
-  state->_last_parent = state->root;
-  state->_current_widget = state->root;
-
+  init_state(state, win);
   return state;
 }
 
@@ -545,7 +493,7 @@ lf_ui_core_next_event(lf_ui_state_t* ui) {
       i++;
     }
   }
-  
+
   for (uint32_t i = 0; i < ui->timers.size; i++) {
     if(ui->timers.items[i].expired && ui->timers.items[i].looping && !ui->timers.items[i].paused) {
       ui->timers.items[i].expired = false;
@@ -588,12 +536,6 @@ void
 lf_ui_core_terminate(lf_ui_state_t* ui) {
   if(!ui) return;
 
-  for(uint32_t i = 0; i < TextLevelMax; i++) { 
-    if(ui->fonts[i] != NULL) {
-      ui->render_font_destroy(ui->render_state, ui->fonts[i]);
-    }
-  }
-
   lf_vector_free(&ui->pages);
 
   lf_widget_remove(ui->root);
@@ -603,6 +545,8 @@ lf_ui_core_terminate(lf_ui_state_t* ui) {
 
   lf_windowing_terminate();
 
+  lf_asset_manager_terminate(ui->asset_manager);
+
 #ifdef LF_RUNARA
   rn_terminate((RnState*)ui->render_state);
 #endif
@@ -610,25 +554,6 @@ lf_ui_core_terminate(lf_ui_state_t* ui) {
   free(ui);
 }
 
-void 
-lf_ui_core_set_font(lf_ui_state_t* ui, const char* fontpath) {
-  if(!fontpath || !ui) return;
-
-  if(ui->fontpath != NULL) {
-    free((void*)ui->fontpath);
-  }
-  ui->fontpath = strdup(fontpath);
-
-  for(uint32_t i = 0; i < TextLevelMax; i++) { 
-    if(ui->fonts[i] != NULL) {
-      ui->render_font_destroy(ui->render_state, ui->fonts[i]);
-    }
-  }
-
-  for(uint32_t i = 0; i < TextLevelMax; i++) {
-    ui->fonts[i] = ui->render_font_create(ui->render_state, ui->fontpath, font_sizes[i]);
-  }
-}
 void 
 lf_ui_core_remove_all_widgets(lf_ui_state_t* ui) {
   lf_widget_remove(ui->root);
@@ -654,7 +579,7 @@ lf_ui_core_set_page(lf_ui_state_t* ui, const char* identifier) {
 
 void 
 lf_ui_core_set_page_by_id(lf_ui_state_t* ui, uint64_t id) {
- if(ui->crnt_page_id == id) return;
+  if(ui->crnt_page_id == id) return;
 
   if(ui->crnt_page_id != 0) {
     lf_ui_core_remove_all_widgets(ui);
@@ -733,7 +658,7 @@ lf_ui_core_start_timer(lf_ui_state_t* ui, float duration, lf_timer_finish_func_t
 
 lf_timer_t*
 lf_ui_core_start_timer_looped(lf_ui_state_t* ui, float duration, lf_timer_finish_func_t finish_cb) {
- lf_vector_append(
+  lf_vector_append(
     &ui->timers, ((lf_timer_t){
       .duration = duration,
       .elapsed = 0.0f,

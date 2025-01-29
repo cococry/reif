@@ -24,7 +24,7 @@ _recalculate_label(
     ui->render_state,
     text->label,
     text_pos,
-    text->font,
+    text->font.font,
     (lf_paragraph_props_t){
       .wrap = wrap, 
       .align = widget->props.text_align
@@ -78,7 +78,7 @@ _text_render(
     text->_text_dimension = ui->render_paragraph(
       ui->render_state,
       text->label,
-      text->font,
+      text->font.font,
       text_pos,
       widget->props.text_color,
       (lf_paragraph_props_t){
@@ -93,7 +93,7 @@ lf_text_t* _text_create(
   lf_ui_state_t* ui,
   lf_widget_t* parent,
   const char* label,
-  lf_font_t font) {
+  lf_mapped_font_t font) {
   if(!parent) return NULL;
   lf_text_t* text = (lf_text_t*)malloc(sizeof(lf_text_t));
 
@@ -104,7 +104,7 @@ lf_text_t* _text_create(
     ui->render_state,
     text->label,
     parent->container.pos,
-    text->font,
+    text->font.font,
     (lf_paragraph_props_t){
       .wrap = parent->container.pos.x + parent->container.size.x, 
       .align = 1
@@ -132,26 +132,24 @@ lf_text_t* _text_create(
   return text;
 }
 
-lf_text_t* lf_text_create(
-    lf_ui_state_t* ui,
-    lf_widget_t* parent,
-    const char* label) {
-   return _text_create(ui, parent, label, ui->fonts[TextLevelParagraph]);
-}
 
 lf_text_t* lf_text_create_ex(
     lf_ui_state_t* ui,
     lf_widget_t* parent,
     const char* label,
-    lf_font_t font) {
+    lf_mapped_font_t font) {
    return _text_create(ui, parent, label, font);
 }
+
 
 void lf_text_set_font(
     lf_ui_state_t* ui, 
     lf_text_t* text,
-    void* font) {
-  text->font = font;
+    const char* family_name,
+    lf_font_style_t style,
+    uint32_t pixel_size) {
+
+  text->font = lf_asset_manager_request_font(ui, family_name, style, pixel_size);
   _recalculate_label(ui, text);
 }
 
@@ -167,18 +165,3 @@ lf_text_set_label(
   text->label = strdup(label);
   _recalculate_label(ui, text);
 }
-
-void lf_text_set_font_size(
-    lf_ui_state_t* ui, 
-    lf_text_t* text,
-    uint32_t size) {
-#ifdef LF_RUNARA
-  if(!text->_changed_font_size) {
-    text->font = lf_load_font(ui, ((RnFont*)text->font)->filepath, size);
-  } else {
-    lf_font_resize(ui, text->font, size);
-  }
-  lf_text_set_font(ui, text, text->font);
-#endif
-}
-
