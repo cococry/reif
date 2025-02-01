@@ -3,6 +3,7 @@
 #include "../include/leif/layout.h"
 #include "../include/leif/animation.h"
 #include "../include/leif/widgets/text.h"
+#include "../include/leif/ez_api.h"
 #include <string.h>
 #include <time.h>
 
@@ -261,7 +262,6 @@ int32_t
 lf_widget_add_child(lf_widget_t* parent, lf_widget_t* child) {
   if(!parent || !child) return 1;
 
-  child->props.text_color = parent->props.text_color;
   child->font_style   = parent->font_style;
   child->font_size    = parent->font_size;
   child->font_family  = parent->font_family;
@@ -640,10 +640,33 @@ lf_widget_set_max_height(lf_widget_t* widget, float height) {
 
 void 
 lf_widget_set_font_style(lf_ui_state_t* ui, lf_widget_t* widget, lf_font_style_t style) {
+  widget->font_style = style;
   if(widget->type == WidgetTypeText) {
     lf_text_set_font(ui, (lf_text_t*)widget, widget->font_family, style, ((lf_text_t*)widget)->font.pixel_size);
   }
   for(uint32_t i = 0; i < widget->num_childs; i++) {
     lf_widget_set_font_style(ui, widget->childs[i], style);
+  }
+}
+
+void 
+lf_widget_set_font_family(lf_ui_state_t* ui, lf_widget_t* widget, const char* font_family) {
+  widget->font_family = font_family;
+  if(widget->type == WidgetTypeText) {
+    lf_text_set_font(ui, (lf_text_t*)widget, font_family, widget->font_style, ((lf_text_t*)widget)->font.pixel_size);
+  }
+  for(uint32_t i = 0; i < widget->num_childs; i++) {
+    lf_widget_set_font_family(ui, widget->childs[i], font_family);
+  }
+}
+
+void 
+lf_widget_set_font_size(lf_ui_state_t* ui, lf_widget_t* widget, uint32_t pixel_size) {
+  widget->font_size = pixel_size;
+  if(widget->type == WidgetTypeText) {
+    lf_text_set_font(ui, (lf_text_t*)widget, widget->font_family, widget->font_style, pixel_size); 
+  }
+  for(uint32_t i = 0; i < widget->num_childs; i++) {
+    lf_widget_set_font_size(ui, widget->childs[i], pixel_size);
   }
 }

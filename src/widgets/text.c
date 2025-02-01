@@ -1,4 +1,5 @@
 #include "../../include/leif/widgets/text.h"
+#include "../../include/leif/ez_api.h"
 #include <cglm/types-struct.h>
 
 #ifdef LF_RUNARA
@@ -114,7 +115,6 @@ lf_text_t* _text_create(
   text->_text_dimension = text_dimension;
 
   lf_widget_props_t props = ui->theme->text_props;
-  props.text_color = parent->props.text_color; 
 
   text->base = *lf_widget_create(
     ui->crnt_widget_id++,
@@ -126,6 +126,7 @@ lf_text_t* _text_create(
    _text_shape
   );
 
+  lf_style_widget_prop(&text->base, text_color, parent->props.text_color);
   text->base.layout_type = LayoutNone;
   lf_widget_add_child(parent, (lf_widget_t*)text);
 

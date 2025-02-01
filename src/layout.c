@@ -162,8 +162,7 @@ lf_layout_vertical(lf_ui_state_t* ui, lf_widget_t* widget) {
       widget->container.size.y = child_size.y;
     }
     if(!widget->_fixed_width) {
-      widget->container.size.x = 
-        min_width != -1.0f ? MIN(max.x, min_width) : max.x;
+      widget->container.size.x = max.x;
     }
   } else if(widget->sizing_type == SizingFitToParent && widget->parent){
     if(!widget->_fixed_height) { 

@@ -23,7 +23,7 @@ typedef enum {
 #define lf_style_crnt_widget_prop(ui, prop, val) \
   (ui->_ez.current_widget->props.prop = (val), lf_widget_submit_props((ui->_ez.current_widget)))
 
-#define lf_style_widget_prop(ui, widget, prop, val) \
+#define lf_style_widget_prop(widget, prop, val) \
   ((widget)->props.prop = (val), lf_widget_submit_props(widget))
 
 lf_ez_state_t lf_ez_api_init(lf_ui_state_t* ui);

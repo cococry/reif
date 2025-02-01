@@ -223,3 +223,7 @@ void lf_widget_set_min_height(lf_widget_t* widget, float height);
 void lf_widget_set_max_height(lf_widget_t* widget, float height);
 
 void lf_widget_set_font_style(lf_ui_state_t* ui, lf_widget_t* widget, lf_font_style_t style);
+
+void lf_widget_set_font_family(lf_ui_state_t* ui, lf_widget_t* widget, const char* font_family);
+
+void lf_widget_set_font_size(lf_ui_state_t* ui, lf_widget_t* widget, uint32_t pixel_size); 

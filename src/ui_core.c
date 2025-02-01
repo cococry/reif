@@ -146,6 +146,7 @@ init_state(lf_ui_state_t* state, lf_window_t win) {
   lf_windowing_set_ui_state(state);
 
   state->root->props.color = state->theme->background_color;
+  state->root->props.text_color = state->theme->text_color;
   state->root->layout_type = LayoutVertical;
   state->root->_fixed_width = true;
   state->root->_fixed_height = true;
@@ -354,7 +355,7 @@ lf_ui_core_default_theme(void) {
 
   theme->img_props = (lf_widget_props_t){
     .color = LF_WHITE, 
-    .text_color = LF_NO_COLOR,
+    .text_color = theme->text_color,
     .padding_left = 0,
     .padding_right = 0,
     .padding_top = 0,
