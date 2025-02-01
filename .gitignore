@@ -2,5 +2,5 @@
 ./lib/
 ./tests/bin
 ./tests/
-./.cache/
+.cache
 ./tests/.cache/
