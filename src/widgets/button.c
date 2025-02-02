@@ -26,9 +26,11 @@ _button_render(
   lf_button_t* button = (lf_button_t*)widget;
   
   if(button->_held) {
-    widget->_rendered_props.color =  lf_color_dim(button->base._initial_props.color, 0.8f);
+    widget->_rendered_props.color =  lf_color_dim(button->base.props.color, 0.8f);
   } else if(button->_hovered) {
-    widget->_rendered_props.color =  lf_color_dim(button->base._initial_props.color, 0.9f);
+    widget->_rendered_props.color =  lf_color_dim(button->base.props.color, 0.9f);
+  } else if(!button->_hovered) {
+    widget->_rendered_props.color = button->base.props.color;
   }
 
   ui->render_rect(
@@ -76,32 +78,35 @@ _button_handle_event(
     if(button->_hovered) {
       button->_held = false;
       button->_hovered = false;
-      if(button->on_leave)
+      if(button->on_leave) {
         button->on_leave(ui, widget);
-      ui->root_needs_render = true;
+      }
+      lf_ui_core_rerender_widget(ui, &button->base);
     }
     return;
   }
 
   if(event.type == WinEventMouseRelease) {
     button->_held = false;
-    if(button->on_click)
+    if(button->on_click) {
       button->on_click(ui, widget);
-    ui->root_needs_render = true;
+    }
+    lf_ui_core_rerender_widget(ui, &button->base);
     return;
   }
   if(event.type == WinEventMousePress) {
     button->_held = true;
-    ui->root_needs_render = true;
+    lf_ui_core_rerender_widget(ui, &button->base);
     return;
   }
 
   else if(event.type == WinEventMouseMove &&
     !button->_hovered) {
     button->_hovered = true;
-    if(button->on_enter)
+    if(button->on_enter) {
       button->on_enter(ui, widget);
-    ui->root_needs_render = true;
+    }
+    lf_ui_core_rerender_widget(ui, &button->base);
     return;
   }
 }

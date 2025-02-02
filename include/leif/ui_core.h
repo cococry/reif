@@ -43,7 +43,6 @@ struct lf_ui_state_t {
   lf_timer_list_t timers;
 
   uint64_t crnt_page_id;
-  bool root_needs_render;
 
   uint32_t crnt_widget_id;
 
@@ -77,7 +76,6 @@ struct lf_ui_state_t {
   float _frame_duration;
 
   float delta_time, _last_time;
-  bool _root_never_shaped, _dirty;
 
   const char* fontpath;
 
@@ -130,6 +128,8 @@ lf_ui_state_t* lf_ui_core_init_ex(
 void lf_ui_core_next_event(lf_ui_state_t* ui);
 
 void lf_ui_core_submit(lf_ui_state_t* ui);
+
+void lf_ui_core_rerender_widget(lf_ui_state_t* ui, lf_widget_t* widget);
 
 void lf_ui_core_begin_render(
     lf_ui_state_t* ui, 

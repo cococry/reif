@@ -5,8 +5,6 @@
 #include <unistd.h>
 
 static void adjust_widget_size(lf_ui_state_t* ui, lf_widget_t* widget, bool* o_fixed_w, bool* o_fixed_h, bool horizontal);
-static vec2s effective_widget_size(lf_widget_t* widget);
-static void reset_widget_props(lf_widget_t* widget);
 
 void adjust_widget_size(lf_ui_state_t* ui, lf_widget_t* widget, bool* o_fixed_w, bool* o_fixed_h, bool horizontal) {
   bool resizable = (!widget->_fixed_width && horizontal) || (!widget->_fixed_height && !horizontal); 
@@ -49,64 +47,6 @@ void adjust_widget_size(lf_ui_state_t* ui, lf_widget_t* widget, bool* o_fixed_w,
   }
 }
 
-vec2s 
-effective_widget_size(lf_widget_t* widget) {
-  return (vec2s){
-    .x = lf_widget_width(widget) + 
-    widget->props.margin_right + widget->props.margin_left,
-    .y = lf_widget_height(widget) + 
-    widget->props.margin_top + widget->props.margin_bottom
-  };
-}
-
-vec2s measure_children(lf_widget_t* widget, vec2s* o_max) {
-  vec2s size = (vec2s){
-    .x = 0,
-    .y = 0
-  };
-  vec2s max = (vec2s){
-    .x = 0,
-    .y = 0
-  };
-
-  vec2s ptr = (vec2s){
-    .x = widget->container.pos.x,
-    .y = widget->container.pos.y 
-  };
-  vec2s ptr_before = ptr;
-  for(uint32_t i = 0; i < widget->num_childs; i++) {
-    lf_widget_t* child = widget->childs[i];
-    if (!child->visible) continue;
-
-    vec2s size = effective_widget_size(child);
-    ptr.x += size.x; 
-    ptr.y += size.y; 
-
-    if(size.x > max.x) {
-      max.x = size.x; 
-    }
-    if(size.y > max.y) {
-      max.y = size.y; 
-    }
-  }
-
-  size.x = ptr.x - ptr_before.x; 
-  size.y = ptr.y - ptr_before.y;
-
-  if(o_max) {
-    *o_max = max;
-  }
-
-  return size;
-}
-
-
-void 
-reset_widget_props(lf_widget_t* widget) {
-  for (uint32_t i = 0; i < widget->num_childs; i++) {
-    widget->childs[i]->props = widget->childs[i]->_initial_props;
-  }
-} 
 
 static void widget_grow_horz(lf_widget_t* widget) {
   if(!widget->_fixed_height) {
@@ -117,7 +57,7 @@ static void widget_grow_horz(lf_widget_t* widget) {
   float avail = widget->parent->container.size.x;
   for(uint32_t i = 0; i < widget->parent->num_childs; i++) {
     if(widget->parent->childs[i] == widget) continue;
-    avail -= effective_widget_size(widget->parent->childs[i]).x;
+    avail -= lf_widget_effective_size(widget->parent->childs[i]).x;
   } 
   if(!widget->_fixed_width) {
     widget->container.size.x = avail - widget->props.margin_left - widget->props.margin_right
@@ -134,7 +74,7 @@ static void widget_grow_vert(lf_widget_t* widget) {
   float avail = widget->parent->container.size.y;
   for(uint32_t i = 0; i < widget->parent->num_childs; i++) {
     if(widget->parent->childs[i] == widget) continue;
-    avail -= effective_widget_size(widget->parent->childs[i]).y;
+    avail -= lf_widget_effective_size(widget->parent->childs[i]).y;
   } 
   if(!widget->_fixed_height) {
     widget->container.size.y = avail - widget->props.margin_top - widget->props.margin_bottom
@@ -144,12 +84,10 @@ static void widget_grow_vert(lf_widget_t* widget) {
 
 void 
 lf_layout_vertical(lf_ui_state_t* ui, lf_widget_t* widget) {
-  reset_widget_props(widget);
-
   lf_widget_props_t widget_props = widget->_rendered_props; 
 
   vec2s max;
-  vec2s child_size = measure_children(widget, &max);
+  vec2s child_size = lf_widget_measure_children(widget, &max);
   float min_width = -1.0f;
   if(widget->parent) {
     min_width = widget->parent->container.size.x 
@@ -234,12 +172,10 @@ lf_layout_vertical(lf_ui_state_t* ui, lf_widget_t* widget) {
 }
 
 void lf_layout_horizontal(lf_ui_state_t* ui, lf_widget_t* widget) {
-  reset_widget_props(widget);
-
   lf_widget_props_t widget_props = widget->_rendered_props; 
 
   vec2s max;
-  vec2s child_size = measure_children(widget, &max);
+  vec2s child_size = lf_widget_measure_children(widget, &max);
   float min_width = -1.0f;
   if(widget->parent) {
     min_width = widget->parent->container.size.x 
@@ -325,10 +261,6 @@ void lf_layout_responsive_grid(lf_ui_state_t* ui, lf_widget_t* widget) {
   if (!widget->num_childs) return;
   if (!widget->parent) return;
 
-  for (uint32_t i = 0; i < widget->num_childs; i++) {
-    widget->childs[i]->props = widget->childs[i]->_initial_props;
-  }
-
   lf_widget_props_t p = widget->props;
 
   bool fixed_w = false, fixed_h = false;
@@ -347,14 +279,14 @@ void lf_layout_responsive_grid(lf_ui_state_t* ui, lf_widget_t* widget) {
     }
 
     lf_widget_t* child = widget->childs[i];
-    float widget_h = effective_widget_size(child).y + child->props.margin_top + child->props.margin_bottom;
+    float widget_h = lf_widget_effective_size(child).y + child->props.margin_top + child->props.margin_bottom;
 
     // Ensure row height is updated at least once, even if `changed_by_layout` is true.
     if (!child->_changed_by_layout || row_heights[row_i] == 0) {
       row_heights[row_i] = fmax(row_heights[row_i], widget_h);
     }
 
-    float widget_w = effective_widget_size(child).x + child->props.margin_left + child->props.margin_right;
+    float widget_w = lf_widget_effective_size(child).x + child->props.margin_left + child->props.margin_right;
     uint32_t col_i = i % n_columns;
     column_widths[col_i] = fmax(column_widths[col_i], widget_w);
   }

@@ -3,7 +3,6 @@
 #include "../include/leif/layout.h"
 #include "../include/leif/animation.h"
 #include "../include/leif/widgets/text.h"
-#include "../include/leif/ez_api.h"
 #include <string.h>
 #include <time.h>
 
@@ -85,11 +84,12 @@ lf_widget_create(
   widget->id = id;
   widget->visible = true;
   widget->_marked_for_removal = false;
+  widget->_changed_by_layout = false;
+  widget->_needs_rerender = false;
 
   widget->type = type;
   widget->container = fallback_container;
   widget->props = props;
-  widget->_initial_props = props;
   widget->_rendered_props = props;
   widget->justify_type = JustifyStart;
   widget->sizing_type = SizingFitToParent;
@@ -103,7 +103,6 @@ lf_widget_create(
 
   widget->_fixed_width = false;
   widget->_fixed_height = false;
-  widget->_changed_by_layout = false;
 
   widget->anims = NULL; 
 
@@ -155,6 +154,7 @@ lf_widget_render(lf_ui_state_t* ui,  lf_widget_t* widget) {
     }
 
     widget->render(ui, widget);
+
 #ifdef LF_RUNARA
     if(widget->type == WidgetTypeDiv) {
 
@@ -334,7 +334,7 @@ void lf_widget_remove_child_from_memory(lf_widget_t* parent, uint32_t child_idx)
 
 float 
 lf_widget_width(lf_widget_t* widget) {
-  return lf_widget_width_ex(widget, widget->props); 
+  return  lf_widget_width_ex(widget, widget->props); 
 }
 
 float 
@@ -398,7 +398,7 @@ void lf_widget_set_color(
   widget->props.color = color;
   lf_widget_submit_props(widget);
 
-  ui->root_needs_render = true;
+  widget->_needs_rerender = true;
 }
 
 void lf_widget_set_border_color(
@@ -410,7 +410,7 @@ void lf_widget_set_border_color(
   widget->props.border_color = color;
   lf_widget_submit_props(widget);
 
-  ui->root_needs_render = true;
+  widget->_needs_rerender = true;
 }
 
 void lf_widget_set_border_width(
@@ -422,7 +422,7 @@ void lf_widget_set_border_width(
   widget->props.border_width = border_width;
   lf_widget_submit_props(widget);
 
-  ui->root_needs_render = true;
+  widget->_needs_rerender = true;
 }
 
 void lf_widget_set_corner_radius(
@@ -434,7 +434,7 @@ void lf_widget_set_corner_radius(
   widget->props.corner_radius = corner_radius;
   lf_widget_submit_props(widget);
 
-  ui->root_needs_render = true;
+  widget->_needs_rerender = true;
 }
 
 void 
@@ -566,7 +566,6 @@ void lf_widget_interrupt_all_animations(
 
 void 
 lf_widget_submit_props(lf_widget_t* widget) {
-  widget->_initial_props = widget->props;
   widget->_rendered_props = widget->props;
 }
 
@@ -669,4 +668,58 @@ lf_widget_set_font_size(lf_ui_state_t* ui, lf_widget_t* widget, uint32_t pixel_s
   for(uint32_t i = 0; i < widget->num_childs; i++) {
     lf_widget_set_font_size(ui, widget->childs[i], pixel_size);
   }
+}
+
+
+vec2s 
+lf_widget_measure_children(lf_widget_t* widget, vec2s* o_max) {
+  vec2s size = (vec2s){
+    .x = 0,
+    .y = 0
+  };
+  vec2s max = (vec2s){
+    .x = 0,
+    .y = 0
+  };
+
+  vec2s ptr = (vec2s){
+    .x = widget->container.pos.x,
+    .y = widget->container.pos.y 
+  };
+  vec2s ptr_before = ptr;
+  for(uint32_t i = 0; i < widget->num_childs; i++) {
+    lf_widget_t* child = widget->childs[i];
+    if (!child->visible) continue;
+
+    vec2s size = lf_widget_effective_size(child);
+    ptr.x += size.x; 
+    ptr.y += size.y; 
+
+    if(size.x > max.x) {
+      max.x = size.x; 
+    }
+    if(size.y > max.y) {
+      max.y = size.y; 
+    }
+  }
+
+  size.x = ptr.x - ptr_before.x; 
+  size.y = ptr.y - ptr_before.y;
+
+  if(o_max) {
+    *o_max = max;
+  }
+
+  return size;
+
+}
+
+vec2s
+lf_widget_effective_size(lf_widget_t* widget) {
+  return (vec2s){
+    .x = lf_widget_width(widget) + 
+    widget->props.margin_right + widget->props.margin_left,
+    .y = lf_widget_height(widget) + 
+    widget->props.margin_top + widget->props.margin_bottom
+  };
 }

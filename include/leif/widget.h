@@ -40,7 +40,7 @@ struct lf_widget_t {
 
   lf_container_t container;
 
-  lf_widget_props_t props, _initial_props, _rendered_props;
+  lf_widget_props_t props, _rendered_props;
 
   lf_widget_render_cb render;
   lf_widget_handle_event_cb handle_event;
@@ -59,15 +59,13 @@ struct lf_widget_t {
 
   bool _fixed_width;
   bool _fixed_height;
-  bool _changed_by_layout;
+  bool _changed_by_layout, _needs_rerender, _marked_for_removal;
 
   lf_animation_t* anims;
 
   float _width_percent;
   float _height_percent;
   
-  bool _marked_for_removal;
-
   vec2s _min_size, _max_size;
 
   const char* font_family;
@@ -227,3 +225,7 @@ void lf_widget_set_font_style(lf_ui_state_t* ui, lf_widget_t* widget, lf_font_st
 void lf_widget_set_font_family(lf_ui_state_t* ui, lf_widget_t* widget, const char* font_family);
 
 void lf_widget_set_font_size(lf_ui_state_t* ui, lf_widget_t* widget, uint32_t pixel_size); 
+
+vec2s lf_widget_measure_children(lf_widget_t* widget, vec2s* o_max);
+
+vec2s lf_widget_effective_size(lf_widget_t* widget);

@@ -64,16 +64,8 @@ void
 win_refresh_callback(lf_ui_state_t* ui, lf_window_t window) {
   (void)window;
   lf_widget_shape(ui, ui->root);
-  ui->root_needs_render = true;
+  ui->root->_needs_rerender = true;
   lf_ui_core_commit_entire_render(ui);
-}
-
-void 
-reset_widget_props(lf_widget_t* widget) {
-  widget->props = widget->_initial_props;
-  for(uint32_t i = 0; i < widget->num_childs; i++) {
-    reset_widget_props(widget->childs[i]);
-  }
 }
 
 void 
@@ -153,9 +145,6 @@ init_state(lf_ui_state_t* state, lf_window_t win) {
 
   state->running = true;
 
-  state->_root_never_shaped = true;
-  state->_dirty = true;
-
   state->_ez = lf_ez_api_init(state); 
 
   clock_gettime(CLOCK_MONOTONIC, &init_time);
@@ -215,7 +204,7 @@ root_resize(lf_ui_state_t* ui, lf_widget_t* widget, lf_event_t ev) {
   if(!widget) return;
   if(widget->type != WidgetTypeRoot) return;
   lf_widget_shape(ui, ui->root);
-  ui->root_needs_render = true;
+  ui->root->_needs_rerender = true;
   lf_ui_core_commit_entire_render(ui);
 }
 
@@ -429,6 +418,26 @@ lf_ui_state_t* lf_ui_core_init_ex(
 }
 
 
+bool rerender_dirty_children(lf_ui_state_t* ui, lf_widget_t* widget) {
+  if(widget->_needs_rerender) {
+    lf_container_t clear_area = LF_SCALE_CONTAINER(widget->container.size.x, widget->container.size.y);
+    if(widget->_max_size.x != -1.0f && clear_area.size.x > widget->_max_size.x) {
+      clear_area.size.x = widget->_max_size.x;
+    }
+    if(widget->_max_size.y != -1.0f && clear_area.size.y > widget->_max_size.y) {
+      clear_area.size.y = widget->_max_size.y;
+    }
+    render_widget_and_submit(ui, widget, clear_area);
+    widget->_needs_rerender = false;
+    return true;
+  } else {
+    for(uint32_t i = 0; i < widget->num_childs; i++) {
+      rerender_dirty_children(ui, widget->childs[i]);
+    }
+    return false;
+  }
+}
+
 void
 lf_ui_core_next_event(lf_ui_state_t* ui) {
   if(ui->crnt_page_id == 0 && ui->pages.size != 0) {
@@ -449,11 +458,9 @@ lf_ui_core_next_event(lf_ui_state_t* ui) {
     }
   }
 
-
-  if(ui->_dirty) {
+  if(ui->root->_needs_rerender) {
     remove_marked_widgets(ui->root);
-    ui->root_needs_render = true;
-    ui->_dirty = false;
+    lf_widget_shape(ui, ui->root);
   }
 
   float cur_time = get_elapsed_time();
@@ -462,22 +469,27 @@ lf_ui_core_next_event(lf_ui_state_t* ui) {
 
   lf_widget_t* shape = NULL;
   if(lf_widget_animate(ui, ui->root, &shape)) {
-    ui->root_needs_render = true;
+    shape->parent->_needs_rerender = true;
     lf_widget_shape(ui, shape->parent);
   }
 
   bool rendered = lf_windowing_get_current_event() == WinEventRefresh;
 
-  // Check if there is some widget to be rerendered
-  if(ui->root_needs_render) { 
-    if(ui->_root_never_shaped) {
-      // Dirty double shape
-      for(uint32_t i = 0; i < 2; i++)
-        lf_widget_shape(ui, ui->root);
-      ui->_root_never_shaped = false;
-    }
+  if(ui->root->_needs_rerender) {
     lf_ui_core_commit_entire_render(ui);
+    ui->root->_needs_rerender = false;
     rendered = true;
+  } else {
+    for(uint32_t i = 0; i < ui->root->num_childs; i++) {
+      bool rendered_child = rerender_dirty_children(ui, ui->root->childs[i]);
+      if(rendered_child) {
+        rendered = true;
+      }
+    }
+    if(rendered) {
+      lf_win_swap_buffers(ui->win);
+      printf("rerendered children.\n");
+    }
   }
 
   if(!rendered) {
@@ -506,7 +518,33 @@ lf_ui_core_next_event(lf_ui_state_t* ui) {
 
 void 
 lf_ui_core_submit(lf_ui_state_t* ui) {
-  ui->_dirty = true;
+  ui->root->_needs_rerender = true;
+}
+
+void 
+lf_ui_core_rerender_widget(lf_ui_state_t* ui, lf_widget_t* widget) {
+  lf_widget_t* rerender = widget; 
+  while(rerender->parent) {
+    lf_widget_t* p = rerender->parent;
+    bool fixed_directional = (p->layout_type == LayoutHorizontal && 
+      (p->_fixed_width || p->_max_size.x != -1.0f)) 
+      || (p->layout_type == LayoutVertical && 
+      (p->_fixed_height || p->_max_size.y != -1.0f));
+    if(fixed_directional) {
+      rerender = p;
+      break;
+    }
+    vec2s s = lf_widget_measure_children(p, NULL);
+    printf("Height : %f\n", lf_widget_height(p));
+    if((s.x <= lf_widget_width(p) && p->layout_type == LayoutHorizontal) || 
+      (s.y < lf_widget_height(p) && p->layout_type == LayoutVertical)) {
+      rerender = p;
+      break;
+    }
+    rerender = rerender->parent;
+  }
+  lf_widget_shape(ui, rerender);
+  rerender->_needs_rerender = true;
 }
 
 void 
@@ -599,7 +637,6 @@ lf_ui_core_set_page_by_id(lf_ui_state_t* ui, uint64_t id) {
   }
 
   ui->crnt_page_id = id;
-  ui->_root_never_shaped = true;
   interrupt_all_animations_recursively(ui->root);
 
   ui->_root_layout_func(ui);
@@ -674,15 +711,13 @@ lf_ui_core_start_timer_looped(lf_ui_state_t* ui, float duration, lf_timer_finish
 void 
 lf_ui_core_commit_entire_render(lf_ui_state_t* ui) {
   if(!ui) return;
-  if(!ui->root_needs_render) return;
+  if(!ui->root->_needs_rerender) return;
   vec2s win_size = lf_win_get_size(ui->win);
   lf_container_t clear_area = LF_SCALE_CONTAINER(
     win_size.x,
     win_size.y);
   ui->root->container = clear_area;
   ui->render_resize_display(ui->render_state, win_size.x, win_size.y);
-  reset_widget_props(ui->root);
   render_widget_and_submit(ui, ui->root, clear_area);
-  ui->root_needs_render = false;
   lf_win_swap_buffers(ui->win);
 }
