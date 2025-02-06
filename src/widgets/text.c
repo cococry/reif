@@ -53,8 +53,6 @@ _text_render(
   if(!widget) return;
 
   lf_text_t* text = (lf_text_t*)widget;
-
-
   vec2s text_pos = (vec2s){
     .x = widget->container.pos.x + widget->props.padding_left, 
     .y =  widget->container.pos.y + widget->props.padding_top 
@@ -72,9 +70,6 @@ _text_render(
     LF_WIDGET_SIZE_V2(&text->base), 
     widget->props.color, widget->props.border_color,
     widget->props.border_width, widget->props.corner_radius);
-
-  if(widget->props.text_align == ParagraphAlignmentCenter) {
-     }
   if(text->label) {
     text->_text_dimension = ui->render_paragraph(
       ui->render_state,
@@ -123,6 +118,7 @@ lf_text_t* _text_create(
     props,
     _text_render, 
     NULL,
+   _text_shape,
    _text_shape
   );
 

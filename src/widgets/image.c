@@ -41,7 +41,8 @@ lf_image_t* _img_create(
     ui->theme->img_props,
     _img_render, 
     NULL,
-    NULL 
+    NULL,
+    NULL
   );
 
   img->base.layout_type = LayoutNone;
@@ -86,7 +87,8 @@ lf_image_t* lf_image_create_ex_w(
     ui->theme->img_props,
     _img_render, 
     NULL,
-    NULL 
+    NULL,
+    NULL
   );
 
   img->base.layout_type = LayoutNone;
@@ -118,7 +120,8 @@ lf_image_t* lf_image_create_ex_h(
     ui->theme->img_props,
     _img_render, 
     NULL,
-    NULL 
+    NULL,
+    NULL
   );
 
   img->base.layout_type = LayoutNone;

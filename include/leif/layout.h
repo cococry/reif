@@ -35,3 +35,9 @@ void lf_layout_horizontal(lf_ui_state_t* ui, lf_widget_t* widget);
 
 void lf_layout_responsive_grid(lf_ui_state_t* ui, lf_widget_t* widget);
 
+void lf_size_calc_vertical(lf_ui_state_t* ui, lf_widget_t* widget);
+
+void lf_size_calc_horizontal(lf_ui_state_t* ui, lf_widget_t* widget);
+
+void lf_size_calc_responsive_grid(lf_ui_state_t* ui, lf_widget_t* widget);
+

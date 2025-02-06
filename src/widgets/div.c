@@ -4,6 +4,7 @@
 
 static void _div_render(lf_ui_state_t* ui, lf_widget_t* widget);
 static void _div_shape(lf_ui_state_t* ui, lf_widget_t* widget);
+static void _div_calc_size(lf_ui_state_t* ui, lf_widget_t* widget);
 
 void 
 _div_render(lf_ui_state_t* ui, lf_widget_t* widget) {
@@ -18,10 +19,16 @@ _div_render(lf_ui_state_t* ui, lf_widget_t* widget) {
 
 void 
 _div_shape(lf_ui_state_t* ui, lf_widget_t* widget) {
-  (void)ui;
   if(!widget) return;
   if(widget->type != WidgetTypeDiv) return;
   lf_widget_apply_layout(ui, widget);
+}
+
+void 
+_div_calc_size(lf_ui_state_t* ui, lf_widget_t* widget) {
+  if(!widget) return;
+  if(widget->type != WidgetTypeDiv) return;
+  lf_widget_calc_layout_size(ui, widget);
 }
 
 lf_div_t* 
@@ -39,7 +46,9 @@ lf_div_create(
     ui->theme->div_props,
     _div_render,
     NULL,
-    _div_shape);
+    _div_shape,
+    _div_calc_size
+    );
 
   ui->crnt_widget_id++;
 

@@ -17,6 +17,10 @@ static void _button_shape(
   lf_ui_state_t* ui, 
   lf_widget_t* widget);
 
+static void _button_size_calc(
+  lf_ui_state_t* ui, 
+  lf_widget_t* widget);
+
 void
 _button_render(
   lf_ui_state_t* ui,
@@ -50,6 +54,14 @@ _button_shape(lf_ui_state_t* ui, lf_widget_t* widget) {
   if(!widget) return;
   if(widget->type != WidgetTypeButton) return;
   lf_widget_apply_layout(ui, widget);
+}
+
+void 
+_button_size_calc(lf_ui_state_t* ui, lf_widget_t* widget) {
+  (void)ui;
+  if(!widget) return;
+  if(widget->type != WidgetTypeButton) return;
+  lf_widget_calc_layout_size(ui, widget);
 }
 
 void 
@@ -133,7 +145,8 @@ lf_button_create(
     props,
     _button_render, 
     _button_handle_event,
-    _button_shape
+    _button_shape,
+    _button_size_calc
   );
 
   button->base.layout_type = LayoutHorizontal;

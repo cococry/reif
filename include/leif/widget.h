@@ -32,6 +32,7 @@ typedef void (*lf_widget_shape_cb)(
       lf_ui_state_t* ui,
       lf_widget_t* widget);
 
+
 struct lf_widget_t {
   lf_widget_t* parent;
   lf_widget_t** childs;
@@ -44,7 +45,7 @@ struct lf_widget_t {
 
   lf_widget_render_cb render;
   lf_widget_handle_event_cb handle_event;
-  lf_widget_shape_cb shape;
+  lf_widget_shape_cb shape, size_calc;
   
   bool visible;
 
@@ -80,7 +81,8 @@ lf_widget_t* lf_widget_create(
     lf_widget_props_t props,
     lf_widget_render_cb render,
     lf_widget_handle_event_cb handle_event,
-    lf_widget_shape_cb shape);
+    lf_widget_shape_cb shape,
+    lf_widget_shape_cb calc_size);
 
 int32_t lf_widget_add_child(
     lf_widget_t* parent, 
@@ -151,6 +153,8 @@ void lf_widget_set_corner_radius(
 void lf_widget_set_layout(lf_widget_t* widget, lf_layout_type_t layout);
 
 void lf_widget_apply_layout(lf_ui_state_t* ui, lf_widget_t* widget);
+
+void lf_widget_calc_layout_size(lf_ui_state_t* ui, lf_widget_t* widget);
 
 void lf_widget_listen_for(lf_widget_t* widget, uint32_t events);
 

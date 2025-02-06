@@ -74,7 +74,8 @@ lf_widget_create(
   lf_widget_props_t props,
   lf_widget_render_cb render,
   lf_widget_handle_event_cb handle_event,
-  lf_widget_shape_cb shape) {
+  lf_widget_shape_cb shape,
+  lf_widget_shape_cb size_calc) {
   lf_widget_t* widget = (lf_widget_t*)malloc(sizeof(lf_widget_t));
 
   widget->parent = NULL;
@@ -97,6 +98,7 @@ lf_widget_create(
   widget->render = render;
   widget->handle_event = handle_event;
   widget->shape = shape;
+  widget->size_calc = size_calc;
 
   widget->listening_for = 0;
   widget->alignment_flags = 0;
@@ -207,6 +209,13 @@ void lf_widget_shape(
       return;
     }
   }
+  for (uint32_t i = 0; i < widget->num_childs; i++) {
+    if(widget->childs[i]->size_calc)
+      widget->childs[i]->size_calc(ui, widget);
+  }
+  if(widget->size_calc)
+    widget->size_calc(ui, widget);
+
   widget->shape(ui, widget);
   for (uint32_t i = 0; i < widget->num_childs; i++) {
     lf_widget_shape(ui, widget->childs[i]);
@@ -444,14 +453,34 @@ lf_widget_set_layout(lf_widget_t* widget, lf_layout_type_t layout) {
 
 void 
 lf_widget_apply_layout(lf_ui_state_t* ui, lf_widget_t* widget) {
-  if(widget->layout_type == LayoutVertical) {
-    lf_layout_vertical(ui, widget);
+  switch (widget->layout_type) {
+    case LayoutVertical:
+      lf_layout_vertical(ui, widget);
+      break;
+    case LayoutHorizontal:
+      lf_layout_horizontal(ui, widget);
+      break;
+    case LayoutResponsiveGrid:
+      lf_layout_responsive_grid(ui, widget);
+      break;
+    default:
+        break;
   }
-  if(widget->layout_type == LayoutHorizontal) {
-    lf_layout_horizontal(ui, widget);
-  }
-  if(widget->layout_type == LayoutResponsiveGrid) {
-    lf_layout_responsive_grid(ui, widget);
+}
+
+void 
+lf_widget_calc_layout_size(lf_ui_state_t* ui, lf_widget_t* widget) {
+  switch (widget->layout_type) {
+    case LayoutVertical:
+      lf_size_calc_vertical(ui, widget);
+      break;
+    case LayoutHorizontal:
+      lf_size_calc_horizontal(ui, widget);
+      break;
+    case LayoutResponsiveGrid:
+      break;
+    default:
+        break;
   }
 }
 

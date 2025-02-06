@@ -63,9 +63,7 @@ win_close_callback(lf_ui_state_t* ui, lf_window_t window) {
 void 
 win_refresh_callback(lf_ui_state_t* ui, lf_window_t window) {
   (void)window;
-  lf_widget_shape(ui, ui->root);
   ui->root->_needs_rerender = true;
-  lf_ui_core_commit_entire_render(ui);
 }
 
 void 
@@ -127,7 +125,7 @@ init_state(lf_ui_state_t* state, lf_window_t win) {
     WidgetTypeRoot,
     LF_SCALE_CONTAINER(lf_win_get_size(win).x, lf_win_get_size(win).y),
     (lf_widget_props_t){0},
-    NULL, NULL, root_shape);
+    NULL, NULL, root_shape, NULL);
 
   state->root->font_family = "Inter";
   state->root->font_style = LF_FONT_STYLE_REGULAR;
@@ -182,8 +180,10 @@ render_widget_and_submit(
         .x = clear_area.pos.x - overdraw,
         .y = clear_area.pos.y - overdraw},
       .size = (vec2s){
-        .x = clear_area.size.x + widget->props.padding_left + widget->props.padding_right + overdraw * 2,
-        .y = clear_area.size.y + widget->props.padding_top + widget->props.padding_bottom + overdraw * 2, 
+        .x = clear_area.size.x + widget->props.padding_left +
+	widget->props.padding_right + overdraw * 2,
+        .y = clear_area.size.y + widget->props.padding_top +
+	widget->props.padding_bottom + overdraw * 2, 
       }});
 
   lf_widget_render(ui, widget);
@@ -203,9 +203,7 @@ root_resize(lf_ui_state_t* ui, lf_widget_t* widget, lf_event_t ev) {
   (void)ev;
   if(!widget) return;
   if(widget->type != WidgetTypeRoot) return;
-  lf_widget_shape(ui, ui->root);
   ui->root->_needs_rerender = true;
-  lf_ui_core_commit_entire_render(ui);
 }
 
 void 
@@ -460,7 +458,6 @@ lf_ui_core_next_event(lf_ui_state_t* ui) {
 
   if(ui->root->_needs_rerender) {
     remove_marked_widgets(ui->root);
-    lf_widget_shape(ui, ui->root);
   }
 
   float cur_time = get_elapsed_time();
@@ -476,6 +473,7 @@ lf_ui_core_next_event(lf_ui_state_t* ui) {
   bool rendered = lf_windowing_get_current_event() == WinEventRefresh;
 
   if(ui->root->_needs_rerender) {
+    lf_widget_shape(ui, ui->root);
     lf_ui_core_commit_entire_render(ui);
     ui->root->_needs_rerender = false;
     rendered = true;
@@ -488,7 +486,6 @@ lf_ui_core_next_event(lf_ui_state_t* ui) {
     }
     if(rendered) {
       lf_win_swap_buffers(ui->win);
-      printf("rerendered children.\n");
     }
   }
 
@@ -508,6 +505,8 @@ lf_ui_core_next_event(lf_ui_state_t* ui) {
   }
 
   for (uint32_t i = 0; i < ui->timers.size; i++) {
+    lf_widget_shape(ui, ui->root);
+    lf_widget_shape(ui, ui->root);
     if(ui->timers.items[i].expired && ui->timers.items[i].looping && !ui->timers.items[i].paused) {
       ui->timers.items[i].expired = false;
       ui->timers.items[i].elapsed = 0.0f;
@@ -535,7 +534,6 @@ lf_ui_core_rerender_widget(lf_ui_state_t* ui, lf_widget_t* widget) {
       break;
     }
     vec2s s = lf_widget_measure_children(p, NULL);
-    printf("Height : %f\n", lf_widget_height(p));
     if((s.x <= lf_widget_width(p) && p->layout_type == LayoutHorizontal) || 
       (s.y < lf_widget_height(p) && p->layout_type == LayoutVertical)) {
       rerender = p;
