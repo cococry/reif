@@ -64,6 +64,7 @@ _text_render(
   if(widget->parent->sizing_type == SizingFitToContent) {
     wrap = -1.0f;
   }
+
   ui->render_rect(
     ui->render_state, 
     widget->container.pos,
@@ -71,7 +72,7 @@ _text_render(
     widget->props.color, widget->props.border_color,
     widget->props.border_width, widget->props.corner_radius);
   if(text->label) {
-    text->_text_dimension = ui->render_paragraph(
+    ui->render_paragraph(
       ui->render_state,
       text->label,
       text->font.font,
@@ -118,13 +119,15 @@ lf_text_t* _text_create(
     props,
     _text_render, 
     NULL,
-   _text_shape,
-   _text_shape
+    NULL,
+    _text_shape
   );
 
   lf_style_widget_prop(&text->base, text_color, parent->props.text_color);
   text->base.layout_type = LayoutNone;
   lf_widget_add_child(parent, (lf_widget_t*)text);
+
+  _recalculate_label(ui, text);
 
   return text;
 }

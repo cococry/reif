@@ -210,12 +210,14 @@ void lf_widget_shape(
     }
   }
   for (uint32_t i = 0; i < widget->num_childs; i++) {
-    if(widget->childs[i]->size_calc)
-      widget->childs[i]->size_calc(ui, widget);
+    if(widget->childs[i]->size_calc) {
+      if(widget->childs[i]->type == WidgetTypeText)
+      widget->childs[i]->size_calc(ui, widget->childs[i]);
+    }
   }
+
   if(widget->size_calc)
     widget->size_calc(ui, widget);
-
   widget->shape(ui, widget);
   for (uint32_t i = 0; i < widget->num_childs; i++) {
     lf_widget_shape(ui, widget->childs[i]);

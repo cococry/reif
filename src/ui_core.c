@@ -203,6 +203,7 @@ root_resize(lf_ui_state_t* ui, lf_widget_t* widget, lf_event_t ev) {
   (void)ev;
   if(!widget) return;
   if(widget->type != WidgetTypeRoot) return;
+  ui->root->container = LF_SCALE_CONTAINER(ev.width, ev.height);
   ui->root->_needs_rerender = true;
 }
 
@@ -505,8 +506,6 @@ lf_ui_core_next_event(lf_ui_state_t* ui) {
   }
 
   for (uint32_t i = 0; i < ui->timers.size; i++) {
-    lf_widget_shape(ui, ui->root);
-    lf_widget_shape(ui, ui->root);
     if(ui->timers.items[i].expired && ui->timers.items[i].looping && !ui->timers.items[i].paused) {
       ui->timers.items[i].expired = false;
       ui->timers.items[i].elapsed = 0.0f;
