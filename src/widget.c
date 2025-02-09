@@ -86,6 +86,7 @@ lf_widget_create(
   widget->visible = true;
   widget->_marked_for_removal = false;
   widget->_changed_by_layout = false;
+  widget->_changed_size = true;
   widget->_needs_rerender = false;
 
   widget->type = type;
@@ -209,15 +210,27 @@ void lf_widget_shape(
       return;
     }
   }
+
+  vec2s sizebefore = widget->container.size;
   for (uint32_t i = 0; i < widget->num_childs; i++) {
     if(widget->childs[i]->size_calc) {
-      if(widget->childs[i]->type == WidgetTypeText)
       widget->childs[i]->size_calc(ui, widget->childs[i]);
     }
   }
 
   if(widget->size_calc)
     widget->size_calc(ui, widget);
+
+  if(!widget->_changed_size) {
+    widget->_changed_size = 
+      !(  widget->container.size.x == sizebefore.x && 
+          widget->container.size.y == sizebefore.y);
+  }
+
+  if(widget->_changed_size) {
+    printf("  -> changed size.\n");
+  }
+
   widget->shape(ui, widget);
   for (uint32_t i = 0; i < widget->num_childs; i++) {
     lf_widget_shape(ui, widget->childs[i]);
@@ -382,6 +395,7 @@ void lf_widget_set_padding(
   widget->props.padding_right = padding;
 
   lf_widget_submit_props(widget);
+  widget->_changed_size = true;
 }
 
 void lf_widget_set_margin(

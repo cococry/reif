@@ -102,6 +102,7 @@ _button_handle_event(
     button->_held = false;
     if(button->on_click) {
       button->on_click(ui, widget);
+      printf("  -> pressed button.\n");
     }
     lf_ui_core_rerender_widget(ui, &button->base);
     return;

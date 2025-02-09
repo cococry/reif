@@ -419,8 +419,8 @@ lf_ui_state_t* lf_ui_core_init_ex(
 
 bool rerender_dirty_children(lf_ui_state_t* ui, lf_widget_t* widget) {
   if(widget->_needs_rerender) {
-    lf_container_t clear_area = LF_SCALE_CONTAINER(widget->container.size.x, widget->container.size.y);
-    if(widget->_max_size.x != -1.0f && clear_area.size.x > widget->_max_size.x) {
+    lf_container_t clear_area = widget->container; 
+      if(widget->_max_size.x != -1.0f && clear_area.size.x > widget->_max_size.x) {
       clear_area.size.x = widget->_max_size.x;
     }
     if(widget->_max_size.y != -1.0f && clear_area.size.y > widget->_max_size.y) {
@@ -430,10 +430,13 @@ bool rerender_dirty_children(lf_ui_state_t* ui, lf_widget_t* widget) {
     widget->_needs_rerender = false;
     return true;
   } else {
+    bool rendered = false;
     for(uint32_t i = 0; i < widget->num_childs; i++) {
-      rerender_dirty_children(ui, widget->childs[i]);
+      if(rerender_dirty_children(ui, widget->childs[i])) {
+        rendered = true;
+      }
     }
-    return false;
+    return rendered;
   }
 }
 
@@ -521,20 +524,15 @@ lf_ui_core_submit(lf_ui_state_t* ui) {
 
 void 
 lf_ui_core_rerender_widget(lf_ui_state_t* ui, lf_widget_t* widget) {
-  lf_widget_t* rerender = widget; 
+  lf_widget_t* rerender = widget;
+  if(!rerender->_changed_size) {
+    printf("  -> did not change size.\n");
+    rerender->_needs_rerender = true;
+    return;
+  }
   while(rerender->parent) {
     lf_widget_t* p = rerender->parent;
-    bool fixed_directional = (p->layout_type == LayoutHorizontal && 
-      (p->_fixed_width || p->_max_size.x != -1.0f)) 
-      || (p->layout_type == LayoutVertical && 
-      (p->_fixed_height || p->_max_size.y != -1.0f));
-    if(fixed_directional) {
-      rerender = p;
-      break;
-    }
-    vec2s s = lf_widget_measure_children(p, NULL);
-    if((s.x <= lf_widget_width(p) && p->layout_type == LayoutHorizontal) || 
-      (s.y < lf_widget_height(p) && p->layout_type == LayoutVertical)) {
+    if(!p->_changed_size) {
       rerender = p;
       break;
     }

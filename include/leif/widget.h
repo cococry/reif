@@ -60,7 +60,7 @@ struct lf_widget_t {
 
   bool _fixed_width;
   bool _fixed_height;
-  bool _changed_by_layout, _needs_rerender, _marked_for_removal;
+  bool _changed_by_layout, _needs_rerender, _marked_for_removal, _changed_size;
 
   lf_animation_t* anims;
 
