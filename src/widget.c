@@ -211,6 +211,9 @@ void lf_widget_shape(
     }
   }
 
+  bool tmpchanged = widget->_changed_size;
+  widget->_changed_size = false;
+
   vec2s sizebefore = widget->container.size;
   for (uint32_t i = 0; i < widget->num_childs; i++) {
     if(widget->childs[i]->size_calc) {
@@ -221,14 +224,10 @@ void lf_widget_shape(
   if(widget->size_calc)
     widget->size_calc(ui, widget);
 
-  if(!widget->_changed_size) {
+  if(!tmpchanged) {
     widget->_changed_size = 
       !(  widget->container.size.x == sizebefore.x && 
           widget->container.size.y == sizebefore.y);
-  }
-
-  if(widget->_changed_size) {
-    printf("  -> changed size.\n");
   }
 
   widget->shape(ui, widget);

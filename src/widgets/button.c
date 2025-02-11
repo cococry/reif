@@ -98,11 +98,10 @@ _button_handle_event(
     return;
   }
 
-  if(event.type == WinEventMouseRelease) {
+  if(event.type == WinEventMouseRelease && lf_point_intersets_container(mouse, container)) {
     button->_held = false;
     if(button->on_click) {
       button->on_click(ui, widget);
-      printf("  -> pressed button.\n");
     }
     lf_ui_core_rerender_widget(ui, &button->base);
     return;

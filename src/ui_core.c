@@ -62,7 +62,8 @@ win_close_callback(lf_ui_state_t* ui, lf_window_t window) {
 
 void 
 win_refresh_callback(lf_ui_state_t* ui, lf_window_t window) {
-  (void)window;
+  vec2s winsize = lf_win_get_size(window);
+  ui->root->container = LF_SCALE_CONTAINER(winsize.x, winsize.y);
   ui->root->_needs_rerender = true;
 }
 
@@ -205,6 +206,7 @@ root_resize(lf_ui_state_t* ui, lf_widget_t* widget, lf_event_t ev) {
   if(widget->type != WidgetTypeRoot) return;
   ui->root->container = LF_SCALE_CONTAINER(ev.width, ev.height);
   ui->root->_needs_rerender = true;
+  lf_widget_shape(ui, ui->root);
 }
 
 void 
@@ -489,7 +491,7 @@ lf_ui_core_next_event(lf_ui_state_t* ui) {
       }
     }
     if(rendered) {
-      lf_win_swap_buffers(ui->win);
+    lf_win_swap_buffers(ui->win);
     }
   }
 
@@ -526,19 +528,28 @@ void
 lf_ui_core_rerender_widget(lf_ui_state_t* ui, lf_widget_t* widget) {
   lf_widget_t* rerender = widget;
   if(!rerender->_changed_size) {
-    printf("  -> did not change size.\n");
     rerender->_needs_rerender = true;
     return;
   }
   while(rerender->parent) {
     lf_widget_t* p = rerender->parent;
+    if(p->size_calc){
+      vec2s sizebefore = p->container.size; 
+      p->size_calc(ui, p);
+      p->_changed_size = 
+        !(  p->container.size.x == sizebefore.x && 
+        p->container.size.y == sizebefore.y);
+      
+    }
     if(!p->_changed_size) {
       rerender = p;
       break;
     }
     rerender = rerender->parent;
   }
-  lf_widget_shape(ui, rerender);
+  if(rerender != ui->root) {
+    lf_widget_shape(ui, rerender);
+  }
   rerender->_needs_rerender = true;
 }
 

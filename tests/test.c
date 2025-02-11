@@ -34,7 +34,6 @@ void on_click(lf_ui_state_t* ui, lf_widget_t* widget) {
   } else {
     lf_widget_set_padding(widget, ui->theme->button_props.padding_top); 
   }
-  lf_ui_core_rerender_widget(ui, widget);
 }
 
 
@@ -45,12 +44,22 @@ int main(void) {
   lf_window_t win = lf_ui_core_create_window(1280, 720, "hello leif");
   s.ui = lf_ui_core_init(win);
 
+  lf_widget_set_fixed_height_percent(s.ui->root, 100.0f);
+  lf_widget_set_alignment(s.ui->root, AlignCenterVertical | AlignCenterHorizontal);
+
+  lf_widget_set_font_family(s.ui, s.ui->root, "CaskaydiaCove Nerd Font");
+  lf_widget_set_font_style(s.ui, s.ui->root, LF_FONT_STYLE_ITALIC); 
+
   lf_div(s.ui);
   lf_style_crnt_widget_prop(s.ui, color, lf_color_from_hex(0x444444));
   lf_widget_set_max_width(lf_crnt(s.ui), 600.0f);
   lf_text_h2(s.ui, "Industrial Society and it's Future");
+  lf_style_crnt_widget_prop(s.ui, margin_left, 0);
+  lf_style_crnt_widget_prop(s.ui, margin_right, 0);
   lf_style_widget_prop(lf_crnt(s.ui), text_align, ParagraphAlignmentCenter);
-  lf_text_h4(s.ui, "By Theodore John Kaczynskid");
+  lf_text_h4(s.ui, "By Theodore John Kaczynski");
+  lf_style_crnt_widget_prop(s.ui, margin_left, 0);
+  lf_style_crnt_widget_prop(s.ui, margin_right, 0);
   lf_style_widget_prop(lf_crnt(s.ui), text_align, ParagraphAlignmentCenter);
 
   lf_div(s.ui);
@@ -58,6 +67,7 @@ int main(void) {
 
   lf_button(s.ui);
   ((lf_button_t*)lf_crnt(s.ui))->on_click = on_click;
+  lf_style_crnt_widget_prop(s.ui, corner_radius, 10);
 
   lf_text_h4(s.ui, "Click me");
 
