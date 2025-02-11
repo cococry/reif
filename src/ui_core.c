@@ -169,8 +169,8 @@ render_widget_and_submit(
   float overdraw = (widget->props.corner_radius != 0) ? OVERDRAW_CORNER_RADIUS : 0;
   vec2s win_size = lf_win_get_size(ui->win);
   lf_color_t clear_color = 
-    (widget->parent) ? 
-    widget->parent->props.color : ui->root->props.color;
+    (widget->parent) && (widget->parent->parent) ? 
+    widget->parent->parent->props.color : ui->root->props.color;
 
   lf_ui_core_begin_render(
     ui,
