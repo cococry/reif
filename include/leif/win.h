@@ -57,6 +57,12 @@ typedef void (*lf_win_mouse_move_func)(
     uint16_t x, uint16_t y
     );
 
+#ifdef LF_X11
+typedef void (*lf_windowing_event_func)(
+    void* ev
+    );
+#endif
+
 int32_t lf_windowing_init(void);
 
 int32_t lf_windowing_terminate(void);
@@ -103,6 +109,9 @@ void lf_win_set_mouse_release_cb(lf_window_t win, lf_win_mouse_release_func mous
 
 void lf_win_set_mouse_move_cb(lf_window_t win, lf_win_mouse_move_func mouse_move_cb);
 
+
 vec2s lf_win_get_size(lf_window_t win);
 
 int32_t lf_win_get_refresh_rate(lf_window_t win);
+
+void lf_windowing_set_event_cb(lf_windowing_event_func cb);

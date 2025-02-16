@@ -27,6 +27,8 @@ typedef struct {
   Window win;
 } window_callbacks_t;
 
+static lf_windowing_event_func windowing_event_cb = NULL;
+
 static Display *display = NULL;
 static window_callbacks_t window_callbacks[MAX_WINDOWS];
 static uint32_t n_windows = 0;
@@ -118,7 +120,7 @@ handle_event(XEvent *event) {
             }
           }
           break;
-      }
+    }
     }
   }
 }
@@ -224,6 +226,8 @@ lf_windowing_next_event(void) {
   XEvent event;
   while (XPending(display)) {
     XNextEvent(display, &event);
+    if(windowing_event_cb)
+      windowing_event_cb(&event);
     handle_event(&event);
   }
 }
@@ -352,6 +356,7 @@ lf_win_set_mouse_move_cb(lf_window_t win, lf_win_mouse_move_func mouse_move_cb) 
   }
 }
 
+
 vec2s 
 lf_win_get_size(lf_window_t win) {
   XWindowAttributes attr;
@@ -367,6 +372,11 @@ lf_win_get_refresh_rate(lf_window_t win) {
   (void)win;
   // Placeholder as X11 doesn't provide refresh rate directly.
   return 60; // Default refresh rate.
+}
+
+void 
+lf_windowing_set_event_cb(lf_windowing_event_func cb) {
+  windowing_event_cb = cb;
 }
 
 #endif

@@ -21,6 +21,7 @@ typedef struct {
   GLFWwindow* win;
 } window_callbacks_t; 
 
+static windowing_event_cb = NULL;
 static window_callbacks_t window_callbacks[MAX_WINDOWS];
 static uint32_t n_windows = 0;
 static lf_ui_state_t* ui;
@@ -222,6 +223,8 @@ lf_windowing_get_current_event(void) {
 void 
 lf_windowing_next_event(void) {
   glfwPollEvents();
+  if(windowing_event_cb)
+    windowing_event_cb(&current_event);
 }
 
 void*
@@ -361,5 +364,10 @@ lf_win_get_refresh_rate(lf_window_t win) {
     }
 
     return -1;
+}
+
+void 
+lf_windowing_set_event_cb(lf_windowing_event_func cb) {
+  windowing_event_cb = cb;
 }
 #endif
