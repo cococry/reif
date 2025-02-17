@@ -14,7 +14,6 @@ _div_render(lf_ui_state_t* ui, lf_widget_t* widget) {
     LF_WIDGET_SIZE_V2(widget),
     widget->props.color, widget->props.border_color, 
     widget->props.border_width, widget->props.corner_radius);
-
 }
 
 void 

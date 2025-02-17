@@ -158,6 +158,7 @@ lf_text_set_label(
     lf_ui_state_t* ui, 
     lf_text_t* text,
     const char* label) {
+  if(strcmp(text->label, label) == 0) return;
   if(text->_changed_label) {
     free(text->label);
   }

@@ -153,6 +153,8 @@ typedef struct {
 
 typedef struct {
   lf_widget_t* last_parent, *current_widget;
+  bool _assignment_only;
+  uint32_t _assignment_idx, _last_assignment_idx;
 } lf_ez_state_t;
 
 bool lf_point_intersets_container(vec2s point, lf_container_t container);

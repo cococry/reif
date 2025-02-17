@@ -137,6 +137,7 @@ lf_rn_render_clear_color_area(
   glEnable(GL_SCISSOR_TEST);
   glScissor(area.pos.x, y_upper_left, area.size.x, area.size.y);
   lf_rn_render_clear_color(color);
+  glDisable(GL_SCISSOR_TEST);
 }
 
 void 

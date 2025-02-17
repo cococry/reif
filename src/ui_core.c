@@ -419,28 +419,36 @@ lf_ui_state_t* lf_ui_core_init_ex(
 }
 
 
-bool rerender_dirty_children(lf_ui_state_t* ui, lf_widget_t* widget) {
-  if(widget->_needs_rerender) {
+bool rerender_dirty_children(lf_ui_state_t* ui, lf_widget_t* widget, bool parent_rendered) {
+  if (widget->_needs_rerender) {
+    if (parent_rendered) {
+      widget->_needs_rerender = false;
+      return false;
+    }
+
     lf_container_t clear_area = widget->container; 
-      if(widget->_max_size.x != -1.0f && clear_area.size.x > widget->_max_size.x) {
+    if (widget->_max_size.x != -1.0f && clear_area.size.x > widget->_max_size.x) {
       clear_area.size.x = widget->_max_size.x;
     }
-    if(widget->_max_size.y != -1.0f && clear_area.size.y > widget->_max_size.y) {
+    if (widget->_max_size.y != -1.0f && clear_area.size.y > widget->_max_size.y) {
       clear_area.size.y = widget->_max_size.y;
     }
+    
     render_widget_and_submit(ui, widget, clear_area);
     widget->_needs_rerender = false;
-    return true;
-  } else {
-    bool rendered = false;
-    for(uint32_t i = 0; i < widget->num_childs; i++) {
-      if(rerender_dirty_children(ui, widget->childs[i])) {
-        rendered = true;
-      }
-    }
-    return rendered;
+    parent_rendered = true;
   }
+
+  bool rendered = parent_rendered;
+  for (uint32_t i = 0; i < widget->num_childs; i++) {
+    if (rerender_dirty_children(ui, widget->childs[i], parent_rendered)) {
+      rendered = true;
+    }
+  }
+  
+  return rendered;
 }
+
 
 void
 lf_ui_core_next_event(lf_ui_state_t* ui) {
@@ -484,14 +492,15 @@ lf_ui_core_next_event(lf_ui_state_t* ui) {
     ui->root->_needs_rerender = false;
     rendered = true;
   } else {
-    for(uint32_t i = 0; i < ui->root->num_childs; i++) {
-      bool rendered_child = rerender_dirty_children(ui, ui->root->childs[i]);
-      if(rendered_child) {
+    rendered = false;
+    for (uint32_t i = 0; i < ui->root->num_childs; i++) {
+      bool rendered_child = rerender_dirty_children(ui, ui->root->childs[i], false);
+      if (rendered_child) {
         rendered = true;
       }
     }
     if(rendered) {
-    lf_win_swap_buffers(ui->win);
+      lf_win_swap_buffers(ui->win);
     }
   }
 
@@ -531,6 +540,7 @@ lf_ui_core_rerender_widget(lf_ui_state_t* ui, lf_widget_t* widget) {
     rerender->_needs_rerender = true;
     return;
   }
+    printf("did not get here.\n");
   while(rerender->parent) {
     lf_widget_t* p = rerender->parent;
     if(p->size_calc){

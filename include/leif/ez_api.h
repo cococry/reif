@@ -28,7 +28,10 @@ typedef enum {
 
 lf_ez_state_t lf_ez_api_init(lf_ui_state_t* ui);
 
+void lf_ez_api_set_assignment_only_mode(lf_ui_state_t* ui, bool assignment_only);
+
 lf_div_t* lf_div(lf_ui_state_t* ui);
+
 
 void lf_div_end(lf_ui_state_t* ui);
 
