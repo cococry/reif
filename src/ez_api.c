@@ -19,9 +19,7 @@ void
 _end_widget(lf_ui_state_t* ui) {
   if(!ui->_ez.last_parent || !ui->_ez.last_parent->parent) return;
   ui->_ez.last_parent = ui->_ez.last_parent->parent;
-  if(ui->_ez._assignment_only) {
-    ui->_ez._assignment_idx = ui->_ez._last_assignment_idx + 1;
-  }
+  ui->_ez._assignment_idx = ui->_ez._last_assignment_idx + 1;
 }
 
 lf_widget_t*
@@ -57,6 +55,7 @@ _text_create_from_level(lf_ui_state_t* ui, const char* label, lf_text_level lvl)
 
     lf_text_t* txt = lf_text_create_ex(ui, ui->_ez.last_parent, label, font);
     ui->_ez.current_widget = &txt->base;
+    ui->_ez._assignment_idx++;
     return txt;
   } else {
     if(ui->_ez._assignment_idx >= ui->_ez.last_parent->num_childs) return NULL;
@@ -71,12 +70,19 @@ _text_create_from_level(lf_ui_state_t* ui, const char* label, lf_text_level lvl)
 
 lf_ez_state_t 
 lf_ez_api_init(lf_ui_state_t* ui) {
-  return (lf_ez_state_t){
+  lf_ez_state_t state = (lf_ez_state_t){
     .current_widget = ui->root, 
     .last_parent = ui->root,
     ._assignment_idx = 0,
     ._last_assignment_idx = 0,
   };
+  lf_vector_init(&state.comps);
+  return state;
+}
+
+void
+lf_ez_api_terminate(lf_ui_state_t* ui) {
+  lf_vector_free(&ui->_ez.comps);
 }
 
 void 
@@ -91,6 +97,8 @@ lf_div(lf_ui_state_t* ui) {
     lf_div_t* div = lf_div_create(ui, ui->_ez.last_parent);
     ui->_ez.last_parent = &div->base;
     ui->_ez.current_widget = &div->base;
+    ui->_ez._last_assignment_idx = ui->_ez._assignment_idx;
+    ui->_ez._assignment_idx = 0;
     return div;
   } else {
     return (lf_div_t*)_get_assignment_widget(ui, WidgetTypeDiv);
@@ -108,6 +116,8 @@ lf_button(lf_ui_state_t* ui) {
     lf_button_t* btn = lf_button_create(ui, ui->_ez.last_parent);
     ui->_ez.last_parent = &btn->base;
     ui->_ez.current_widget = &btn->base;
+    ui->_ez._last_assignment_idx = ui->_ez._assignment_idx;
+    ui->_ez._assignment_idx = 0;
     return btn;
   } else {
     return (lf_button_t*)_get_assignment_widget(ui, WidgetTypeButton);
@@ -165,6 +175,7 @@ lf_text_sized(lf_ui_state_t* ui, const char* label, uint32_t pixel_size) {
 
     lf_text_t* txt = lf_text_create_ex(ui, ui->_ez.last_parent, label, font); 
     ui->_ez.current_widget = &txt->base;
+    ui->_ez._assignment_idx++;
     return txt;
   } else {
     if(ui->_ez._assignment_idx >= ui->_ez.last_parent->num_childs) return NULL;
@@ -189,9 +200,10 @@ lf_crnt(lf_ui_state_t* ui) {
 lf_image_t* 
 lf_image(lf_ui_state_t* ui, const char* filepath) {
   if(!ui->_ez._assignment_only) {
-  lf_image_t* img = lf_image_create(ui, ui->_ez.last_parent, filepath);
-  ui->_ez.current_widget = &img->base;
-  return img; 
+    lf_image_t* img = lf_image_create(ui, ui->_ez.last_parent, filepath);
+    ui->_ez.current_widget = &img->base;
+    ui->_ez._assignment_idx++;
+    return img; 
   } else {
     if(ui->_ez._assignment_idx >= ui->_ez.last_parent->num_childs) return NULL;
     lf_widget_t* widget = ui->_ez.last_parent->childs[ui->_ez._assignment_idx++];
@@ -206,6 +218,7 @@ lf_image_sized(lf_ui_state_t* ui, const char* filepath, uint32_t w, uint32_t h) 
   if(!ui->_ez._assignment_only) {
     lf_image_t* img = lf_image_create_ex(ui, ui->_ez.last_parent, filepath, w, h);
     ui->_ez.current_widget = &img->base;
+    ui->_ez._assignment_idx++;
     return img; 
   } else {
     if(ui->_ez._assignment_idx >= ui->_ez.last_parent->num_childs) return NULL;
@@ -219,8 +232,9 @@ lf_image_sized(lf_ui_state_t* ui, const char* filepath, uint32_t w, uint32_t h) 
 lf_image_t* 
 lf_image_sized_w(lf_ui_state_t* ui, const char* filepath, uint32_t w) {
   if(!ui->_ez._assignment_only) {
-  lf_image_t* img = lf_image_create_ex_w(ui, ui->_ez.last_parent, filepath, w);
-  ui->_ez.current_widget = &img->base;
+    lf_image_t* img = lf_image_create_ex_w(ui, ui->_ez.last_parent, filepath, w);
+    ui->_ez.current_widget = &img->base;
+    ui->_ez._assignment_idx++;
   return img; 
   } else {
     if(ui->_ez._assignment_idx >= ui->_ez.last_parent->num_childs) return NULL;
@@ -236,8 +250,9 @@ lf_image_t*
 lf_image_sized_h(lf_ui_state_t* ui, const char* filepath, uint32_t h) {
   if(!ui->_ez._assignment_only) {
   lf_image_t* img = lf_image_create_ex_h(ui, ui->_ez.last_parent, filepath, h);
-  ui->_ez.current_widget = &img->base;
-  return img; 
+    ui->_ez.current_widget = &img->base;
+    ui->_ez._assignment_idx++;
+    return img; 
   } else {
     if(ui->_ez._assignment_idx >= ui->_ez.last_parent->num_childs) return NULL;
     lf_widget_t* widget = ui->_ez.last_parent->childs[ui->_ez._assignment_idx++];
@@ -247,3 +262,29 @@ lf_image_sized_h(lf_ui_state_t* ui, const char* filepath, uint32_t h) {
   }
 }
 
+void 
+lf_component(lf_ui_state_t* ui, lf_component_func_t comp_func) {
+  printf("assignment idx: %i\nm", ui->_ez._assignment_idx);
+  lf_vector_append(&ui->_ez.comps, ((lf_component_t){
+    .func = comp_func, 
+    ._child_idx = ui->_ez._assignment_idx,
+    ._parent = ui->_ez.last_parent
+  }));
+  comp_func();
+}
+
+void 
+lf_component_rerender(lf_ui_state_t* ui, lf_component_func_t comp_func) {
+  for (uint32_t i = 0; i < ui->_ez.comps.size; i++) {
+    lf_component_t comp = ui->_ez.comps.items[i];
+    if (comp.func == comp_func) {
+      lf_ez_api_set_assignment_only_mode(ui, true);
+      ui->_ez._assignment_idx = comp._child_idx;
+      ui->_ez.last_parent = comp._parent; 
+      ui->_ez.comps.items[i].func();
+      lf_ez_api_set_assignment_only_mode(ui, false);
+      lf_ui_core_rerender_widget(ui, comp._parent->childs[comp._child_idx]); 
+      return;
+    }
+  }
+}

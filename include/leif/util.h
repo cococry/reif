@@ -151,10 +151,25 @@ typedef struct {
   lf_paragraph_alignment_t text_align;
 } lf_widget_props_t;
 
+typedef void (*lf_component_func_t)(void);
+
+typedef struct {
+  lf_component_func_t func;
+  uint32_t _child_idx;
+  lf_widget_t* _parent;
+} lf_component_t;
+
+typedef struct {
+  lf_component_t* items;
+  uint32_t cap, size;
+} lf_component_list_t;
+
 typedef struct {
   lf_widget_t* last_parent, *current_widget;
   bool _assignment_only;
   uint32_t _assignment_idx, _last_assignment_idx;
+
+  lf_component_list_t comps;
 } lf_ez_state_t;
 
 bool lf_point_intersets_container(vec2s point, lf_container_t container);

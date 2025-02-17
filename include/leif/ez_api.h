@@ -28,10 +28,11 @@ typedef enum {
 
 lf_ez_state_t lf_ez_api_init(lf_ui_state_t* ui);
 
+void lf_ez_api_terminate(lf_ui_state_t* ui);
+
 void lf_ez_api_set_assignment_only_mode(lf_ui_state_t* ui, bool assignment_only);
 
 lf_div_t* lf_div(lf_ui_state_t* ui);
-
 
 void lf_div_end(lf_ui_state_t* ui);
 
@@ -65,6 +66,7 @@ lf_image_t* lf_image_sized_w(lf_ui_state_t* ui, const char* filepath, uint32_t w
 
 lf_image_t* lf_image_sized_h(lf_ui_state_t* ui, const char* filepath, uint32_t w);
 
-void lf_override_font_style(lf_ui_state_t* ui, lf_font_style_t style);
+void lf_component(lf_ui_state_t* ui, lf_component_func_t comp_func);
 
-void lf_override_font_style_unset(lf_ui_state_t* ui, lf_font_style_t style);
+void lf_component_rerender(lf_ui_state_t* ui, lf_component_func_t comp_func);
+

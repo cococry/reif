@@ -602,6 +602,8 @@ lf_ui_core_terminate(lf_ui_state_t* ui) {
 
   lf_asset_manager_terminate(ui->asset_manager);
 
+  lf_ez_api_terminate(ui);
+
 #ifdef LF_RUNARA
   rn_terminate((RnState*)ui->render_state);
 #endif
@@ -737,3 +739,4 @@ lf_ui_core_commit_entire_render(lf_ui_state_t* ui) {
   render_widget_and_submit(ui, ui->root, clear_area);
   lf_win_swap_buffers(ui->win);
 }
+

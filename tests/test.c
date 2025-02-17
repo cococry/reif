@@ -30,22 +30,16 @@ static state_t s;
 
 static void maincomp(void);
 
-static lf_widget_t* rerender = NULL;
-
 int counter = 0;
 bool active = false;
 void on_click(lf_ui_state_t* ui, lf_widget_t* widget) {
   counter++;
   active = !active;
-  lf_ez_api_set_assignment_only_mode(s.ui, true);
-  s.ui->_ez._assignment_idx = 0;
-  maincomp();
-  lf_ez_api_set_assignment_only_mode(s.ui, false);
-  lf_ui_core_rerender_widget(ui, rerender); 
+  lf_component_rerender(ui, maincomp);
 }
 
 void maincomp(void) {
-  rerender = &lf_div(s.ui)->base;
+  lf_div(s.ui);
 
   char buf[64];
   sprintf(buf, "Counter: %i", counter);
@@ -61,23 +55,23 @@ void maincomp(void) {
 
   lf_text_h4(s.ui, "Increase");
 
-
   lf_button_end(s.ui);
 
   lf_div_end(s.ui);
 }
+
 int main(void) {
 
   if(lf_windowing_init() != 0) return EXIT_FAILURE;
 
   lf_window_t win = lf_ui_core_create_window(1280, 720, "hello leif");
   s.ui = lf_ui_core_init(win);
-  maincomp();
+  lf_text_h1(s.ui, "Hello, World!");
+  lf_component(s.ui, maincomp);
   while(s.ui->running) {
     lf_ui_core_next_event(s.ui);
   }
 
- 
   lf_ui_core_terminate(s.ui);
 	
   return EXIT_SUCCESS;

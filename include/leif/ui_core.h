@@ -30,7 +30,6 @@ typedef struct {
   uint32_t cap, size;
 } lf_timer_list_t;
 
-
 typedef void (*lf_page_func_t)(
       lf_ui_state_t* ui);
 
@@ -162,4 +161,3 @@ lf_timer_t* lf_ui_core_start_timer(lf_ui_state_t* ui, float duration, lf_timer_f
 lf_timer_t* lf_ui_core_start_timer_looped(lf_ui_state_t* ui, float duration, lf_timer_finish_func_t finish_cb);
 
 void lf_ui_core_commit_entire_render(lf_ui_state_t* ui);
-
