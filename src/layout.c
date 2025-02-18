@@ -92,8 +92,7 @@ lf_layout_vertical(lf_ui_state_t* ui, lf_widget_t* widget) {
     .y = widget_props.padding_top
   };
 
-  bool centered_horizontal = lf_flag_exists(&widget->alignment_flags, AlignCenterHorizontal) && 
-    widget->sizing_type != SizingFitToContent;
+  bool centered_horizontal = lf_flag_exists(&widget->alignment_flags, AlignCenterHorizontal); 
 
   if(lf_flag_exists(&widget->alignment_flags, AlignCenterVertical) && widget->sizing_type != SizingFitToContent) {
     offset.y = (lf_widget_height_ex(widget, widget->_rendered_props) - child_size.y) / 2.0f;
@@ -174,8 +173,9 @@ void lf_layout_horizontal(lf_ui_state_t* ui, lf_widget_t* widget) {
       ptr.x += child->props.margin_left;
     else if(widget->justify_type == JustifyEnd) 
       ptr.x -= size.x + child->props.margin_right;
-    
-    child->container.pos.y = ptr.y + ((centered_vertical) ? (lf_widget_height_ex(widget, widget->_rendered_props) - 
+   
+    child->container.pos.y = ptr.y + ((centered_vertical) ? (
+      LF_WIDGET_SIZE_RENDERED_V2(widget).y - 
       LF_WIDGET_SIZE_RENDERED_V2(child).y) / 2.0f :
       child->props.margin_top);
 

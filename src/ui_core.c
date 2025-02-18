@@ -449,7 +449,6 @@ bool rerender_dirty_children(lf_ui_state_t* ui, lf_widget_t* widget, bool parent
   return rendered;
 }
 
-
 void
 lf_ui_core_next_event(lf_ui_state_t* ui) {
   if(ui->crnt_page_id == 0 && ui->pages.size != 0) {
@@ -480,8 +479,8 @@ lf_ui_core_next_event(lf_ui_state_t* ui) {
 
   lf_widget_t* shape = NULL;
   if(lf_widget_animate(ui, ui->root, &shape)) {
-    shape->parent->_needs_rerender = true;
-    lf_widget_shape(ui, shape->parent);
+    //lf_ui_core_rerender_widget(ui, shape->parent ? shape->parent : ui->root);
+    ui->root->_needs_rerender = true;
   }
 
   bool rendered = lf_windowing_get_current_event() == WinEventRefresh;
@@ -535,12 +534,12 @@ lf_ui_core_submit(lf_ui_state_t* ui) {
 
 void 
 lf_ui_core_rerender_widget(lf_ui_state_t* ui, lf_widget_t* widget) {
+  if(ui->root->_needs_rerender) return;
   lf_widget_t* rerender = widget;
   if(!rerender->_changed_size) {
     rerender->_needs_rerender = true;
     return;
   }
-    printf("did not get here.\n");
   while(rerender->parent) {
     lf_widget_t* p = rerender->parent;
     if(p->size_calc){

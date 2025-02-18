@@ -617,24 +617,28 @@ void
 lf_widget_set_fixed_width(lf_widget_t* widget, float width) {
   widget->container.size.x = width;
   widget->_fixed_width = true;
+  widget->_changed_size = true;
 }
 
 void 
 lf_widget_set_fixed_height(lf_widget_t* widget, float height) {
   widget->container.size.y = height;
   widget->_fixed_height = true;
+  widget->_changed_size = true;
 }
 
 void 
 lf_widget_set_fixed_width_percent(lf_widget_t* widget, float percent) {
   widget->_width_percent = percent / 100.0f;
   widget->_fixed_width = true;
+  widget->_changed_size = true;
 }
 
 void 
 lf_widget_set_fixed_height_percent(lf_widget_t* widget, float percent) {
   widget->_height_percent = percent / 100.0f;
   widget->_fixed_height = true;
+  widget->_changed_size = true;
 }
 
 void lf_widget_set_alignment(lf_widget_t* widget, uint32_t flags) {
