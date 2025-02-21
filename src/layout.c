@@ -84,7 +84,7 @@ static void widget_grow_vert(lf_widget_t* widget) {
 
 void 
 lf_layout_vertical(lf_ui_state_t* ui, lf_widget_t* widget) {
-  lf_widget_props_t widget_props = widget->_rendered_props; 
+  lf_widget_props_t widget_props = widget->props; 
 
   vec2s child_size = lf_widget_measure_children(widget, NULL);
    vec2s offset = (vec2s){
@@ -95,7 +95,7 @@ lf_layout_vertical(lf_ui_state_t* ui, lf_widget_t* widget) {
   bool centered_horizontal = lf_flag_exists(&widget->alignment_flags, AlignCenterHorizontal); 
 
   if(lf_flag_exists(&widget->alignment_flags, AlignCenterVertical) && widget->sizing_type != SizingFitToContent) {
-    offset.y = (lf_widget_height_ex(widget, widget->_rendered_props) - child_size.y) / 2.0f;
+    offset.y = (lf_widget_height_ex(widget, widget->props) - child_size.y) / 2.0f;
   }
 
   if(centered_horizontal) {
@@ -121,7 +121,7 @@ lf_layout_vertical(lf_ui_state_t* ui, lf_widget_t* widget) {
     else if(widget->justify_type == JustifyEnd) 
       ptr.y -= size.y + child->props.margin_bottom;
 
-    float centering_offset = (lf_widget_width_ex(widget, widget->_rendered_props) - LF_WIDGET_SIZE_RENDERED_V2(child).x) / 2.0f;
+    float centering_offset = (lf_widget_width_ex(widget, widget->_rendered_props) - LF_WIDGET_SIZE_V2(child).x) / 2.0f;
 
     child->container.pos.x = ptr.x + ((centered_horizontal) ? centering_offset : child->props.margin_left); 
 
@@ -138,7 +138,7 @@ lf_layout_vertical(lf_ui_state_t* ui, lf_widget_t* widget) {
 }
 
 void lf_layout_horizontal(lf_ui_state_t* ui, lf_widget_t* widget) {
-  lf_widget_props_t widget_props = widget->_rendered_props; 
+  lf_widget_props_t widget_props = widget->props; 
 
   vec2s child_size = lf_widget_measure_children(widget, NULL);
   vec2s offset = (vec2s){
@@ -146,7 +146,7 @@ void lf_layout_horizontal(lf_ui_state_t* ui, lf_widget_t* widget) {
     .y = widget_props.padding_top
   };
   if(lf_flag_exists(&widget->alignment_flags, AlignCenterHorizontal)) {
-    offset.x = (lf_widget_width_ex(widget, widget->_rendered_props) - child_size.x) / 2.0f;
+    offset.x = (lf_widget_width_ex(widget, widget->props) - child_size.x) / 2.0f;
   }
   if(lf_flag_exists(&widget->alignment_flags, AlignCenterVertical)) {
     offset.y = 0;

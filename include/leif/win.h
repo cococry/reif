@@ -57,11 +57,9 @@ typedef void (*lf_win_mouse_move_func)(
     uint16_t x, uint16_t y
     );
 
-#ifdef LF_X11
 typedef void (*lf_windowing_event_func)(
     void* ev
     );
-#endif
 
 int32_t lf_windowing_init(void);
 

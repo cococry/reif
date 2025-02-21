@@ -480,6 +480,8 @@ lf_ui_core_next_event(lf_ui_state_t* ui) {
   lf_widget_t* shape = NULL;
   if(lf_widget_animate(ui, ui->root, &shape)) {
     //lf_ui_core_rerender_widget(ui, shape->parent ? shape->parent : ui->root);
+    lf_widget_shape(ui, shape);
+    printf("Color r: %i\n", shape->props.color.r);
     ui->root->_needs_rerender = true;
   }
 

@@ -84,6 +84,31 @@ void maincomp(void) {
 
 static void comp(void);
 static bool a = false;
+
+void on_hover(lf_ui_state_t* ui, lf_widget_t* widget) {
+  lf_widget_add_animation(widget, &widget->props.padding_left, ui->theme->button_props.padding_left, 
+                          ui->theme->button_props.padding_left + 10, 0.2, lf_ease_in_quad);
+  lf_widget_add_animation(widget, &widget->props.padding_right, ui->theme->button_props.padding_right, 
+                          ui->theme->button_props.padding_right + 10, 0.2, lf_ease_in_quad);
+  lf_widget_add_animation(widget, &widget->props.padding_top, ui->theme->button_props.padding_top, 
+                          ui->theme->button_props.padding_top + 10, 0.2, lf_ease_in_quad);
+  lf_widget_add_animation(widget, &widget->props.padding_bottom, ui->theme->button_props.padding_top, 
+                          ui->theme->button_props.padding_top + 10, 0.2, lf_ease_in_quad);
+}
+
+void on_leave(lf_ui_state_t* ui, lf_widget_t* widget) {
+  lf_widget_add_animation(widget, &widget->props.padding_left, 
+                          ui->theme->button_props.padding_left + 10, 
+                          ui->theme->button_props.padding_left, 0.2, lf_ease_in_quad);
+  lf_widget_add_animation(widget, &widget->props.padding_right, ui->theme->button_props.padding_right, 
+                          ui->theme->button_props.padding_right + 10, 0.2, lf_ease_in_quad);
+  
+  lf_widget_add_animation(widget, &widget->props.padding_top, ui->theme->button_props.padding_top + 10, 
+                          ui->theme->button_props.padding_top , 0.2, lf_ease_in_quad);
+  lf_widget_add_animation(widget, &widget->props.padding_bottom, ui->theme->button_props.padding_top + 10, 
+                          ui->theme->button_props.padding_top , 0.2, lf_ease_in_quad);
+}
+
 void on_click(lf_ui_state_t* ui, lf_widget_t* widget) {
   if(a) {
     lf_widget_set_padding(widget, ui->theme->button_props.padding_left);
@@ -143,6 +168,8 @@ int main(void) {
   lf_window_t win = lf_ui_core_create_window(1280, 720, "hello leif");
   s.ui = lf_ui_core_init(win);
 
+  lf_style_crnt_widget_prop(s.ui, text_color, LF_BLACK);
+  lf_style_crnt_widget_prop(s.ui, color, LF_WHITE);
   lf_widget_set_fixed_height_percent(lf_crnt(s.ui), 100.0f);
   lf_widget_set_alignment(lf_crnt(s.ui), AlignCenterHorizontal | AlignCenterVertical); 
 
@@ -153,10 +180,10 @@ int main(void) {
   lf_style_crnt_widget_prop(s.ui, margin_bottom, 25.0f);
   lf_style_crnt_widget_prop(s.ui, corner_radius, 20);
   ((lf_button_t*)lf_crnt(s.ui))->on_click = desktop_up;
+  ((lf_button_t*)lf_crnt(s.ui))->on_enter = on_hover;
+  ((lf_button_t*)lf_crnt(s.ui))->on_leave = on_leave;
   lf_style_crnt_widget_prop(s.ui, padding_bottom, 5); 
   lf_style_crnt_widget_prop(s.ui, padding_top, 5); 
-  lf_style_crnt_widget_prop(s.ui, padding_left, 25); 
-  lf_style_crnt_widget_prop(s.ui, padding_right, 25); 
   lf_text_h4(s.ui, "Desktop Up");
   lf_button_end(s.ui);
 

@@ -21,7 +21,7 @@ typedef struct {
   GLFWwindow* win;
 } window_callbacks_t; 
 
-static windowing_event_cb = NULL;
+static lf_windowing_event_func  windowing_event_cb = NULL;
 static window_callbacks_t window_callbacks[MAX_WINDOWS];
 static uint32_t n_windows = 0;
 static lf_ui_state_t* ui;
