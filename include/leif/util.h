@@ -149,6 +149,7 @@ typedef struct {
   lf_color_t border_color;
 
   lf_paragraph_alignment_t text_align;
+
 } lf_widget_props_t;
 
 typedef void (*lf_component_func_t)(void);

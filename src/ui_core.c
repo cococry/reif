@@ -482,7 +482,8 @@ lf_ui_core_next_event(lf_ui_state_t* ui) {
 
   lf_widget_t* shape = NULL;
   if(lf_widget_animate(ui, ui->root, &shape)) {
-    lf_ui_core_rerender_widget(ui, shape->parent ? shape->parent : ui->root);
+    lf_widget_t* widget = shape->parent ? shape->parent : ui->root;
+    lf_ui_core_rerender_widget(ui, widget);
   }
 
   bool rendered = lf_windowing_get_current_event() == WinEventRefresh;

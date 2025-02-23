@@ -12,7 +12,7 @@
 #define LF_BLUE ((lf_color_t){0,0,255,255})
 
 typedef struct {
-  uint8_t r, g, b, a;
+  float r, g, b, a;
 } lf_color_t;
 
 lf_color_t lf_color_from_hex(uint32_t hex);

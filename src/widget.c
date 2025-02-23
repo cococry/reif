@@ -16,6 +16,7 @@ static void widget_resize_children(lf_widget_t* widget, uint32_t new_cap);
 static void widget_animate(lf_ui_state_t* ui, lf_widget_t* widget);
 static uint32_t count_anims(lf_animation_t* head);
 
+
 void 
 widget_resize_children(lf_widget_t* widget, uint32_t new_cap) {
   widget->childs = (lf_widget_t**)realloc(widget->childs, new_cap * sizeof(lf_widget_t*));
@@ -66,6 +67,7 @@ count_anims(lf_animation_t* head) {
 
   return count;
 }
+
 lf_widget_t* 
 lf_widget_create(
   uint32_t id,
@@ -107,6 +109,7 @@ lf_widget_create(
   widget->_fixed_width = false;
   widget->_fixed_height = false;
 
+
   widget->anims = NULL; 
 
   widget->_width_percent = 0.0f;
@@ -114,6 +117,9 @@ lf_widget_create(
   
   widget->_min_size = (vec2s){.x = -1.0f, .y = -1.0f};
   widget->_max_size = (vec2s){.x = -1.0f, .y = -1.0f};
+
+  widget->transition_time   = 0.0f;
+  widget->transition_func   = NULL;
 
   return widget;
 }
@@ -152,7 +158,9 @@ lf_widget_render(lf_ui_state_t* ui,  lf_widget_t* widget) {
   if(!widget->visible) return;
   if(widget->render) {
     if(!lf_container_intersets_container(
-      LF_WIDGET_CONTAINER(widget), ui->root->container) || !lf_container_intersets_container(LF_WIDGET_CONTAINER(widget), LF_WIDGET_CONTAINER(widget->parent))) {
+      LF_WIDGET_CONTAINER(widget), ui->root->container) || 
+      !lf_container_intersets_container(
+        LF_WIDGET_CONTAINER(widget), LF_WIDGET_CONTAINER(widget->parent))) {
       return;
     }
 
@@ -245,6 +253,7 @@ bool lf_widget_animate(
   uint32_t n_anims = count_anims(widget->anims);
   if (n_anims != 0) {
     widget_animate(ui, widget);
+    lf_widget_submit_props(widget);
     animated = true;
     if (*o_shape == NULL) {
       *o_shape = widget;
@@ -388,35 +397,11 @@ void lf_widget_set_padding(
       widget->props.padding_left == padding && 
       widget->props.padding_right == padding) return;
 
-  printf("Siegesdenkmal.\n");
-  lf_widget_add_animation(
-      widget,
-      &widget->_rendered_props.padding_left,
-      widget->_rendered_props.padding_left,
-      padding,
-      0.2, lf_ease_in_quad);
-
-  lf_widget_add_animation(
-      widget,
-      &widget->_rendered_props.padding_right,
-      widget->_rendered_props.padding_right,
-      padding,
-      0.2, lf_ease_in_quad);
-
-  lf_widget_add_animation(
-      widget,
-      &widget->_rendered_props.padding_top,
-      widget->_rendered_props.padding_top,
-      padding,
-      0.2, lf_ease_in_quad);
-
-  lf_widget_add_animation(
-      widget,
-      &widget->_rendered_props.padding_bottom,
-      widget->_rendered_props.padding_bottom,
-      padding,
-      0.2, lf_ease_in_quad);
-
+  lf_widget_set_prop(widget, &widget->props.padding_left, padding); 
+  lf_widget_set_prop(widget, &widget->props.padding_right, padding); 
+  lf_widget_set_prop(widget, &widget->props.padding_top, padding); 
+  lf_widget_set_prop(widget, &widget->props.padding_bottom, padding); 
+ 
   widget->_changed_size = true;
 }
 
@@ -794,3 +779,27 @@ lf_widget_effective_size(lf_widget_t* widget) {
     widget->props.margin_top + widget->props.margin_bottom
   };
 }
+
+void
+lf_widget_set_transition_props(
+    lf_widget_t* widget, float transition_time,
+    lf_animation_func_t transition_func) {
+  widget->transition_time = transition_time;
+  widget->transition_func = transition_func;
+}
+
+void lf_widget_set_prop(
+  lf_widget_t* widget, 
+  float* prop, float val) {
+  if(widget->transition_func) {
+    lf_widget_add_animation(
+      widget,
+      prop, 
+      *prop, val,
+      widget->transition_time, widget->transition_func);
+  } else {
+    *prop = val; 
+    lf_widget_submit_props(widget);
+  }
+}
+

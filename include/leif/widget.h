@@ -72,6 +72,9 @@ struct lf_widget_t {
   const char* font_family;
   int32_t font_size;
   lf_font_style_t font_style;
+
+  float transition_time;
+  lf_animation_func_t transition_func;
 };
 
 lf_widget_t* lf_widget_create(
@@ -233,3 +236,11 @@ void lf_widget_set_font_size(lf_ui_state_t* ui, lf_widget_t* widget, uint32_t pi
 vec2s lf_widget_measure_children(lf_widget_t* widget, vec2s* o_max);
 
 vec2s lf_widget_effective_size(lf_widget_t* widget);
+
+void lf_widget_set_transition_props(
+    lf_widget_t* widget, float transition_time,
+    lf_animation_func_t transition_func);
+
+void lf_widget_set_prop(
+  lf_widget_t* widget, 
+  float* prop, float val);

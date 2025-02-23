@@ -123,7 +123,7 @@ lf_text_t* _text_create(
     _text_shape
   );
 
-  lf_style_widget_prop(&text->base, text_color, parent->props.text_color);
+  text->base.props.text_color = parent->props.text_color;
   text->base.layout_type = LayoutNone;
   lf_widget_add_child(parent, (lf_widget_t*)text);
 
