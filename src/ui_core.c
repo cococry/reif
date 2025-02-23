@@ -147,6 +147,8 @@ init_state(lf_ui_state_t* state, lf_window_t win) {
   state->_ez = lf_ez_api_init(state); 
 
   clock_gettime(CLOCK_MONOTONIC, &init_time);
+  state->_last_time = get_elapsed_time();
+  state->delta_time = 0.0f;
 
 }
 
@@ -458,8 +460,9 @@ lf_ui_core_next_event(lf_ui_state_t* ui) {
   lf_windowing_next_event();
 
   for (uint32_t i = 0; i < ui->timers.size; i++) {
-    if(!ui->timers.items[i].paused)
+    if(!ui->timers.items[i].paused) {
       lf_timer_tick(ui, &ui->timers.items[i], ui->delta_time, false);
+    }
   }
 
   // Mark expired timers for deletion
@@ -479,10 +482,7 @@ lf_ui_core_next_event(lf_ui_state_t* ui) {
 
   lf_widget_t* shape = NULL;
   if(lf_widget_animate(ui, ui->root, &shape)) {
-    //lf_ui_core_rerender_widget(ui, shape->parent ? shape->parent : ui->root);
-    lf_widget_shape(ui, shape);
-    printf("Color r: %i\n", shape->props.color.r);
-    ui->root->_needs_rerender = true;
+    lf_ui_core_rerender_widget(ui, shape->parent ? shape->parent : ui->root);
   }
 
   bool rendered = lf_windowing_get_current_event() == WinEventRefresh;
@@ -710,6 +710,10 @@ lf_ui_core_start_timer(lf_ui_state_t* ui, float duration, lf_timer_finish_func_t
       .looping = false,
       .finish_cb = finish_cb
     }));
+  for(uint32_t i = 0; i < ui->timers.size; i++) {
+    printf("Timer: %f, %f\n", ui->timers.items[i].duration,
+        ui->timers.items[i].elapsed);
+  }
   return &ui->timers.items[ui->timers.size - 1];
 }
 

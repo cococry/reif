@@ -93,7 +93,8 @@ _button_handle_event(
       if(button->on_leave) {
         button->on_leave(ui, widget);
       }
-      lf_ui_core_rerender_widget(ui, &button->base);
+      if(!widget->_needs_rerender && !widget->anims)
+        lf_ui_core_rerender_widget(ui, &button->base);
     }
     return;
   }
@@ -103,12 +104,14 @@ _button_handle_event(
     if(button->on_click) {
       button->on_click(ui, widget);
     }
-    lf_ui_core_rerender_widget(ui, &button->base);
+    if(!widget->_needs_rerender && !widget->anims)
+      lf_ui_core_rerender_widget(ui, &button->base);
     return;
   }
   if(event.type == WinEventMousePress) {
     button->_held = true;
-    lf_ui_core_rerender_widget(ui, &button->base);
+    if(!widget->_needs_rerender && !widget->anims)
+      lf_ui_core_rerender_widget(ui, &button->base);
     return;
   }
 
@@ -118,7 +121,8 @@ _button_handle_event(
     if(button->on_enter) {
       button->on_enter(ui, widget);
     }
-    lf_ui_core_rerender_widget(ui, &button->base);
+    if(!widget->_needs_rerender && !widget->anims)
+      lf_ui_core_rerender_widget(ui, &button->base);
     return;
   }
 }

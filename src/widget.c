@@ -375,25 +375,48 @@ lf_widget_width_ex(lf_widget_t* widget, lf_widget_props_t props) {
 float 
 lf_widget_height_ex(lf_widget_t* widget, lf_widget_props_t props) {
   return widget->container.size.y + 
-  props.padding_top       +
-  props.padding_bottom;
+    props.padding_top       +
+    props.padding_bottom;
 }
 
 void lf_widget_set_padding(
-  lf_widget_t* widget,
-  float padding) {
+    lf_widget_t* widget,
+    float padding) {
   if(
-    widget->props.padding_top == padding && 
-    widget->props.padding_bottom == padding && 
-    widget->props.padding_left == padding && 
-    widget->props.padding_right == padding) return;
+      widget->props.padding_top == padding && 
+      widget->props.padding_bottom == padding && 
+      widget->props.padding_left == padding && 
+      widget->props.padding_right == padding) return;
 
-  widget->props.padding_top = padding;
-  widget->props.padding_bottom = padding;
-  widget->props.padding_left = padding; 
-  widget->props.padding_right = padding;
+  printf("Siegesdenkmal.\n");
+  lf_widget_add_animation(
+      widget,
+      &widget->_rendered_props.padding_left,
+      widget->_rendered_props.padding_left,
+      padding,
+      0.2, lf_ease_in_quad);
 
-  lf_widget_submit_props(widget);
+  lf_widget_add_animation(
+      widget,
+      &widget->_rendered_props.padding_right,
+      widget->_rendered_props.padding_right,
+      padding,
+      0.2, lf_ease_in_quad);
+
+  lf_widget_add_animation(
+      widget,
+      &widget->_rendered_props.padding_top,
+      widget->_rendered_props.padding_top,
+      padding,
+      0.2, lf_ease_in_quad);
+
+  lf_widget_add_animation(
+      widget,
+      &widget->_rendered_props.padding_bottom,
+      widget->_rendered_props.padding_bottom,
+      padding,
+      0.2, lf_ease_in_quad);
+
   widget->_changed_size = true;
 }
 
