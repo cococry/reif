@@ -14,29 +14,30 @@ static uint32_t font_sizes[] = {
   13, // H6
   16  // Paragraph
 };
-
-void 
-_end_widget(lf_ui_state_t* ui) {
-  if(!ui->_ez.last_parent || !ui->_ez.last_parent->parent) return;
+void _end_widget(lf_ui_state_t* ui) {
+  if (!ui->_ez.last_parent || !ui->_ez.last_parent->parent) return;
   ui->_ez.last_parent = ui->_ez.last_parent->parent;
   ui->_ez._assignment_idx = ui->_ez._last_assignment_idx; 
 }
 
 lf_widget_t*
 _get_assignment_widget(lf_ui_state_t* ui, lf_widget_type_t type) {
-  if(ui->_ez._assignment_idx >= ui->_ez.last_parent->num_childs) {
-      fprintf(stderr,"leif: mismatch in widget tree.\n"); 
+  if (!ui->_ez.last_parent || ui->_ez._assignment_idx >= ui->_ez.last_parent->num_childs) {
+    fprintf(stderr, "leif: mismatch in widget tree.\n");
     return NULL;
   }
-  lf_widget_t* widget = ui->_ez.last_parent->childs[ui->_ez._assignment_idx++];
-  if(widget->type != type) {
-      fprintf(stderr,"leif: mismatch in widget tree. widget ID: %i.\n", widget->id);
+
+  lf_widget_t* widget = ui->_ez.last_parent->childs[ui->_ez._assignment_idx];
+
+  if (widget->type != type) {
+    fprintf(stderr, "leif: mismatch in widget tree. widget ID: %i.\n", widget->id);
     return NULL;
   }
-  ui->_ez._last_assignment_idx = ui->_ez._assignment_idx;
+
+  ui->_ez.current_widget = widget;
+  ui->_ez.last_parent = widget;  
+  ui->_ez._last_assignment_idx = ui->_ez._assignment_idx + 1;
   ui->_ez._assignment_idx = 0;
-  ui->_ez.last_parent = widget; 
-  ui->_ez.current_widget = widget; 
   return widget;
 }
 
@@ -66,11 +67,15 @@ _text_create_from_level(lf_ui_state_t* ui, const char* label, lf_text_level lvl)
   } else {
     if(ui->_ez._assignment_idx >= ui->_ez.last_parent->num_childs) return NULL;
     lf_widget_t* widget = ui->_ez.last_parent->childs[ui->_ez._assignment_idx++];
+    if(widget->id == 4) {
+      printf("Correct!\n");
+    }
     if(widget->type != WidgetTypeText) {
       fprintf(stderr,"leif: mismatch in widget tree. widget ID: %i.\n", widget->id);
       return NULL;
     }
     lf_text_set_label(ui, (lf_text_t*)widget, label);
+      printf("Setting label!\n");
     ui->_ez.current_widget = widget; 
     return (lf_text_t*)widget;
   }
@@ -106,7 +111,6 @@ lf_div(lf_ui_state_t* ui) {
     lf_div_t* div = lf_div_create(ui, ui->_ez.last_parent);
     ui->_ez.last_parent = &div->base;
     ui->_ez.current_widget = &div->base;
-    ui->_ez._assignment_idx++;
     ui->_ez._last_assignment_idx = ui->_ez._assignment_idx;
     ui->_ez._assignment_idx = 0;
     return div;
@@ -126,8 +130,7 @@ lf_button(lf_ui_state_t* ui) {
     lf_button_t* btn = lf_button_create(ui, ui->_ez.last_parent);
     ui->_ez.last_parent = &btn->base;
     ui->_ez.current_widget = &btn->base;
-    ui->_ez._assignment_idx++;
-    ui->_ez._last_assignment_idx = ui->_ez._assignment_idx;
+    ui->_ez._last_assignment_idx = ui->_ez._assignment_idx + 1;
     ui->_ez._assignment_idx = 0;
     return btn;
   } else {
@@ -316,23 +319,35 @@ lf_component(lf_ui_state_t* ui, lf_component_func_t comp_func) {
     ._child_idx = ui->_ez._assignment_idx,
     ._parent = ui->_ez.last_parent
   }));
+  lf_div(ui);
+  lf_crnt(ui)->sizing_type = SizingFitToContent;
   comp_func();
+  lf_div_end(ui);
 }
 
-void 
-lf_component_rerender(lf_ui_state_t* ui, lf_component_func_t comp_func) {
+void lf_component_rerender(lf_ui_state_t* ui, lf_component_func_t comp_func) {
   for (uint32_t i = 0; i < ui->_ez.comps.size; i++) {
-    lf_component_t comp = ui->_ez.comps.items[i];
-    if (comp.func == comp_func) {
+    lf_component_t* comp = &ui->_ez.comps.items[i];
 
+    if (comp->func == comp_func) {
       lf_ez_api_set_assignment_only_mode(ui, true);
-      ui->_ez._assignment_idx = comp._child_idx;
-      ui->_ez.last_parent = comp._parent; 
-      ui->_ez.comps.items[i].func();
-      lf_ez_api_set_assignment_only_mode(ui, false);
 
-      lf_ui_core_rerender_widget(ui, comp._parent->childs[comp._child_idx]); 
+      ui->_ez._assignment_idx = comp->_child_idx;
+      ui->_ez.last_parent = comp->_parent;
+      if(ui->_ez.last_parent != ui->root || ui->_ez._assignment_idx != 1) {
+        printf("Fuck...\n");
+      }
+      lf_div(ui);
+      lf_crnt(ui)->sizing_type = SizingFitToContent;
+      comp->func();  // Run component
+      lf_div_end(ui);
+
+      lf_ez_api_set_assignment_only_mode(ui, false);
       
+      if (comp->_parent && comp->_parent->num_childs > comp->_child_idx) {
+        lf_ui_core_rerender_widget(ui, comp->_parent->childs[comp->_child_idx]);
+      }
+
       return;
     }
   }

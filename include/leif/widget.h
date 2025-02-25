@@ -126,32 +126,14 @@ void lf_widget_remove_from_memory(lf_widget_t* widget);
 void lf_widget_remove_child_from_memory(lf_widget_t* parent, uint32_t child_idx);
 
 void lf_widget_set_padding(
+    lf_ui_state_t* ui,
     lf_widget_t* widget,
     float padding);
 
 void lf_widget_set_margin(
+    lf_ui_state_t* ui,
     lf_widget_t* widget,
     float margin);
-
-void lf_widget_set_color(
-    lf_ui_state_t* ui,
-    lf_widget_t* widget,
-    lf_color_t color);
-
-void lf_widget_set_border_color(
-    lf_ui_state_t* ui,
-    lf_widget_t* widget,
-    lf_color_t color);
-
-void lf_widget_set_border_width(
-    lf_ui_state_t* ui,
-    lf_widget_t* widget,
-    float border_width);
-
-void lf_widget_set_corner_radius(
-    lf_ui_state_t* ui,
-    lf_widget_t* widget,
-    float corner_radius);
 
 void lf_widget_set_layout(lf_widget_t* widget, lf_layout_type_t layout);
 
@@ -242,5 +224,12 @@ void lf_widget_set_transition_props(
     lf_animation_func_t transition_func);
 
 void lf_widget_set_prop(
-  lf_widget_t* widget, 
-  float* prop, float val);
+    lf_ui_state_t* ui,
+    lf_widget_t* widget, 
+    float* prop, float val);
+
+
+void lf_widget_set_prop_color(
+    lf_ui_state_t* ui,
+    lf_widget_t* widget, 
+    lf_color_t* prop, lf_color_t val);

@@ -371,7 +371,7 @@ int32_t
 lf_win_get_refresh_rate(lf_window_t win) {
   (void)win;
   // Placeholder as X11 doesn't provide refresh rate directly.
-  return 60; // Default refresh rate.
+  return 144; // Default refresh rate.
 }
 
 void 
