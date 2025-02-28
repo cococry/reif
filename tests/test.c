@@ -13,7 +13,6 @@
 #include <leif/widgets/text.h>
 #include <leif/win.h>
 #include <stdint.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
 
@@ -28,30 +27,57 @@ typedef struct {
 
 static state_t s;
 
+static int barsize = 30;
+static int numdesktops = 9;
+static int crntdesktop = 3;
+
+
+static bool is_big = false;
 static void on_click(lf_ui_state_t* ui, lf_widget_t* widget);
 
 static void comp(void);
 
-
-static int c = 0;
-void comp(void) {
- // printf("Assignment idx before BUTTON_END: %i\n", s.ui->_ez._assignment_idx);
-  lf_button(s.ui);
-  ((lf_button_t*)lf_crnt(s.ui))->on_click = on_click;
-  char buf[64];
-  sprintf(buf, "Click %i", c); 
-  lf_text_h4(s.ui, buf);
-  lf_button_end(s.ui);
-  //printf("Assignment idx after BUTTON_END: %i\n", s.ui->_ez._assignment_idx);
-
-  //printf("Childs of root: %i\n", s.ui->root->num_childs);
-  lf_text_h4(s.ui, buf);
-  printf("Widget ID: %i\n", lf_crnt(s.ui)->id);
+void on_click(lf_ui_state_t* ui, lf_widget_t* widget) {
+  if(crntdesktop + 1 > numdesktops)
+    crntdesktop = 0;
+  else 
+    crntdesktop++;
+  lf_component_rerender(s.ui, comp);
 }
 
-static void on_click(lf_ui_state_t* ui, lf_widget_t* widget) {
-  c++; // HHAHAHAHAHAHAHA
-  lf_component_rerender(ui, comp);
+static bool showing_dialogue = false;
+
+static char* text = "Hello World"; 
+void on_click_dec(lf_ui_state_t* ui, lf_widget_t* widget) {
+  showing_dialogue = !showing_dialogue;
+  lf_component_rerender(s.ui, comp);
+}
+
+void comp(void) {
+  lf_div(s.ui);
+
+  lf_button(s.ui);
+  ((lf_button_t*)lf_crnt(s.ui))->on_click = on_click_dec;
+  lf_text_h4(s.ui, "SHOW INFO");
+  lf_button_end(s.ui);
+
+  lf_div_t* div = lf_div(s.ui);
+  lf_widget_set_max_width(lf_crnt(s.ui), 500.0f);
+  lf_text_h4(s.ui, "The industrial revolution and it's consequences have been a disaster to the human race.");
+  lf_text_p(s.ui, "~ Theodore John Kaczynski");
+  lf_div_end(s.ui);
+  lf_widget_set_visible(&div->base, showing_dialogue);
+
+
+  lf_text_h1(s.ui, "Hello, World!");
+  lf_div_end(s.ui);
+}
+
+static void desktop_up(lf_ui_state_t* ui, lf_widget_t* widget) {
+  crntdesktop++;
+  if(crntdesktop >= numdesktops)
+    crntdesktop = 0;
+  lf_component_rerender(s.ui, comp);
 }
 int main(void) {
 
@@ -62,8 +88,6 @@ int main(void) {
 
   lf_widget_set_fixed_height_percent(lf_crnt(s.ui), 100.0f);
   lf_widget_set_alignment(lf_crnt(s.ui), AlignCenterHorizontal | AlignCenterVertical); 
-
-  lf_text_h1(s.ui, "Default Text");
 
   lf_component(s.ui, comp);
 

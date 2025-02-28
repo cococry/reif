@@ -135,7 +135,7 @@ lf_rn_render_clear_color_area(
   uint32_t render_height) {
   int32_t y_upper_left = render_height - (area.pos.y + area.size.y);
   glEnable(GL_SCISSOR_TEST);
-  glScissor(area.pos.x, y_upper_left, area.size.x, area.size.y);
+  glScissor((int)area.pos.x, y_upper_left, (int)area.size.x, (int)area.size.y);
   lf_rn_render_clear_color(color);
   glDisable(GL_SCISSOR_TEST);
 }

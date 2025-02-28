@@ -17,20 +17,26 @@ static uint32_t font_sizes[] = {
 void _end_widget(lf_ui_state_t* ui) {
   if (!ui->_ez.last_parent || !ui->_ez.last_parent->parent) return;
   ui->_ez.last_parent = ui->_ez.last_parent->parent;
-  ui->_ez._assignment_idx = ui->_ez._last_assignment_idx; 
+  ui->_ez._assignment_idx = ui->_ez._last_assignment_idx + 1; 
 }
 
 lf_widget_t*
 _get_assignment_widget(lf_ui_state_t* ui, lf_widget_type_t type) {
   if (!ui->_ez.last_parent || ui->_ez._assignment_idx >= ui->_ez.last_parent->num_childs) {
-    fprintf(stderr, "leif: mismatch in widget tree.\n");
+    fprintf(stderr, "leif: _get_assignment_widget: mismatch in widget tree.\n");
+    if(!ui->_ez.last_parent)
+      fprintf(stderr, "leif: _get_assignment_widget: assigment parent not valid.\n");
+    if(ui->_ez._assignment_idx >= ui->_ez.last_parent->num_childs)
+      fprintf(stderr, "leif: _get_assignment_widget: assigment child index not valid (assigment index: %i).\n",
+              ui->_ez._assignment_idx);
     return NULL;
   }
+
 
   lf_widget_t* widget = ui->_ez.last_parent->childs[ui->_ez._assignment_idx];
 
   if (widget->type != type) {
-    fprintf(stderr, "leif: mismatch in widget tree. widget ID: %i.\n", widget->id);
+    fprintf(stderr, "leif: _get_assignment_widget: mismatch in widget tree. widget ID: %i.\n", widget->id);
     return NULL;
   }
 
@@ -67,15 +73,11 @@ _text_create_from_level(lf_ui_state_t* ui, const char* label, lf_text_level lvl)
   } else {
     if(ui->_ez._assignment_idx >= ui->_ez.last_parent->num_childs) return NULL;
     lf_widget_t* widget = ui->_ez.last_parent->childs[ui->_ez._assignment_idx++];
-    if(widget->id == 4) {
-      printf("Correct!\n");
-    }
     if(widget->type != WidgetTypeText) {
-      fprintf(stderr,"leif: mismatch in widget tree. widget ID: %i.\n", widget->id);
+      fprintf(stderr,"leif: _text_create_from_level: mismatch in widget tree. widget ID: %i.\n", widget->id);
       return NULL;
     }
     lf_text_set_label(ui, (lf_text_t*)widget, label);
-      printf("Setting label!\n");
     ui->_ez.current_widget = widget; 
     return (lf_text_t*)widget;
   }
@@ -107,7 +109,7 @@ lf_ez_api_set_assignment_only_mode(lf_ui_state_t* ui, bool assignment_only) {
 lf_div_t*
 lf_div(lf_ui_state_t* ui) {
   if(!ui->_ez.last_parent) return NULL;
-  if(!ui->_ez._assignment_only) {
+   if(!ui->_ez._assignment_only) {
     lf_div_t* div = lf_div_create(ui, ui->_ez.last_parent);
     ui->_ez.last_parent = &div->base;
     ui->_ez.current_widget = &div->base;
@@ -141,6 +143,7 @@ lf_button(lf_ui_state_t* ui) {
 void
 lf_button_end(lf_ui_state_t* ui) {
   _end_widget(ui);
+  ui->_ez._assignment_idx--;
 }
 
 lf_text_t* 
@@ -193,12 +196,12 @@ lf_text_sized(lf_ui_state_t* ui, const char* label, uint32_t pixel_size) {
     return txt;
   } else {
     if(ui->_ez._assignment_idx >= ui->_ez.last_parent->num_childs) {
-      fprintf(stderr,"leif: mismatch in widget tree.\n");
+      fprintf(stderr,"leif: lf_text_sized: mismatch in widget tree.\n");
       return NULL;
     } 
     lf_widget_t* widget = ui->_ez.last_parent->childs[ui->_ez._assignment_idx++];
     if(widget->type != WidgetTypeText) {
-      fprintf(stderr,"leif: mismatch in widget tree. widget ID: %i.\n", widget->id);
+      fprintf(stderr,"leif: lf_text_sized: mismatch in widget tree. widget ID: %i.\n", widget->id);
       return NULL;
     }
     lf_text_set_label(ui, (lf_text_t*)widget, label);
@@ -248,12 +251,12 @@ lf_image_sized(lf_ui_state_t* ui, const char* filepath, uint32_t w, uint32_t h) 
     return img; 
   } else {
   if(ui->_ez._assignment_idx >= ui->_ez.last_parent->num_childs) {
-      fprintf(stderr,"leif: mismatch in widget tree.\n");
+      fprintf(stderr,"leif: lf_image_sized: mismatch in widget tree.\n");
       return NULL;
     }
     lf_widget_t* widget = ui->_ez.last_parent->childs[ui->_ez._assignment_idx++];
     if(widget->type != WidgetTypeImage) {
-      fprintf(stderr,"leif: mismatch in widget tree. widget ID\n");
+      fprintf(stderr,"leif: lf_image_sized: mismatch in widget tree. widget ID\n");
       return NULL;
     }
     ui->_ez.current_widget = widget; 
@@ -270,15 +273,15 @@ lf_image_sized_w(lf_ui_state_t* ui, const char* filepath, uint32_t w) {
     lf_image_t* img = lf_image_create_ex_w(ui, ui->_ez.last_parent, filepath, w);
     ui->_ez.current_widget = &img->base;
     ui->_ez._assignment_idx++;
-  return img; 
+    return img; 
   } else {
     if(ui->_ez._assignment_idx >= ui->_ez.last_parent->num_childs) {
-      fprintf(stderr,"leif: mismatch in widget tree.\n");
+      fprintf(stderr,"leif: lf_image_sized_w: mismatch in widget tree.\n");
       return NULL;
     }
     lf_widget_t* widget = ui->_ez.last_parent->childs[ui->_ez._assignment_idx++];
     if(widget->type != WidgetTypeImage) {
-      fprintf(stderr,"leif: mismatch in widget tree. widget ID\n");
+      fprintf(stderr,"leif: lf_image_sized_w: mismatch in widget tree. widget ID\n");
       return NULL;
     }
     ui->_ez.current_widget = widget; 
@@ -298,12 +301,12 @@ lf_image_sized_h(lf_ui_state_t* ui, const char* filepath, uint32_t h) {
     return img; 
   } else {
   if(ui->_ez._assignment_idx >= ui->_ez.last_parent->num_childs) {
-      fprintf(stderr,"leif: mismatch in widget tree.\n");
+      fprintf(stderr,"leif: lf_image_sized_h: mismatch in widget tree.\n");
       return NULL;
     }
     lf_widget_t* widget = ui->_ez.last_parent->childs[ui->_ez._assignment_idx++];
     if(widget->type != WidgetTypeImage) {
-      fprintf(stderr,"leif: mismatch in widget tree. widget ID\n");
+      fprintf(stderr,"leif: lf_image_sized_h: mismatch in widget tree. widget ID\n");
       return NULL;
     }
     ui->_ez.current_widget = widget; 
@@ -319,10 +322,7 @@ lf_component(lf_ui_state_t* ui, lf_component_func_t comp_func) {
     ._child_idx = ui->_ez._assignment_idx,
     ._parent = ui->_ez.last_parent
   }));
-  lf_div(ui);
-  lf_crnt(ui)->sizing_type = SizingFitToContent;
   comp_func();
-  lf_div_end(ui);
 }
 
 void lf_component_rerender(lf_ui_state_t* ui, lf_component_func_t comp_func) {
@@ -334,13 +334,7 @@ void lf_component_rerender(lf_ui_state_t* ui, lf_component_func_t comp_func) {
 
       ui->_ez._assignment_idx = comp->_child_idx;
       ui->_ez.last_parent = comp->_parent;
-      if(ui->_ez.last_parent != ui->root || ui->_ez._assignment_idx != 1) {
-        printf("Fuck...\n");
-      }
-      lf_div(ui);
-      lf_crnt(ui)->sizing_type = SizingFitToContent;
-      comp->func();  // Run component
-      lf_div_end(ui);
+      comp->func();  // Run component 
 
       lf_ez_api_set_assignment_only_mode(ui, false);
       
@@ -351,4 +345,9 @@ void lf_component_rerender(lf_ui_state_t* ui, lf_component_func_t comp_func) {
       return;
     }
   }
+}
+
+void 
+lf_skip_widget(lf_ui_state_t* ui) {
+  ui->_ez._assignment_idx++;
 }

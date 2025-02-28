@@ -41,7 +41,7 @@ struct lf_widget_t {
 
   lf_container_t container;
 
-  lf_widget_props_t props, _rendered_props;
+  lf_widget_props_t props, _rendered_props, _initial_props;
 
   lf_widget_render_cb render;
   lf_widget_handle_event_cb handle_event;
@@ -61,6 +61,7 @@ struct lf_widget_t {
   bool _fixed_width;
   bool _fixed_height;
   bool _changed_by_layout, _needs_rerender, _marked_for_removal, _changed_size;
+  bool _needs_size_calc;
 
   lf_animation_t* anims;
 
@@ -228,8 +229,9 @@ void lf_widget_set_prop(
     lf_widget_t* widget, 
     float* prop, float val);
 
-
 void lf_widget_set_prop_color(
     lf_ui_state_t* ui,
     lf_widget_t* widget, 
     lf_color_t* prop, lf_color_t val);
+
+void lf_widget_set_visible(lf_widget_t* widget, bool visible);

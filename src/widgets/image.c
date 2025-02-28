@@ -8,7 +8,7 @@ void _img_render(
   if(!widget || !ui) return;
   lf_image_t* img = (lf_image_t*)widget;
   ui->render_texture(ui->render_state, widget->container.pos,
-                    widget->props.color, img->tex_id, img->width, img->height,
+                    LF_WHITE, img->tex_id, img->width, img->height,
                      widget->props.corner_radius,
                      widget->props.border_width,
                      widget->props.border_color);

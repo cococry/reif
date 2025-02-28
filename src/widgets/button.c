@@ -27,25 +27,15 @@ _button_render(
   lf_widget_t* widget) { 
   if(!widget) return;
 
-  lf_button_t* button = (lf_button_t*)widget;
-  
-  if(button->_held) {
-    widget->_rendered_props.color =  lf_color_dim(button->base.props.color, 0.8f);
-  } else if(button->_hovered) {
-    widget->_rendered_props.color =  lf_color_dim(button->base.props.color, 0.9f);
-  } else if(!button->_hovered) {
-    widget->_rendered_props.color = button->base.props.color;
-  }
-
   ui->render_rect(
     ui->render_state, 
     widget->container.pos,
     (vec2s){
-      .x = widget->container.size.x + widget->_rendered_props.padding_left + widget->_rendered_props.padding_right,
-      .y = widget->container.size.y + widget->_rendered_props.padding_top + widget->_rendered_props.padding_bottom
+      .x = widget->container.size.x + widget->props.padding_left + widget->props.padding_right,
+      .y = widget->container.size.y + widget->props.padding_top + widget->props.padding_bottom
     },
     widget->_rendered_props.color, widget->props.border_color,
-    widget->_rendered_props.border_width, widget->props.corner_radius);
+    widget->props.border_width, widget->props.corner_radius);
 }
 
 void 
@@ -90,6 +80,10 @@ _button_handle_event(
     if(button->_hovered) {
       button->_held = false;
       button->_hovered = false;
+      lf_widget_set_prop_color(
+        ui, widget, 
+        &widget->props.color, 
+        button->base._initial_props.color);
       if(button->on_leave) {
         button->on_leave(ui, widget);
       }
@@ -101,6 +95,10 @@ _button_handle_event(
 
   if(event.type == WinEventMouseRelease && lf_point_intersets_container(mouse, container)) {
     button->_held = false;
+    lf_widget_set_prop_color(
+      ui, widget, 
+      &widget->props.color, 
+      button->base._initial_props.color);
     if(button->on_click) {
       button->on_click(ui, widget);
     }
@@ -110,6 +108,10 @@ _button_handle_event(
   }
   if(event.type == WinEventMousePress) {
     button->_held = true;
+    lf_widget_set_prop_color(
+      ui, widget,
+      &widget->props.color, 
+      lf_color_dim(button->base._initial_props.color, 0.8f));
     if(!widget->_needs_rerender && !widget->anims)
       lf_ui_core_rerender_widget(ui, &button->base);
     return;
@@ -118,6 +120,10 @@ _button_handle_event(
   else if(event.type == WinEventMouseMove &&
     !button->_hovered) {
     button->_hovered = true;
+    lf_widget_set_prop_color(
+      ui, widget, 
+      &widget->props.color, 
+      lf_color_dim(button->base._initial_props.color, 0.9f));
     if(button->on_enter) {
       button->on_enter(ui, widget);
     }

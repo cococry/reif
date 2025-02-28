@@ -19,6 +19,17 @@ typedef enum {
   TextLevelMax        = 7
 } lf_text_level;
 
+#define lf_style_widget_prop(ui, widget, prop, val) \
+  do { \
+    lf_widget_set_prop((ui), (widget), &(widget)->props.prop, (val)); \
+    (widget)->_initial_props.prop = (val); \
+  } while(0)
+
+#define lf_style_widget_prop_color(ui, widget, prop, val) \
+  do { \
+    lf_widget_set_prop_color((ui), (widget), &(widget)->props.prop, (val)); \
+    (widget)->_initial_props.prop = (val); \
+  } while(0)
 
 lf_ez_state_t lf_ez_api_init(lf_ui_state_t* ui);
 
@@ -64,3 +75,4 @@ void lf_component(lf_ui_state_t* ui, lf_component_func_t comp_func);
 
 void lf_component_rerender(lf_ui_state_t* ui, lf_component_func_t comp_func);
 
+void lf_skip_widget(lf_ui_state_t* ui);

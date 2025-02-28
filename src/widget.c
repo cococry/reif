@@ -14,7 +14,6 @@
 
 static void widget_resize_children(lf_widget_t* widget, uint32_t new_cap);
 static void widget_animate(lf_ui_state_t* ui, lf_widget_t* widget);
-static uint32_t count_anims(lf_animation_t* head);
 
 
 void 
@@ -56,18 +55,6 @@ widget_animate(lf_ui_state_t* ui, lf_widget_t* widget) {
   }
  }
 
-uint32_t 
-count_anims(lf_animation_t* head) {
-  int count = 0;
-  lf_animation_t* current = head;
-  while (current != NULL) {
-    count++;
-    current = current->next;
-  }
-
-  return count;
-}
-
 lf_widget_t* 
 lf_widget_create(
   uint32_t id,
@@ -90,11 +77,13 @@ lf_widget_create(
   widget->_changed_by_layout = false;
   widget->_changed_size = true;
   widget->_needs_rerender = false;
+  widget->_needs_size_calc = false;
 
   widget->type = type;
   widget->container = fallback_container;
   widget->props = props;
   widget->_rendered_props = props;
+  widget->_initial_props = props;
   widget->justify_type = JustifyStart;
   widget->sizing_type = SizingFitToParent;
 
@@ -165,7 +154,6 @@ lf_widget_render(lf_ui_state_t* ui,  lf_widget_t* widget) {
     }
 
     widget->render(ui, widget);
-
 #ifdef LF_RUNARA
     if(widget->type == WidgetTypeDiv) {
 
@@ -198,11 +186,11 @@ lf_widget_render(lf_ui_state_t* ui,  lf_widget_t* widget) {
     lf_widget_render(ui, widget->childs[i]);
   }
 #ifdef LF_RUNARA
-  if(widget->type == WidgetTypeDiv) {
-  rn_unset_cull_end_x((RnState*)ui->render_state);
-    rn_unset_cull_end_y((RnState*)ui->render_state);
-  rn_unset_cull_start_x((RnState*)ui->render_state);
-  rn_unset_cull_start_y((RnState*)ui->render_state);
+    if(widget->type == WidgetTypeDiv) {
+      rn_unset_cull_end_x((RnState*)ui->render_state);
+      rn_unset_cull_end_y((RnState*)ui->render_state);
+      rn_unset_cull_start_x((RnState*)ui->render_state);
+      rn_unset_cull_start_y((RnState*)ui->render_state);
   }
 #endif
 }
@@ -210,7 +198,7 @@ lf_widget_render(lf_ui_state_t* ui,  lf_widget_t* widget) {
 void lf_widget_shape(
   lf_ui_state_t* ui,
   lf_widget_t* widget) {
-  if (!widget->shape) return;
+  if (!widget->shape) return; 
   if(widget->parent) {
     if(!lf_container_intersets_container(
       LF_WIDGET_CONTAINER(widget), ui->root->container) || 
@@ -218,27 +206,29 @@ void lf_widget_shape(
       return;
     }
   }
+    bool tmpchanged = widget->_changed_size;
+    widget->_changed_size = false;
 
-  bool tmpchanged = widget->_changed_size;
-  widget->_changed_size = false;
-
-  vec2s sizebefore = widget->container.size;
-  for (uint32_t i = 0; i < widget->num_childs; i++) {
-    if(widget->childs[i]->size_calc) {
-      widget->childs[i]->size_calc(ui, widget->childs[i]);
+    vec2s sizebefore = widget->container.size;
+    for (uint32_t i = 0; i < widget->num_childs; i++) {
+      if(widget->childs[i]->size_calc) {
+        widget->childs[i]->_needs_size_calc = true;
+        widget->childs[i]->size_calc(ui, widget->childs[i]);
+      }
     }
-  }
 
-  if(widget->size_calc)
-    widget->size_calc(ui, widget);
+    if(widget->size_calc) {
+      widget->_needs_size_calc = true;
+      widget->size_calc(ui, widget);
+    }
 
-  if(!tmpchanged) {
-    widget->_changed_size = 
-      !(  widget->container.size.x == sizebefore.x && 
-          widget->container.size.y == sizebefore.y);
-  }
+    if(!tmpchanged) {
+      widget->_changed_size = 
+        !(  widget->container.size.x == sizebefore.x && 
+        widget->container.size.y == sizebefore.y);
+    }
 
-  widget->shape(ui, widget);
+    widget->shape(ui, widget);
   for (uint32_t i = 0; i < widget->num_childs; i++) {
     lf_widget_shape(ui, widget->childs[i]);
   }
@@ -249,9 +239,7 @@ bool lf_widget_animate(
   lf_widget_t* widget,
   lf_widget_t** o_shape) {  
   bool animated = false;
-
-  uint32_t n_anims = count_anims(widget->anims);
-  if (n_anims != 0) {
+  if (widget->anims) {
     widget_animate(ui, widget);
     lf_widget_submit_props(widget);
     animated = true;
@@ -272,7 +260,7 @@ bool lf_widget_animate(
 
 bool 
 lf_widget_is_animating(lf_widget_t* widget) {
-  return count_anims(widget->anims) != 0; 
+  return widget->anims; 
 }
 
 void
@@ -757,7 +745,6 @@ void lf_widget_set_prop(
       widget->transition_time, widget->transition_func);
   } else {
     *prop = val; 
-    lf_widget_submit_props(widget);
   }
 }
 
@@ -771,4 +758,11 @@ lf_widget_set_prop_color(
   lf_widget_set_prop(ui, widget, &prop->g, val.g);
   lf_widget_set_prop(ui, widget, &prop->b, val.b);
   lf_widget_set_prop(ui, widget, &prop->a, val.a);
+  lf_widget_submit_props(widget);
+}
+
+void 
+lf_widget_set_visible(lf_widget_t* widget, bool visible) {
+  widget->visible = visible;
+  widget->parent->_changed_size =true;
 }

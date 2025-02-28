@@ -171,8 +171,8 @@ render_widget_and_submit(
   float overdraw = (widget->props.corner_radius != 0) ? OVERDRAW_CORNER_RADIUS : 0;
   vec2s win_size = lf_win_get_size(ui->win);
   lf_color_t clear_color = 
-    (widget->parent) && (widget->parent->parent) ? 
-    widget->parent->parent->props.color : ui->root->props.color;
+    (widget->parent) ? 
+    widget->parent->props.color : ui->root->props.color;
 
   lf_ui_core_begin_render(
     ui,
@@ -451,6 +451,9 @@ bool rerender_dirty_children(lf_ui_state_t* ui, lf_widget_t* widget, bool parent
   return rendered;
 }
 
+void total_shape(lf_widget_t* widget) {
+
+}
 void
 lf_ui_core_next_event(lf_ui_state_t* ui) {
   if(ui->crnt_page_id == 0 && ui->pages.size != 0) {
@@ -536,7 +539,7 @@ lf_ui_core_submit(lf_ui_state_t* ui) {
 
 void 
 lf_ui_core_rerender_widget(lf_ui_state_t* ui, lf_widget_t* widget) {
-  if(ui->root->_needs_rerender) return;
+  if(ui->root->_needs_rerender || widget->_needs_rerender) return;
   lf_widget_t* rerender = widget;
   if(!rerender->_changed_size) {
     rerender->_needs_rerender = true;
