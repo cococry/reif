@@ -165,6 +165,7 @@ typedef struct {
   uint32_t cap, size;
 } lf_component_list_t;
 
+
 typedef struct {
   lf_widget_t* last_parent, *current_widget;
   bool _assignment_only;

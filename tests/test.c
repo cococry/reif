@@ -13,6 +13,7 @@
 #include <leif/widgets/text.h>
 #include <leif/win.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
 
@@ -47,29 +48,47 @@ void on_click(lf_ui_state_t* ui, lf_widget_t* widget) {
 
 static bool showing_dialogue = false;
 
-static char* text = "Hello World"; 
-void on_click_dec(lf_ui_state_t* ui, lf_widget_t* widget) {
-  showing_dialogue = !showing_dialogue;
+static int nelements = 1;
+void onclick(lf_ui_state_t* ui, lf_widget_t* widget) {
+  nelements++;
+  lf_component_rerender(s.ui, comp);
+}
+void onclickdec(lf_ui_state_t* ui, lf_widget_t* widget) {
+  nelements--;
   lf_component_rerender(s.ui, comp);
 }
 
 void comp(void) {
+  s.ui->_ez._assignment_idx = 0;
   lf_div(s.ui);
 
   lf_button(s.ui);
-  ((lf_button_t*)lf_crnt(s.ui))->on_click = on_click_dec;
-  lf_text_h4(s.ui, "SHOW INFO");
+    lf_widget_set_transition_props(lf_crnt(s.ui), 0.2f, lf_ease_out_quad);
+    lf_style_widget_prop(s.ui, lf_crnt(s.ui), corner_radius, 10);
+  ((lf_button_t*)lf_crnt(s.ui))->on_click = onclick;
+  lf_text_h4(s.ui, "Increase");
   lf_button_end(s.ui);
 
-  lf_div_t* div = lf_div(s.ui);
-  lf_widget_set_max_width(lf_crnt(s.ui), 500.0f);
-  lf_text_h4(s.ui, "The industrial revolution and it's consequences have been a disaster to the human race.");
-  lf_text_p(s.ui, "~ Theodore John Kaczynski");
+  lf_button(s.ui);
+    lf_widget_set_transition_props(lf_crnt(s.ui), 0.2f, lf_ease_out_quad);
+    lf_style_widget_prop(s.ui, lf_crnt(s.ui), corner_radius, 10);
+  ((lf_button_t*)lf_crnt(s.ui))->on_click = onclickdec;
+  lf_text_h4(s.ui, "Decrease");
+  lf_button_end(s.ui);
+
+  lf_text_h4(s.ui, "Element display");
+  char buf[64];
+  sprintf(buf, "Elements: %i", nelements); 
+  lf_text_h1(s.ui, buf);
+
+  lf_div(s.ui);
+  for(uint32_t i = 0; i < nelements; i++) {
+    char buf[64];
+    sprintf(buf, "Element: %i", i); 
+    lf_text_h4(s.ui, buf);
+  }
   lf_div_end(s.ui);
-  lf_widget_set_visible(&div->base, showing_dialogue);
 
-
-  lf_text_h1(s.ui, "Hello, World!");
   lf_div_end(s.ui);
 }
 

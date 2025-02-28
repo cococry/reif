@@ -75,6 +75,7 @@ lf_widget_create(
   widget->visible = true;
   widget->_marked_for_removal = false;
   widget->_changed_by_layout = false;
+  widget->_rendered_within_comp = false;
   widget->_changed_size = true;
   widget->_needs_rerender = false;
   widget->_needs_size_calc = false;
