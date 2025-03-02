@@ -21,6 +21,8 @@ _div_shape(lf_ui_state_t* ui, lf_widget_t* widget) {
   if(!widget) return;
   if(widget->type != WidgetTypeDiv) return;
   lf_widget_apply_layout(ui, widget);
+  //printf("  => div size: (%f,%f)\n", widget->container.size.x,
+    //  widget->container.size.y);
 }
 
 void 

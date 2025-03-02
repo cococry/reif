@@ -68,9 +68,9 @@ lf_widget_create(
   lf_widget_t* widget = (lf_widget_t*)malloc(sizeof(lf_widget_t));
 
   widget->parent = NULL;
-  widget->childs = NULL;
-  widget->cap_childs = 0;
+  widget->cap_childs = INIT_CHILD_CAP;
   widget->num_childs = 0;
+  widget->childs = malloc(sizeof(*widget->childs) * INIT_CHILD_CAP);
   widget->id = id;
   widget->visible = true;
   widget->_marked_for_removal = false;
@@ -78,7 +78,7 @@ lf_widget_create(
   widget->_rendered_within_comp = false;
   widget->_changed_size = true;
   widget->_needs_rerender = false;
-  widget->_needs_size_calc = false;
+  widget->_needs_size_calc = true;
 
   widget->type = type;
   widget->container = fallback_container;
@@ -196,44 +196,37 @@ lf_widget_render(lf_ui_state_t* ui,  lf_widget_t* widget) {
 #endif
 }
 
-void lf_widget_shape(
-  lf_ui_state_t* ui,
-  lf_widget_t* widget) {
-  if (!widget->shape) return; 
-  if(widget->parent) {
-    if(!lf_container_intersets_container(
-      LF_WIDGET_CONTAINER(widget), ui->root->container) || 
-      !lf_container_intersets_container(LF_WIDGET_CONTAINER(widget), LF_WIDGET_CONTAINER(widget->parent))) {
+void lf_widget_shape(lf_ui_state_t* ui, lf_widget_t* widget) {
+  if (!widget || !widget->shape) return;
+
+  if (widget != ui->root && widget->parent) {
+    if (!lf_container_intersets_container(
+          LF_WIDGET_CONTAINER(widget), ui->root->container) ||
+        !lf_container_intersets_container(
+          LF_WIDGET_CONTAINER(widget), LF_WIDGET_CONTAINER(widget->parent))) {
       return;
     }
   }
-    bool tmpchanged = widget->_changed_size;
-    widget->_changed_size = false;
+  vec2s size_before = widget->container.size;
 
-    vec2s sizebefore = widget->container.size;
-    for (uint32_t i = 0; i < widget->num_childs; i++) {
-      if(widget->childs[i]->size_calc) {
-        widget->childs[i]->_needs_size_calc = true;
-        widget->childs[i]->size_calc(ui, widget->childs[i]);
-      }
-    }
+  // Step 2: Calculate the widget's own size now that children's sizes are known
+  if (widget->size_calc){
+    widget->size_calc(ui, widget);
+  }
 
-    if(widget->size_calc) {
-      widget->_needs_size_calc = true;
-      widget->size_calc(ui, widget);
-    }
+  // Step 3: Determine if the size has changed
+  widget->_changed_size = !(widget->container.size.x == size_before.x &&
+                            widget->container.size.y == size_before.y);
 
-    if(!tmpchanged) {
-      widget->_changed_size = 
-        !(  widget->container.size.x == sizebefore.x && 
-        widget->container.size.y == sizebefore.y);
-    }
+  // Step 4: Apply final positioning and shaping
+  widget->shape(ui, widget);
 
-    widget->shape(ui, widget);
+  // Step 5: Recursively shape children after size has been finalized
   for (uint32_t i = 0; i < widget->num_childs; i++) {
     lf_widget_shape(ui, widget->childs[i]);
   }
 }
+
 
 bool lf_widget_animate(
   lf_ui_state_t* ui,
@@ -350,7 +343,10 @@ void lf_widget_remove_child_from_memory(lf_widget_t* parent, uint32_t child_idx)
   }
   parent->num_childs--;
 
-  parent->childs = realloc(parent->childs, parent->num_childs * sizeof(lf_widget_t*));
+  parent->childs = realloc(parent->childs, 
+      ((parent->num_childs != 0) ? parent->num_childs : INIT_CHILD_CAP)
+       * sizeof(lf_widget_t*));
+  parent->cap_childs = MAX(parent->num_childs, INIT_CHILD_CAP); 
 }
 
 float 
@@ -439,7 +435,7 @@ lf_widget_apply_layout(lf_ui_state_t* ui, lf_widget_t* widget) {
 void 
 lf_widget_calc_layout_size(lf_ui_state_t* ui, lf_widget_t* widget) {
   switch (widget->layout_type) {
-    case LayoutVertical:
+    case LayoutVertical: 
       lf_size_calc_vertical(ui, widget);
       break;
     case LayoutHorizontal:

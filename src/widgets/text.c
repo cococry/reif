@@ -31,9 +31,15 @@ _recalculate_label(
       .align = widget->props.text_align
     }
   );
+  if((text->_text_dimension.width != text_dimension.width || 
+      text->_text_dimension.height != text_dimension.height)) {
+  }
   text->base.container.size.x = text_dimension.width; 
   text->base.container.size.y = text_dimension.height;
+
   text->_text_dimension = text_dimension;
+  //printf("  => calculated text dimension: (%f,%f)\n", text->_text_dimension.width,
+    //  text->_text_dimension.height);
 }
 
 void
@@ -122,7 +128,6 @@ lf_text_t* _text_create(
     NULL,
     _text_shape
   );
-
   text->base.props.text_color = parent->props.text_color;
   text->base.layout_type = LayoutNone;
   lf_widget_add_child(parent, (lf_widget_t*)text);
@@ -164,5 +169,12 @@ lf_text_set_label(
   }
   text->_changed_label = false;
   text->label = strdup(label);
+  lf_text_dimension_t dim_before = text->_text_dimension;
   _recalculate_label(ui, text);
+  if(dim_before.width != text->_text_dimension.width || 
+      dim_before.height != text->_text_dimension.height) {
+    text->base._changed_size = true;
+    lf_ui_core_rerender_widget(ui, &text->base);
+  }
+  
 }

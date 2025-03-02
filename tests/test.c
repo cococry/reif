@@ -54,42 +54,22 @@ void onclick(lf_ui_state_t* ui, lf_widget_t* widget) {
   lf_component_rerender(s.ui, comp);
 }
 void onclickdec(lf_ui_state_t* ui, lf_widget_t* widget) {
-  nelements--;
+  if(nelements - 1 >= 0)
+    nelements--;
   lf_component_rerender(s.ui, comp);
 }
 
 void comp(void) {
-  s.ui->_ez._assignment_idx = 0;
   lf_div(s.ui);
+  lf_div(s.ui);
+  lf_text_h4(s.ui, "Click me");
 
-  lf_button(s.ui);
-    lf_widget_set_transition_props(lf_crnt(s.ui), 0.2f, lf_ease_out_quad);
-    lf_style_widget_prop(s.ui, lf_crnt(s.ui), corner_radius, 10);
-  ((lf_button_t*)lf_crnt(s.ui))->on_click = onclick;
-  lf_text_h4(s.ui, "Increase");
-  lf_button_end(s.ui);
-
-  lf_button(s.ui);
-    lf_widget_set_transition_props(lf_crnt(s.ui), 0.2f, lf_ease_out_quad);
-    lf_style_widget_prop(s.ui, lf_crnt(s.ui), corner_radius, 10);
-  ((lf_button_t*)lf_crnt(s.ui))->on_click = onclickdec;
-  lf_text_h4(s.ui, "Decrease");
-  lf_button_end(s.ui);
-
-  lf_text_h4(s.ui, "Element display");
   char buf[64];
-  sprintf(buf, "Elements: %i", nelements); 
-  lf_text_h1(s.ui, buf);
-
-  lf_div(s.ui);
-  for(uint32_t i = 0; i < nelements; i++) {
-    char buf[64];
-    sprintf(buf, "Element: %i", i); 
-    lf_text_h4(s.ui, buf);
-  }
+  sprintf(buf, "Elements: %i", nelements);
+  lf_text_h1(s.ui, buf); 
   lf_div_end(s.ui);
-
   lf_div_end(s.ui);
+  lf_text_h4(s.ui, "Hello");
 }
 
 static void desktop_up(lf_ui_state_t* ui, lf_widget_t* widget) {
@@ -105,10 +85,12 @@ int main(void) {
   lf_window_t win = lf_ui_core_create_window(1280, 720, "hello leif");
   s.ui = lf_ui_core_init(win);
 
-  lf_widget_set_fixed_height_percent(lf_crnt(s.ui), 100.0f);
-  lf_widget_set_alignment(lf_crnt(s.ui), AlignCenterHorizontal | AlignCenterVertical); 
 
-  lf_component(s.ui, comp);
+  lf_div(s.ui);
+  lf_style_widget_prop_color(s.ui, lf_crnt(s.ui), color, LF_RED);
+  lf_text_h1(s.ui, "Hello, World!");
+  lf_div_end(s.ui);
+  lf_text_h4(s.ui, "world");
 
   while(s.ui->running) {
     lf_ui_core_next_event(s.ui);

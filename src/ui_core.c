@@ -42,6 +42,7 @@ static void render_widget_and_submit(
 
 static void root_shape(lf_ui_state_t* ui, lf_widget_t* widget);
 static void root_resize(lf_ui_state_t* ui, lf_widget_t* widget, lf_event_t ev);
+static void root_size_calc(lf_ui_state_t* ui, lf_widget_t* widget);
 static void win_close_callback(lf_ui_state_t* ui, lf_window_t window);
 static void win_refresh_callback(lf_ui_state_t* ui, lf_window_t window);
 static void remove_marked_widgets(lf_widget_t* root);
@@ -65,6 +66,7 @@ win_refresh_callback(lf_ui_state_t* ui, lf_window_t window) {
   vec2s winsize = lf_win_get_size(window);
   ui->root->container = LF_SCALE_CONTAINER(winsize.x, winsize.y);
   ui->root->_needs_rerender = true;
+  ui->root->_needs_shape = true;
 }
 
 void 
@@ -126,7 +128,7 @@ init_state(lf_ui_state_t* state, lf_window_t win) {
     WidgetTypeRoot,
     LF_SCALE_CONTAINER(lf_win_get_size(win).x, lf_win_get_size(win).y),
     (lf_widget_props_t){0},
-    NULL, NULL, root_shape, NULL);
+    NULL, NULL, root_shape, root_size_calc);
 
   state->root->font_family = "Inter";
   state->root->font_style = LF_FONT_STYLE_REGULAR;
@@ -201,6 +203,13 @@ root_shape(lf_ui_state_t* ui, lf_widget_t* widget) {
   lf_widget_apply_layout(ui, ui->root);
 }
 
+void lf_reset_size_flags(lf_widget_t* widget) {
+  widget->_needs_size_calc = true;
+  for (size_t i = 0; i < widget->num_childs; i++) {
+    lf_reset_size_flags(widget->childs[i]);
+  }
+}
+
 void 
 root_resize(lf_ui_state_t* ui, lf_widget_t* widget, lf_event_t ev) {
   (void)ev;
@@ -208,7 +217,15 @@ root_resize(lf_ui_state_t* ui, lf_widget_t* widget, lf_event_t ev) {
   if(widget->type != WidgetTypeRoot) return;
   ui->root->container = LF_SCALE_CONTAINER(ev.width, ev.height);
   ui->root->_needs_rerender = true;
-  lf_widget_shape(ui, ui->root);
+  ui->root->_needs_shape = true;
+  lf_reset_size_flags(ui->root);
+}
+  
+void 
+root_size_calc(lf_ui_state_t* ui, lf_widget_t* widget) {
+  if(!widget) return;
+  if(widget->type != WidgetTypeRoot) return;
+  lf_widget_calc_layout_size(ui, widget);
 }
 
 void 
@@ -482,7 +499,6 @@ lf_ui_core_next_event(lf_ui_state_t* ui) {
   float cur_time = get_elapsed_time();
   ui->delta_time = cur_time - ui->_last_time;
   ui->_last_time = cur_time;
-
   lf_widget_t* shape = NULL;
   if(lf_widget_animate(ui, ui->root, &shape)) {
     ui->root->_needs_rerender = true;
@@ -528,7 +544,7 @@ lf_ui_core_next_event(lf_ui_state_t* ui) {
       ui->timers.items[i].expired = false;
       ui->timers.items[i].elapsed = 0.0f;
     }
-  }
+}
 }
 
 
@@ -539,7 +555,9 @@ lf_ui_core_submit(lf_ui_state_t* ui) {
 
 void 
 lf_ui_core_rerender_widget(lf_ui_state_t* ui, lf_widget_t* widget) {
-  if(ui->root->_needs_rerender || widget->_needs_rerender) return;
+  if(ui->root->_needs_rerender || widget->_needs_rerender) {
+    return;
+  }
   lf_widget_t* rerender = widget;
   if(!rerender->_changed_size) {
     rerender->_needs_rerender = true;
@@ -561,7 +579,7 @@ lf_ui_core_rerender_widget(lf_ui_state_t* ui, lf_widget_t* widget) {
     }
     rerender = rerender->parent;
   }
-  if(rerender != ui->root) {
+  if(rerender != ui->root && rerender->shape) {
     lf_widget_shape(ui, rerender);
   }
   rerender->_needs_rerender = true;
@@ -713,10 +731,6 @@ lf_ui_core_start_timer(lf_ui_state_t* ui, float duration, lf_timer_finish_func_t
       .looping = false,
       .finish_cb = finish_cb
     }));
-  for(uint32_t i = 0; i < ui->timers.size; i++) {
-    printf("Timer: %f, %f\n", ui->timers.items[i].duration,
-        ui->timers.items[i].elapsed);
-  }
   return &ui->timers.items[ui->timers.size - 1];
 }
 
