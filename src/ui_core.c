@@ -48,6 +48,7 @@ static void win_refresh_callback(lf_ui_state_t* ui, lf_window_t window);
 static void remove_marked_widgets(lf_widget_t* root);
 static void interrupt_all_animations_recursively(lf_widget_t* widget);
 static void default_root_layout_func(lf_ui_state_t* ui);
+static void default_idle_delay_func(lf_ui_state_t* ui);
 static void init_state(lf_ui_state_t* state, lf_window_t win);
 
 static uint32_t window_flags = 0;
@@ -65,8 +66,7 @@ void
 win_refresh_callback(lf_ui_state_t* ui, lf_window_t window) {
   vec2s winsize = lf_win_get_size(window);
   ui->root->container = LF_SCALE_CONTAINER(winsize.x, winsize.y);
-  ui->root->_needs_rerender = true;
-  ui->root->_needs_shape = true;
+  ui->needs_render = true;
 }
 
 void 
@@ -100,6 +100,11 @@ interrupt_all_animations_recursively(lf_widget_t* widget) {
 void 
 default_root_layout_func(lf_ui_state_t* ui) {
   lf_ui_core_display_current_page(ui);
+}
+
+void
+default_idle_delay_func(lf_ui_state_t* ui) {
+  usleep(ui->_frame_duration * 1000000);
 }
 
 void 
@@ -152,6 +157,7 @@ init_state(lf_ui_state_t* state, lf_window_t win) {
   state->_last_time = get_elapsed_time();
   state->delta_time = 0.0f;
 
+  state->_idle_delay_func = default_idle_delay_func;
 }
 
 float 
@@ -203,22 +209,14 @@ root_shape(lf_ui_state_t* ui, lf_widget_t* widget) {
   lf_widget_apply_layout(ui, ui->root);
 }
 
-void lf_reset_size_flags(lf_widget_t* widget) {
-  widget->_needs_size_calc = true;
-  for (size_t i = 0; i < widget->num_childs; i++) {
-    lf_reset_size_flags(widget->childs[i]);
-  }
-}
-
 void 
 root_resize(lf_ui_state_t* ui, lf_widget_t* widget, lf_event_t ev) {
   (void)ev;
   if(!widget) return;
   if(widget->type != WidgetTypeRoot) return;
   ui->root->container = LF_SCALE_CONTAINER(ev.width, ev.height);
-  ui->root->_needs_rerender = true;
-  ui->root->_needs_shape = true;
-  lf_reset_size_flags(ui->root);
+  ui->needs_render = true;
+  lf_widget_invalidate_size_and_layout(ui->root);
 }
   
 void 
@@ -437,154 +435,76 @@ lf_ui_state_t* lf_ui_core_init_ex(
   return state;
 }
 
-
-bool rerender_dirty_children(lf_ui_state_t* ui, lf_widget_t* widget, bool parent_rendered) {
-  if (widget->_needs_rerender) {
-    if (parent_rendered) {
-      widget->_needs_rerender = false;
-      return false;
-    }
-
-    lf_container_t clear_area = widget->container; 
-    if (widget->_max_size.x != -1.0f && clear_area.size.x > widget->_max_size.x) {
-      clear_area.size.x = widget->_max_size.x;
-    }
-    if (widget->_max_size.y != -1.0f && clear_area.size.y > widget->_max_size.y) {
-      clear_area.size.y = widget->_max_size.y;
-    }
-    
-    render_widget_and_submit(ui, widget, clear_area);
-    widget->_needs_rerender = false;
-    parent_rendered = true;
-  }
-
-  bool rendered = parent_rendered;
-  for (uint32_t i = 0; i < widget->num_childs; i++) {
-    if (rerender_dirty_children(ui, widget->childs[i], parent_rendered)) {
-      rendered = true;
-    }
-  }
-  
-  return rendered;
-}
-
-void total_shape(lf_widget_t* widget) {
-
-}
-void
-lf_ui_core_next_event(lf_ui_state_t* ui) {
-  if(ui->crnt_page_id == 0 && ui->pages.size != 0) {
+void lf_ui_core_next_event(lf_ui_state_t* ui) {
+  if (ui->crnt_page_id == 0 && ui->pages.size != 0) {
     lf_ui_core_set_page_by_id(ui, ui->pages.items[0].id);
     fprintf(stderr, "leif: no active page set, but pages available, defaulting to first page.\n");
   }
+
   lf_windowing_next_event();
+  if(lf_windowing_get_current_event() != WinEventNone)
 
-  for (uint32_t i = 0; i < ui->timers.size; i++) {
-    if(!ui->timers.items[i].paused) {
-      lf_timer_tick(ui, &ui->timers.items[i], ui->delta_time, false);
+    for (uint32_t i = 0; i < ui->timers.size;) {
+      lf_timer_t* timer = &ui->timers.items[i];
+      if (!timer->paused) {
+        lf_timer_tick(ui, timer, ui->delta_time, false);
+        if (timer->elapsed >= timer->duration) {
+          timer->expired = true;
+        }
+      }
+
+      if (timer->expired && !timer->looping && !timer->paused) {
+        lf_vector_remove_by_idx(&ui->timers, i);
+      } else {
+        if (timer->expired && timer->looping) {
+          timer->expired = false;
+          timer->elapsed = 0.0f;
+        }
+        i++;
+      }
     }
-  }
 
-  // Mark expired timers for deletion
-  for (uint32_t i = 0; i < ui->timers.size; i++) {
-    if (ui->timers.items[i].elapsed >= ui->timers.items[i].duration && !ui->timers.items[i].paused) {
-      ui->timers.items[i].expired = true; 
-    }
-  }
-
-  if(ui->root->_needs_rerender) {
+  if (ui->needs_render) {
     remove_marked_widgets(ui->root);
   }
 
   float cur_time = get_elapsed_time();
   ui->delta_time = cur_time - ui->_last_time;
   ui->_last_time = cur_time;
-  lf_widget_t* shape = NULL;
-  if(lf_widget_animate(ui, ui->root, &shape)) {
-    ui->root->_needs_rerender = true;
+
+  lf_widget_t* animated = NULL;
+  if (lf_widget_animate(ui, ui->root, &animated)) {
+    ui->needs_render = true;
+    lf_widget_t* to_shape = lf_widget_flag_for_layout(ui, animated);
+    if(to_shape) {
+      lf_widget_shape(ui, to_shape);
+    }
   }
 
   bool rendered = lf_windowing_get_current_event() == WinEventRefresh;
 
-  if(ui->root->_needs_rerender) {
+  if(ui->root->_needs_shape) {
     lf_widget_shape(ui, ui->root);
-    lf_ui_core_commit_entire_render(ui);
-    ui->root->_needs_rerender = false;
-    rendered = true;
-  } else {
-    rendered = false;
-    for (uint32_t i = 0; i < ui->root->num_childs; i++) {
-      bool rendered_child = rerender_dirty_children(ui, ui->root->childs[i], false);
-      if (rendered_child) {
-        rendered = true;
-      }
-    }
-    if(rendered) {
-      lf_win_swap_buffers(ui->win);
-    }
   }
 
-  if(!rendered) {
-    usleep((ui->_frame_duration) * 1000000);
-  } 
+  if (ui->needs_render) {
+    lf_ui_core_commit_entire_render(ui);
+    ui->needs_render = false;
+    rendered = true;
+  }
+  if (!rendered) {
+    ui->_idle_delay_func(ui);
+  }
 
   lf_windowing_update();
-
-  // Remove expired timers
-  for (uint32_t i = 0; i < ui->timers.size;) {
-    if (ui->timers.items[i].expired && !ui->timers.items[i].looping && !ui->timers.items[i].paused) {
-      lf_vector_remove_by_idx(&ui->timers, i);
-    } else {
-      i++;
-    }
-  }
-
-  for (uint32_t i = 0; i < ui->timers.size; i++) {
-    if(ui->timers.items[i].expired && ui->timers.items[i].looping && !ui->timers.items[i].paused) {
-      ui->timers.items[i].expired = false;
-      ui->timers.items[i].elapsed = 0.0f;
-    }
 }
-}
+
 
 
 void 
 lf_ui_core_submit(lf_ui_state_t* ui) {
-  ui->root->_needs_rerender = true;
+  ui->needs_render = true;
 }
-
-void 
-lf_ui_core_rerender_widget(lf_ui_state_t* ui, lf_widget_t* widget) {
-  if(ui->root->_needs_rerender || widget->_needs_rerender) {
-    return;
-  }
-  lf_widget_t* rerender = widget;
-  if(!rerender->_changed_size) {
-    rerender->_needs_rerender = true;
-    return;
-  }
-  while(rerender->parent) {
-    lf_widget_t* p = rerender->parent;
-    if(p->size_calc){
-      vec2s sizebefore = p->container.size; 
-      p->size_calc(ui, p);
-      p->_changed_size = 
-        !(  p->container.size.x == sizebefore.x && 
-        p->container.size.y == sizebefore.y);
-      
-    }
-    if(!p->_changed_size) {
-      rerender = p;
-      break;
-    }
-    rerender = rerender->parent;
-  }
-  if(rerender != ui->root && rerender->shape) {
-    lf_widget_shape(ui, rerender);
-  }
-  rerender->_needs_rerender = true;
-}
-
 void 
 lf_ui_core_begin_render(
   lf_ui_state_t* ui,
@@ -751,7 +671,7 @@ lf_ui_core_start_timer_looped(lf_ui_state_t* ui, float duration, lf_timer_finish
 void 
 lf_ui_core_commit_entire_render(lf_ui_state_t* ui) {
   if(!ui) return;
-  if(!ui->root->_needs_rerender) return;
+  if(!ui->needs_render) return;
   vec2s win_size = lf_win_get_size(ui->win);
   lf_container_t clear_area = LF_SCALE_CONTAINER(
     win_size.x,

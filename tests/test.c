@@ -28,55 +28,46 @@ typedef struct {
 
 static state_t s;
 
-static int barsize = 30;
-static int numdesktops = 9;
-static int crntdesktop = 3;
+void delay(lf_ui_state_t* ui) {
+  usleep((ui->_frame_duration ) * 1000000);
+}
 
-
-static bool is_big = false;
-static void on_click(lf_ui_state_t* ui, lf_widget_t* widget);
+bool big = false;
 
 static void comp(void);
 
-void on_click(lf_ui_state_t* ui, lf_widget_t* widget) {
-  if(crntdesktop + 1 > numdesktops)
-    crntdesktop = 0;
-  else 
-    crntdesktop++;
-  lf_component_rerender(s.ui, comp);
+void removestuff(lf_ui_state_t* ui, lf_widget_t* widget) {
+  big = !big;
+  lf_widget_set_padding(s.ui, widget, big ? 40.0f : ui->theme->button_props.padding_right);
+  lf_component_rerender(ui, comp);
 }
 
-static bool showing_dialogue = false;
-
-static int nelements = 1;
-void onclick(lf_ui_state_t* ui, lf_widget_t* widget) {
-  nelements++;
-  lf_component_rerender(s.ui, comp);
-}
-void onclickdec(lf_ui_state_t* ui, lf_widget_t* widget) {
-  if(nelements - 1 >= 0)
-    nelements--;
-  lf_component_rerender(s.ui, comp);
-}
 
 void comp(void) {
   lf_div(s.ui);
+  lf_widget_set_fixed_height_percent(lf_crnt(s.ui), 100.0f);
+  lf_widget_set_alignment(lf_crnt(s.ui), AlignCenterHorizontal | AlignCenterVertical);
   lf_div(s.ui);
-  lf_text_h4(s.ui, "Click me");
+  lf_style_widget_prop_color(s.ui, lf_crnt(s.ui), color, lf_color_from_hex(0x555555));
+  lf_style_widget_prop(s.ui, lf_crnt(s.ui), corner_radius, 20);
 
-  char buf[64];
-  sprintf(buf, "Elements: %i", nelements);
-  lf_text_h1(s.ui, buf); 
-  lf_div_end(s.ui);
-  lf_div_end(s.ui);
-  lf_text_h4(s.ui, "Hello");
-}
+  lf_widget_set_fixed_width(lf_crnt(s.ui), 500.0f);
 
-static void desktop_up(lf_ui_state_t* ui, lf_widget_t* widget) {
-  crntdesktop++;
-  if(crntdesktop >= numdesktops)
-    crntdesktop = 0;
-  lf_component_rerender(s.ui, comp);
+  for(uint32_t i = 0; i < 5; i++) {
+    lf_button(s.ui);
+    lf_widget_set_transition_props(lf_crnt(s.ui), 0.1f, lf_ease_out_quad);
+
+    ((lf_button_t*)lf_crnt(s.ui))->on_click = removestuff;
+
+    lf_text_h4(s.ui, "Click Me");
+
+    lf_button_end(s.ui);
+  }
+
+
+  lf_div_end(s.ui);
+  lf_text_h1(s.ui, "Text sample");
+  lf_div_end(s.ui);
 }
 int main(void) {
 
@@ -85,12 +76,12 @@ int main(void) {
   lf_window_t win = lf_ui_core_create_window(1280, 720, "hello leif");
   s.ui = lf_ui_core_init(win);
 
+ 
+  s.ui->_idle_delay_func = delay;
 
-  lf_div(s.ui);
-  lf_style_widget_prop_color(s.ui, lf_crnt(s.ui), color, LF_RED);
-  lf_text_h1(s.ui, "Hello, World!");
-  lf_div_end(s.ui);
-  lf_text_h4(s.ui, "world");
+  lf_widget_set_font_family(s.ui, lf_crnt(s.ui), "CaskaydiaCove Nerd Font");
+
+  lf_component(s.ui, comp);
 
   while(s.ui->running) {
     lf_ui_core_next_event(s.ui);

@@ -60,7 +60,7 @@ struct lf_widget_t {
 
   bool _fixed_width;
   bool _fixed_height;
-  bool _changed_by_layout, _needs_rerender, _marked_for_removal, _changed_size,
+  bool _changed_by_layout, _marked_for_removal, _changed_size,
        _rendered_within_comp;
   bool _needs_size_calc, _needs_shape;
 
@@ -89,7 +89,7 @@ lf_widget_t* lf_widget_create(
     lf_widget_shape_cb shape,
     lf_widget_shape_cb calc_size);
 
-int32_t lf_widget_add_child(
+void lf_widget_add_child(
     lf_widget_t* parent, 
     lf_widget_t* child);
 
@@ -201,6 +201,8 @@ void lf_widget_set_fixed_height_percent(lf_widget_t* widget, float percent);
 
 void lf_widget_set_alignment(lf_widget_t* widget, uint32_t flags);
 
+void lf_widget_set_sizing(lf_widget_t* widget, lf_sizing_type_t sizing);
+
 void lf_widget_apply_size_hints(lf_widget_t* widget);
 
 void lf_widget_set_min_width(lf_widget_t* widget, float width);
@@ -236,3 +238,11 @@ void lf_widget_set_prop_color(
     lf_color_t* prop, lf_color_t val);
 
 void lf_widget_set_visible(lf_widget_t* widget, bool visible);
+
+void lf_widget_invalidate_size(lf_widget_t* widget);
+
+void lf_widget_invalidate_layout(lf_widget_t* widget);
+
+void lf_widget_invalidate_size_and_layout(lf_widget_t* widget);
+
+lf_widget_t* lf_widget_flag_for_layout(lf_ui_state_t* ui, lf_widget_t* widget);

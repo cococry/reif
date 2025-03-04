@@ -38,8 +38,6 @@ _recalculate_label(
   text->base.container.size.y = text_dimension.height;
 
   text->_text_dimension = text_dimension;
-  //printf("  => calculated text dimension: (%f,%f)\n", text->_text_dimension.width,
-    //  text->_text_dimension.height);
 }
 
 void
@@ -174,7 +172,7 @@ lf_text_set_label(
   if(dim_before.width != text->_text_dimension.width || 
       dim_before.height != text->_text_dimension.height) {
     text->base._changed_size = true;
-    lf_ui_core_rerender_widget(ui, &text->base);
+    ui->needs_render = true;
   }
   
 }

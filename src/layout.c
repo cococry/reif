@@ -27,16 +27,10 @@ void adjust_widget_size(lf_ui_state_t* ui, lf_widget_t* widget, bool* o_fixed_w,
       widget->props.margin_left - widget->props.margin_right -
       widget->props.padding_left - widget->props.padding_right;
   } 
-  if (widget->_fixed_width && widget->_width_percent != 0.0f) {
-    widget->container.size.x = parent_inner_width * widget->_width_percent - (widget->props.padding_left + widget->props.padding_right);
-  }
 
   // Height sizing
   if (resizable && (widget->sizing_type == SizingFitToParent || (widget->sizing_type == SizingGrow))) {
     widget->container.size.y = parent_inner_height - (widget->props.margin_top + widget->props.margin_bottom);
-  }
-  if (widget->_fixed_height && widget->_height_percent != 0.0f) {
-    widget->container.size.y = parent_inner_height * widget->_height_percent; 
   }
 
   // Set output fixed flag values
@@ -49,7 +43,7 @@ void adjust_widget_size(lf_ui_state_t* ui, lf_widget_t* widget, bool* o_fixed_w,
 }
 
 
-static void widget_grow_horz(lf_widget_t* widget) {
+static void widget_grow_horz(lf_ui_state_t* ui, lf_widget_t* widget) {
   if (!widget->visible) return;
   if(!widget->_fixed_height) {
     widget->container.size.y = widget->parent->container.size.y - 
@@ -67,7 +61,7 @@ static void widget_grow_horz(lf_widget_t* widget) {
   }
 }
 
-static void widget_grow_vert(lf_widget_t* widget) {
+static void widget_grow_vert(lf_ui_state_t* ui, lf_widget_t* widget) {
 
   if (!widget->visible) return;
   if(!widget->_fixed_width) {
@@ -118,17 +112,18 @@ lf_layout_vertical(lf_ui_state_t* ui, lf_widget_t* widget) {
 
   for(uint32_t i = 0; i < widget->num_childs; i++) {
     lf_widget_t* child = widget->childs[i];
-    //printf("  => child size: (%f,%f)\n", child->container.size.x,
-      //  child->container.size.y);
     if (!child->visible) continue;
 
-    vec2s size = LF_WIDGET_SIZE_RENDERED_V2(child);
+    vec2s size = LF_WIDGET_SIZE_V2(child);
+    /*if(widget->type == WidgetTypeDiv) {
+      printf("  => Child %i: %f\n", i, size.y); 
+    }*/
     if(widget->justify_type == JustifyStart)
       ptr.y += child->props.margin_top;
     else if(widget->justify_type == JustifyEnd) 
       ptr.y -= size.y + child->props.margin_bottom;
 
-    float centering_offset = (lf_widget_width_ex(widget, widget->props) - LF_WIDGET_SIZE_RENDERED_V2(child).x) / 2.0f;
+    float centering_offset = (lf_widget_width_ex(widget, widget->props) - LF_WIDGET_SIZE_V2(child).x) / 2.0f;
 
     child->container.pos.x = ptr.x + ((centered_horizontal) ? centering_offset : child->props.margin_left); 
 
@@ -143,6 +138,7 @@ lf_layout_vertical(lf_ui_state_t* ui, lf_widget_t* widget) {
   }
   lf_widget_apply_size_hints(widget);
 }
+
 
 
 void lf_layout_horizontal(lf_ui_state_t* ui, lf_widget_t* widget) {
@@ -228,7 +224,6 @@ void lf_layout_responsive_grid(lf_ui_state_t* ui, lf_widget_t* widget) {
     lf_widget_t* child = widget->childs[i];
     float widget_h = lf_widget_effective_size(child).y + child->props.margin_top + child->props.margin_bottom;
 
-    // Ensure row height is updated at least once, even if `changed_by_layout` is true.
     if (!child->_changed_by_layout || row_heights[row_i] == 0) {
       row_heights[row_i] = fmax(row_heights[row_i], widget_h);
     }
@@ -301,53 +296,50 @@ void lf_layout_responsive_grid(lf_ui_state_t* ui, lf_widget_t* widget) {
 
 
 void lf_size_calc_vertical(lf_ui_state_t* ui, lf_widget_t* widget) {
-  lf_widget_props_t props = widget->props;
   if(!widget->_needs_size_calc) return;
+  lf_widget_props_t props = widget->props;
   float min_width = -1.0f;
-  if (widget->parent) {
-    min_width = widget->parent->container.size.x
-      - props.padding_left - props.padding_right
-      - props.margin_left  - props.margin_right;
-  }
+  vec2s child_size = (vec2s){.x = -1.0f,.y = -1.0f};
   if(widget->sizing_type == SizingFitToParent) {
     if (widget->parent && !widget->_fixed_width) {
+      min_width = widget->parent->container.size.x
+        - props.padding_left - props.padding_right
+        - props.margin_left  - props.margin_right;
       widget->container.size.x = min_width;
     }
   }
+
+  lf_widget_apply_size_hints(widget);
+
   for (size_t i = 0; i < widget->num_childs; i++) {
-    widget->childs[i]->size_calc(ui, widget->childs[i]);  
+    if(widget->childs[i]->size_calc)
+      widget->childs[i]->size_calc(ui, widget->childs[i]);  
   }
 
-  vec2s max = {0}, child_size = {0};
+  if(widget->sizing_type == SizingGrow && widget->parent) {
+    if (widget->parent->layout_type == LayoutHorizontal) {
+      widget_grow_horz(ui, widget);
+    } else if (widget->parent->layout_type == LayoutVertical) {
+      widget_grow_vert(ui, widget);
+    }
+  } else if(widget->sizing_type == SizingFitToContent) {
+    if (!widget->_fixed_width) {
+      vec2s max;
+      child_size = lf_widget_measure_children(widget, &max);
+      widget->container.size.x = max.x;
+    }
+  }
 
   if (widget->sizing_type != SizingGrow &&
       !widget->_fixed_height) {
-    // Ensure all children have been processed before measuring
-    child_size = lf_widget_measure_children(widget, &max);
+    if(child_size.x == -1.0f && child_size.y == -1.0f) {
+      child_size = lf_widget_measure_children(widget, NULL);
+    }
     widget->container.size.y = child_size.y;
   }
 
-  switch (widget->sizing_type) {
-    case SizingFitToContent:
-      if (!widget->_fixed_width) {
-        widget->container.size.x = max.x;
-      }
-      break;
-
-    case SizingGrow:
-      if (widget->parent) {
-        if (widget->parent->layout_type == LayoutHorizontal) {
-          widget_grow_horz(widget);
-        } else if (widget->parent->layout_type == LayoutVertical) {
-          widget_grow_vert(widget);
-        }
-      }
-      break;
-    default: 
-      break;
-  }
-
   lf_widget_apply_size_hints(widget);
+
   widget->_needs_size_calc = false;
 }
 
@@ -355,45 +347,41 @@ void lf_size_calc_vertical(lf_ui_state_t* ui, lf_widget_t* widget) {
 
 void 
 lf_size_calc_horizontal(lf_ui_state_t* ui, lf_widget_t* widget) {
-  for (size_t i = 0; i < widget->num_childs; i++) {
-    widget->childs[i]->size_calc(ui, widget->childs[i]);  
-  }
   if(!widget->_needs_size_calc) return;
   lf_widget_props_t props = widget->_rendered_props;
-  vec2s max, child_size = lf_widget_measure_children(widget, &max);
   float min_width = -1.0f;
+  vec2s max = (vec2s){.x = -1.0f,.y = -1.0f};
+  if(widget->sizing_type == SizingFitToParent) {
+    if (widget->parent && !widget->_fixed_width) {
+      min_width = widget->parent->container.size.x 
+        - props.padding_left - props.padding_right 
+        - props.margin_left  - props.margin_right;
+      widget->container.size.x = min_width;
+    }
+  }
+  lf_widget_apply_size_hints(widget);
 
-  if (widget->parent) {
-    min_width = widget->parent->container.size.x 
-      - props.padding_left - props.padding_right 
-      - props.margin_left  - props.margin_right;
+  for (size_t i = 0; i < widget->num_childs; i++) {
+    if(widget->childs[i]->size_calc)
+      widget->childs[i]->size_calc(ui, widget->childs[i]);  
   }
 
-  switch (widget->sizing_type) {
-    case SizingFitToContent:
-      if (!widget->_fixed_width) {
-        widget->container.size.x = child_size.x;
-      }
-      break;
-
-    case SizingFitToParent:
-      if (widget->parent && !widget->_fixed_width) {
-        widget->container.size.x = min_width;
-      }
-      break;
-
-    case SizingGrow:
-      if (widget->parent) {
-        if (widget->parent->layout_type == LayoutHorizontal) {
-          widget_grow_horz(widget);
-        } else if (widget->parent->layout_type == LayoutVertical) {
-          widget_grow_vert(widget);
-        }
-      }
-      break;
+  if(widget->sizing_type == SizingFitToContent) {
+    if (!widget->_fixed_width) {
+      vec2s child_size = lf_widget_measure_children(widget, &max);
+      widget->container.size.x = child_size.x;
+    }
+  } else if(widget->sizing_type == SizingGrow && widget->parent) {
+    if (widget->parent->layout_type == LayoutHorizontal) {
+      widget_grow_horz(ui, widget);
+    } else if (widget->parent->layout_type == LayoutVertical) {
+      widget_grow_vert(ui, widget);
+    }
   }
 
   if (!widget->_fixed_height && widget->sizing_type != SizingGrow) {
+    if(max.x == -1.0f && max.y == -1.0f)
+      lf_widget_measure_children(widget, &max);
     widget->container.size.y = max.y;
   }
 

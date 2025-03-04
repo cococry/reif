@@ -72,7 +72,7 @@ _get_font_size(lf_ui_state_t* ui, lf_text_level lvl) {
 
 lf_text_t* 
 _text_create_from_level(lf_ui_state_t* ui, const char* label, lf_text_level lvl) {
-  bool overflowing = _assign_idx(ui) >= ui->_ez.last_parent->num_childs;
+  bool overflowing = _assign_idx(ui) >= ui->_ez.last_parent->num_childs && ui->_ez.last_parent->num_childs != 0;
   if (!ui->_ez._assignment_only || overflowing) {
     lf_mapped_font_t font = lf_asset_manager_request_font(
         ui, 
@@ -85,10 +85,14 @@ _text_create_from_level(lf_ui_state_t* ui, const char* label, lf_text_level lvl)
 
     ui->_ez.index_stack[ui->_ez.index_depth]++;
 
-    ui->_ez.last_parent->_changed_size = true;
-    ui->_ez.last_parent->_needs_rerender = false;
+    if(overflowing) {
+      ui->needs_render = true;
+      txt->base.parent->_changed_size = true;
+      lf_widget_flag_for_layout(ui, txt->base.parent);
+      lf_widget_invalidate_size(txt->base.parent);
+    }
+
     txt->base._rendered_within_comp = true;
-    lf_ui_core_rerender_widget(ui, ui->_ez.last_parent);
 
     return txt;
   } else {
@@ -265,6 +269,7 @@ lf_image(lf_ui_state_t* ui, const char* filepath) {
     img->base._rendered_within_comp = true;
     ui->_ez.current_widget = &img->base;
     ui->_ez.index_stack[ui->_ez.index_depth]++;
+    printf("created image.\n");
     return img; 
   } else {
     if(_assign_idx(ui) >= ui->_ez.last_parent->num_childs) {
@@ -313,17 +318,15 @@ lf_image_sized(lf_ui_state_t* ui, const char* filepath, uint32_t w, uint32_t h) 
 
 lf_image_t* 
 lf_image_sized_w(lf_ui_state_t* ui, const char* filepath, uint32_t w) {
-  if(!ui->_ez._assignment_only) {
+  bool overflowing = _assign_idx(ui) >= ui->_ez.last_parent->num_childs;
+  if(!ui->_ez._assignment_only || overflowing) {
     lf_image_t* img = lf_image_create_ex_w(ui, ui->_ez.last_parent, filepath, w);
     ui->_ez.current_widget = &img->base;
-    img->base._rendered_within_comp = true;
     ui->_ez.index_stack[ui->_ez.index_depth]++;
+
+    img->base._rendered_within_comp = true;
     return img; 
   } else {
-    if(_assign_idx(ui) >= ui->_ez.last_parent->num_childs) {
-      fprintf(stderr,"leif: lf_image_sized_w: mismatch in widget tree.\n");
-      return NULL;
-    }
     lf_widget_t* widget = ui->_ez.last_parent->childs[ui->_ez.index_stack[ui->_ez.index_depth]++];
     widget->_rendered_within_comp = true;
     if(widget->type != WidgetTypeImage) {
@@ -386,8 +389,8 @@ void remove_widgets(lf_ui_state_t* ui, lf_widget_t* widget, lf_widget_t* end,
 
   if (!widget->_rendered_within_comp) {
     comp_widget->_changed_size = true;
-    comp_widget->_needs_rerender = false;
-    lf_ui_core_rerender_widget(ui, comp_widget);
+    ui->needs_render = true;
+    lf_widget_flag_for_layout(ui, comp_widget);
     lf_widget_remove(widget);
   }
 
@@ -419,8 +422,8 @@ void lf_component_rerender(lf_ui_state_t* ui, lf_component_func_t comp_func) {
       lf_ez_api_set_assignment_only_mode(ui, false);
 
       if (comp->_parent && comp->_parent->num_childs > comp->_child_idx) {
-        comp_widget->_needs_rerender = false;
-        lf_ui_core_rerender_widget(ui, comp_widget); 
+        lf_widget_flag_for_layout(ui, comp_widget);
+        ui->needs_render = true;
       }
 
       return;

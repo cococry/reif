@@ -18,12 +18,14 @@ static void widget_animate(lf_ui_state_t* ui, lf_widget_t* widget);
 
 void 
 widget_resize_children(lf_widget_t* widget, uint32_t new_cap) {
+  if(!widget) return;
   widget->childs = (lf_widget_t**)realloc(widget->childs, new_cap * sizeof(lf_widget_t*));
   widget->cap_childs = new_cap;
 }
 
 void 
 widget_animate(lf_ui_state_t* ui, lf_widget_t* widget) {
+  if(!widget) return;
   lf_animation_t* prev = NULL;
   lf_animation_t* anim = widget->anims;
 
@@ -70,15 +72,15 @@ lf_widget_create(
   widget->parent = NULL;
   widget->cap_childs = INIT_CHILD_CAP;
   widget->num_childs = 0;
-  widget->childs = malloc(sizeof(*widget->childs) * INIT_CHILD_CAP);
+  widget->childs = malloc(sizeof(lf_widget_t) * INIT_CHILD_CAP);
   widget->id = id;
   widget->visible = true;
   widget->_marked_for_removal = false;
   widget->_changed_by_layout = false;
   widget->_rendered_within_comp = false;
   widget->_changed_size = true;
-  widget->_needs_rerender = false;
   widget->_needs_size_calc = true;
+  widget->_needs_shape = true;
 
   widget->type = type;
   widget->container = fallback_container;
@@ -114,18 +116,8 @@ lf_widget_create(
   return widget;
 }
 
-lf_widget_t* get_first_intersecting_parent(lf_widget_t* widget) {
-  lf_widget_t* current = widget->parent;
-  while (current != NULL) {
-    if (lf_container_intersets_container(LF_WIDGET_CONTAINER(widget), LF_WIDGET_CONTAINER(current))) {
-      return current; 
-    }
-    current = current->parent; 
-  }
-  return NULL; 
-}
-
 static float widget_get_cull_end_y(lf_widget_t* widget) {
+  if(!widget) return 0.0f;
   return 
         widget->container.pos.y + 
         widget->props.padding_top +
@@ -135,6 +127,7 @@ static float widget_get_cull_end_y(lf_widget_t* widget) {
 } 
 
 static float widget_get_cull_end_x(lf_widget_t* widget) {
+  if(!widget) return 0.0f;
   return 
         widget->container.pos.x + 
         widget->props.padding_left + 
@@ -145,6 +138,7 @@ static float widget_get_cull_end_x(lf_widget_t* widget) {
 
 void
 lf_widget_render(lf_ui_state_t* ui,  lf_widget_t* widget) {
+  if(!widget) return;
   if(!widget->visible) return;
   if(widget->render) {
     if(!lf_container_intersets_container(
@@ -197,7 +191,7 @@ lf_widget_render(lf_ui_state_t* ui,  lf_widget_t* widget) {
 }
 
 void lf_widget_shape(lf_ui_state_t* ui, lf_widget_t* widget) {
-  if (!widget || !widget->shape) return;
+  if (!widget || !widget->shape || !widget->_needs_shape) return;
 
   if (widget != ui->root && widget->parent) {
     if (!lf_container_intersets_container(
@@ -209,19 +203,16 @@ void lf_widget_shape(lf_ui_state_t* ui, lf_widget_t* widget) {
   }
   vec2s size_before = widget->container.size;
 
-  // Step 2: Calculate the widget's own size now that children's sizes are known
   if (widget->size_calc){
     widget->size_calc(ui, widget);
   }
 
-  // Step 3: Determine if the size has changed
   widget->_changed_size = !(widget->container.size.x == size_before.x &&
                             widget->container.size.y == size_before.y);
 
-  // Step 4: Apply final positioning and shaping
   widget->shape(ui, widget);
+  widget->_needs_shape = false;
 
-  // Step 5: Recursively shape children after size has been finalized
   for (uint32_t i = 0; i < widget->num_childs; i++) {
     lf_widget_shape(ui, widget->childs[i]);
   }
@@ -232,9 +223,11 @@ bool lf_widget_animate(
   lf_ui_state_t* ui,
   lf_widget_t* widget,
   lf_widget_t** o_shape) {  
+  if(!widget) return false;
   bool animated = false;
   if (widget->anims) {
     widget_animate(ui, widget);
+    widget->_changed_size = true;
     lf_widget_submit_props(widget);
     animated = true;
     if (*o_shape == NULL) {
@@ -254,6 +247,7 @@ bool lf_widget_animate(
 
 bool 
 lf_widget_is_animating(lf_widget_t* widget) {
+  if(!widget) return false;
   return widget->anims; 
 }
 
@@ -263,18 +257,15 @@ lf_widget_handle_event(lf_ui_state_t* ui, lf_widget_t* widget, lf_event_t event)
   if(widget->handle_event && lf_widget_is_listening(widget, event.type)) {
     widget->handle_event(ui, widget, event); 
   }
-
-  if(!widget) {
-    return;
-  }
+  if(!widget) return;
   for(uint32_t i = 0; i < widget->num_childs; i++) {
     lf_widget_handle_event(ui, widget->childs[i], event);
   }
 }
 
-int32_t
+void
 lf_widget_add_child(lf_widget_t* parent, lf_widget_t* child) {
-  if(!parent || !child) return 1;
+  if(!parent || !child) return;
 
   child->font_style   = parent->font_style;
   child->font_size    = parent->font_size;
@@ -287,7 +278,7 @@ lf_widget_add_child(lf_widget_t* parent, lf_widget_t* child) {
   parent->childs[parent->num_childs++] = child;
   child->parent = parent;
   
-  return 0;
+  return;
 }
 
 void
@@ -351,16 +342,19 @@ void lf_widget_remove_child_from_memory(lf_widget_t* parent, uint32_t child_idx)
 
 float 
 lf_widget_width(lf_widget_t* widget) {
+  if(!widget) return 0.0f;
   return  lf_widget_width_ex(widget, widget->props); 
 }
 
 float 
 lf_widget_height(lf_widget_t* widget) {
+  if(!widget) return 0.0f;
   return lf_widget_height_ex(widget, widget->props); 
 }
 
 float 
 lf_widget_width_ex(lf_widget_t* widget, lf_widget_props_t props) {
+  if(!widget) return 0.0f;
   return widget->container.size.x + 
   props.padding_left      +
   props.padding_right;
@@ -368,6 +362,7 @@ lf_widget_width_ex(lf_widget_t* widget, lf_widget_props_t props) {
 
 float 
 lf_widget_height_ex(lf_widget_t* widget, lf_widget_props_t props) {
+  if(!widget) return 0.0f;
   return widget->container.size.y + 
     props.padding_top       +
     props.padding_bottom;
@@ -377,6 +372,7 @@ void lf_widget_set_padding(
   lf_ui_state_t* ui,
   lf_widget_t* widget,
   float padding) {
+  if(!widget) return;
   if(
     widget->props.padding_top == padding && 
     widget->props.padding_bottom == padding && 
@@ -387,14 +383,16 @@ void lf_widget_set_padding(
   lf_widget_set_prop(ui, widget, &widget->props.padding_right, padding); 
   lf_widget_set_prop(ui, widget, &widget->props.padding_top, padding); 
   lf_widget_set_prop(ui, widget, &widget->props.padding_bottom, padding); 
- 
   widget->_changed_size = true;
+  lf_widget_flag_for_layout(ui, widget);
+ 
 }
 
 void lf_widget_set_margin(
   lf_ui_state_t* ui,
   lf_widget_t* widget,
   float margin) {
+  if(!widget) return;
   if(
     widget->props.margin_top == margin && 
     widget->props.margin_bottom == margin && 
@@ -412,11 +410,13 @@ void lf_widget_set_margin(
 
 void 
 lf_widget_set_layout(lf_widget_t* widget, lf_layout_type_t layout) {
+  if(!widget) return;
   widget->layout_type = layout;
 }
 
 void 
 lf_widget_apply_layout(lf_ui_state_t* ui, lf_widget_t* widget) {
+  if(!widget) return;
   switch (widget->layout_type) {
     case LayoutVertical:
       lf_layout_vertical(ui, widget);
@@ -434,6 +434,7 @@ lf_widget_apply_layout(lf_ui_state_t* ui, lf_widget_t* widget) {
 
 void 
 lf_widget_calc_layout_size(lf_ui_state_t* ui, lf_widget_t* widget) {
+  if(!widget) return;
   switch (widget->layout_type) {
     case LayoutVertical: 
       lf_size_calc_vertical(ui, widget);
@@ -450,21 +451,25 @@ lf_widget_calc_layout_size(lf_ui_state_t* ui, lf_widget_t* widget) {
 
 void 
 lf_widget_listen_for(lf_widget_t* widget, uint32_t events) {
+  if(!widget) return;
   widget->listening_for |= events;
 }
 
 void 
 lf_widget_unlisten(lf_widget_t* widget, uint32_t events) {
+  if(!widget) return;
   widget->listening_for &= ~events;
 }
 
 bool 
 lf_widget_is_listening(lf_widget_t* widget, uint32_t events) {
+  if(!widget) return false;
   return (widget->listening_for & events) != 0;
 }
 
 void 
 lf_widget_set_listener(lf_widget_t* widget, lf_widget_handle_event_cb cb, uint32_t events) {
+  if(!widget) return;
   widget->handle_event = cb;
   lf_widget_listen_for(widget, events);
 }
@@ -476,6 +481,7 @@ lf_animation_t* lf_widget_add_animation(
   float end_value, 
   float duration,
   lf_animation_func_t func) {
+  if(!widget) return NULL;
   lf_widget_interrupt_animation(widget, target);
   return lf_animation_create(
     &widget->anims,
@@ -497,6 +503,7 @@ lf_animation_t* lf_widget_add_animation_looped(
     float end_value, 
     float duration,
     lf_animation_func_t func) {
+  if(!widget) return NULL;
   lf_widget_interrupt_animation(widget, target);
   return lf_animation_create(
     &widget->anims,
@@ -517,6 +524,7 @@ lf_animation_t* lf_widget_add_keyframe_animation(
     float *target,
     lf_animation_keyframe_t* keyframes,
     uint32_t n_keyframes) {
+  if(!widget) return NULL;
   lf_widget_interrupt_animation(widget, target);
   return lf_animation_create(
     &widget->anims,
@@ -532,6 +540,7 @@ lf_animation_t* lf_widget_add_keyframe_animation_looped(
     float *target,
     lf_animation_keyframe_t* keyframes,
     uint32_t n_keyframes) {
+  if(!widget) return NULL;
   lf_widget_interrupt_animation(widget, target);
   return lf_animation_create(
     &widget->anims,
@@ -545,11 +554,13 @@ lf_animation_t* lf_widget_add_keyframe_animation_looped(
 void lf_widget_interrupt_animation(
     lf_widget_t* widget,
     float *target) {
+  if(!widget) return;
   lf_animation_interrupt(widget->anims, target);
 }
 
 void lf_widget_interrupt_all_animations(
     lf_widget_t* widget) {
+  if(!widget) return;
   lf_animation_t* anim = widget->anims;
   while(anim) {
     anim->active = false;
@@ -559,11 +570,13 @@ void lf_widget_interrupt_all_animations(
 
 void 
 lf_widget_submit_props(lf_widget_t* widget) {
+  if(!widget) return;
   widget->_rendered_props = widget->props;
 }
 
 void 
 lf_widget_set_fixed_width(lf_widget_t* widget, float width) {
+  if(!widget) return;
   widget->container.size.x = width;
   widget->_fixed_width = true;
   widget->_changed_size = true;
@@ -571,6 +584,7 @@ lf_widget_set_fixed_width(lf_widget_t* widget, float width) {
 
 void 
 lf_widget_set_fixed_height(lf_widget_t* widget, float height) {
+  if(!widget) return;
   widget->container.size.y = height;
   widget->_fixed_height = true;
   widget->_changed_size = true;
@@ -578,6 +592,7 @@ lf_widget_set_fixed_height(lf_widget_t* widget, float height) {
 
 void 
 lf_widget_set_fixed_width_percent(lf_widget_t* widget, float percent) {
+  if(!widget) return;
   widget->_width_percent = percent / 100.0f;
   widget->_fixed_width = true;
   widget->_changed_size = true;
@@ -585,13 +600,21 @@ lf_widget_set_fixed_width_percent(lf_widget_t* widget, float percent) {
 
 void 
 lf_widget_set_fixed_height_percent(lf_widget_t* widget, float percent) {
+  if(!widget) return;
   widget->_height_percent = percent / 100.0f;
   widget->_fixed_height = true;
   widget->_changed_size = true;
 }
 
 void lf_widget_set_alignment(lf_widget_t* widget, uint32_t flags) {
+  if(!widget) return;
   lf_flag_set(&widget->alignment_flags, flags);
+}
+
+void 
+lf_widget_set_sizing(lf_widget_t* widget, lf_sizing_type_t sizing) {
+  if(!widget) return;
+  widget->sizing_type = sizing;
 }
 
 void 
@@ -607,6 +630,23 @@ lf_widget_apply_size_hints(lf_widget_t* widget) {
   }
   if(widget->_max_size.y != -1.0f) {
     widget->container.size.y = widget->container.size.y > widget->_max_size.y ? widget->_max_size.y : widget->container.size.y; 
+  }
+
+  if (widget->_fixed_width && widget->_width_percent != 0.0f && widget->parent) {
+    widget->container.size.x = lf_widget_width(widget->parent) * 
+      widget->_width_percent - 
+      widget->props.padding_left - widget->props.padding_right - 
+      widget->parent->props.padding_left - widget->parent->props.padding_right -
+    widget->props.margin_left - widget->props.margin_right
+    ;
+  }
+  if (widget->_fixed_height && widget->_height_percent != 0.0f && widget->parent) {
+    widget->container.size.y = lf_widget_height(widget->parent) * 
+      widget->_height_percent - 
+      widget->props.padding_top - widget->props.padding_bottom - 
+      widget->parent->props.padding_top -
+      widget->props.margin_top - widget->props.margin_bottom
+    ; 
   }
 }
 
@@ -741,7 +781,8 @@ void lf_widget_set_prop(
       *prop, val,
       widget->transition_time, widget->transition_func);
   } else {
-    *prop = val; 
+    *prop = val;
+    lf_widget_submit_props(widget);
   }
 }
 
@@ -763,3 +804,61 @@ lf_widget_set_visible(lf_widget_t* widget, bool visible) {
   widget->visible = visible;
   widget->parent->_changed_size =true;
 }
+
+void 
+lf_widget_invalidate_size(lf_widget_t* widget) {
+  widget->_needs_size_calc = true;
+  for (size_t i = 0; i < widget->num_childs; i++) {
+    lf_widget_invalidate_size(widget->childs[i]);
+  }
+
+}
+
+void 
+lf_widget_invalidate_layout(lf_widget_t* widget) {
+  widget->_needs_shape = true;
+  for (size_t i = 0; i < widget->num_childs; i++) {
+    lf_widget_invalidate_layout(widget->childs[i]);
+  }
+}
+
+void 
+lf_widget_invalidate_size_and_layout(lf_widget_t* widget) {
+  widget->_needs_size_calc = true;
+  widget->_needs_shape = true;
+  for (size_t i = 0; i < widget->num_childs; i++) {
+    lf_widget_invalidate_size_and_layout(widget->childs[i]);
+  }
+}
+
+lf_widget_t*
+lf_widget_flag_for_layout(lf_ui_state_t* ui, lf_widget_t* widget) {
+  if (!widget || !widget->size_calc) return NULL;
+
+  lf_widget_t* to_flag = widget;
+  bool size_changed = false;
+
+  while (to_flag) {
+    vec2s size_before;
+    if(!to_flag->_changed_size) {
+      size_before = to_flag->container.size;
+      to_flag->size_calc(ui, to_flag); 
+    }
+
+    if ((to_flag->_changed_size || (
+      to_flag->container.size.x != size_before.x || 
+      to_flag->container.size.y != size_before.y)) && to_flag->parent) {
+      size_changed = true;
+      to_flag = to_flag->parent;
+    } else {
+      break;
+    }
+  }
+
+  if (size_changed && to_flag) {
+    lf_widget_invalidate_size_and_layout(to_flag);
+    return to_flag;
+  }
+  return NULL;
+}
+

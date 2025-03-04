@@ -33,6 +33,9 @@ typedef struct {
 typedef void (*lf_page_func_t)(
       lf_ui_state_t* ui);
 
+typedef void (*lf_idle_delay_func_t)(
+      lf_ui_state_t* ui);
+
 struct lf_ui_state_t {
   lf_window_t win;
 
@@ -70,6 +73,7 @@ struct lf_ui_state_t {
   lf_theme_t* theme;
 
   bool running;
+  bool needs_render;
 
   uint32_t refresh_rate;
   float _frame_duration;
@@ -79,8 +83,11 @@ struct lf_ui_state_t {
   const char* fontpath;
 
   lf_page_func_t _root_layout_func;
+  lf_idle_delay_func_t _idle_delay_func;
 
   lf_ez_state_t _ez;
+
+
 };
 
 struct lf_page_t {
@@ -127,8 +134,6 @@ lf_ui_state_t* lf_ui_core_init_ex(
 void lf_ui_core_next_event(lf_ui_state_t* ui);
 
 void lf_ui_core_submit(lf_ui_state_t* ui);
-
-void lf_ui_core_rerender_widget(lf_ui_state_t* ui, lf_widget_t* widget);
 
 void lf_ui_core_begin_render(
     lf_ui_state_t* ui, 

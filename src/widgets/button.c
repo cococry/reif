@@ -80,40 +80,45 @@ _button_handle_event(
     if(button->_hovered) {
       button->_held = false;
       button->_hovered = false;
+      ui->needs_render = true;
       lf_widget_set_prop_color(
         ui, widget, 
         &widget->props.color, 
         button->base._initial_props.color);
+      
       if(button->on_leave) {
         button->on_leave(ui, widget);
       }
-      if(!widget->_needs_rerender && !widget->anims)
-        lf_ui_core_rerender_widget(ui, &button->base);
     }
     return;
   }
 
   if(event.type == WinEventMouseRelease && lf_point_intersets_container(mouse, container)) {
     button->_held = false;
-    lf_widget_set_prop_color(
-      ui, widget, 
-      &widget->props.color, 
-      button->base._initial_props.color);
+    if(button->_hovered) {
+      lf_widget_set_prop_color(
+        ui, widget, 
+        &widget->props.color, 
+        lf_color_dim(button->base._initial_props.color, 0.9f));
+    } else {
+      lf_widget_set_prop_color(
+        ui, widget, 
+        &widget->props.color, 
+        button->base._initial_props.color);
+    }
+    ui->needs_render = true;
     if(button->on_click) {
       button->on_click(ui, widget);
     }
-    if(!widget->_needs_rerender && !widget->anims)
-      lf_ui_core_rerender_widget(ui, &button->base);
     return;
   }
   if(event.type == WinEventMousePress) {
     button->_held = true;
+    ui->needs_render = true;
     lf_widget_set_prop_color(
       ui, widget,
       &widget->props.color, 
       lf_color_dim(button->base._initial_props.color, 0.8f));
-    if(!widget->_needs_rerender && !widget->anims)
-      lf_ui_core_rerender_widget(ui, &button->base);
     return;
   }
 
@@ -124,11 +129,10 @@ _button_handle_event(
       ui, widget, 
       &widget->props.color, 
       lf_color_dim(button->base._initial_props.color, 0.9f));
+    ui->needs_render = true;
     if(button->on_enter) {
       button->on_enter(ui, widget);
     }
-    if(!widget->_needs_rerender && !widget->anims)
-      lf_ui_core_rerender_widget(ui, &button->base);
     return;
   }
 }
