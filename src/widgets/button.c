@@ -4,14 +4,14 @@
 #include <runara/runara.h>
 #endif
 
-static void _button_render(
-  lf_ui_state_t* ui,
-  lf_widget_t* widget);
-
 static void _button_handle_event(
   lf_ui_state_t* ui, 
   lf_widget_t* widget, 
   lf_event_t event);
+
+static void _button_render(
+  lf_ui_state_t* ui,
+  lf_widget_t* widget);
 
 static void _button_shape(
   lf_ui_state_t* ui, 
@@ -21,46 +21,12 @@ static void _button_size_calc(
   lf_ui_state_t* ui, 
   lf_widget_t* widget);
 
-void
-_button_render(
-  lf_ui_state_t* ui,
-  lf_widget_t* widget) { 
-  if(!widget) return;
-
-  ui->render_rect(
-    ui->render_state, 
-    widget->container.pos,
-    (vec2s){
-      .x = widget->container.size.x + widget->props.padding_left + widget->props.padding_right,
-      .y = widget->container.size.y + widget->props.padding_top + widget->props.padding_bottom
-    },
-    widget->_rendered_props.color, widget->props.border_color,
-    widget->props.border_width, widget->props.corner_radius);
-}
-
-void 
-_button_shape(lf_ui_state_t* ui, lf_widget_t* widget) {
-  (void)ui;
-  if(!widget) return;
-  if(widget->type != WidgetTypeButton) return;
-  lf_widget_apply_layout(ui, widget);
-}
-
-void 
-_button_size_calc(lf_ui_state_t* ui, lf_widget_t* widget) {
-  (void)ui;
-  if(!widget) return;
-  if(widget->type != WidgetTypeButton) return;
-  lf_widget_calc_layout_size(ui, widget);
-}
-
 void 
 _button_handle_event(
   lf_ui_state_t* ui, 
   lf_widget_t* widget, 
   lf_event_t event) {
-
-  if(event.button != LeftMouse && event.type != WinEventMouseMove) return;
+  if(event.button != LeftMouse) return;
   if(!lf_container_intersets_container(
     widget->container, ui->root->container)) {
     return;
@@ -135,6 +101,40 @@ _button_handle_event(
     }
     return;
   }
+}
+
+
+void
+_button_render(
+  lf_ui_state_t* ui,
+  lf_widget_t* widget) { 
+  if(!widget) return;
+
+  ui->render_rect(
+    ui->render_state, 
+    widget->container.pos,
+    (vec2s){
+      .x = widget->container.size.x + widget->props.padding_left + widget->props.padding_right,
+      .y = widget->container.size.y + widget->props.padding_top + widget->props.padding_bottom
+    },
+    widget->_rendered_props.color, widget->props.border_color,
+    widget->props.border_width, widget->props.corner_radius);
+}
+
+void 
+_button_shape(lf_ui_state_t* ui, lf_widget_t* widget) {
+  (void)ui;
+  if(!widget) return;
+  if(widget->type != WidgetTypeButton) return;
+  lf_widget_apply_layout(ui, widget);
+}
+
+void 
+_button_size_calc(lf_ui_state_t* ui, lf_widget_t* widget) {
+  (void)ui;
+  if(!widget) return;
+  if(widget->type != WidgetTypeButton) return;
+  lf_widget_calc_layout_size(ui, widget);
 }
   
 lf_button_t* 

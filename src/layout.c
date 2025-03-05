@@ -125,9 +125,8 @@ lf_layout_vertical(lf_ui_state_t* ui, lf_widget_t* widget) {
 
     float centering_offset = (lf_widget_width_ex(widget, widget->props) - LF_WIDGET_SIZE_V2(child).x) / 2.0f;
 
-    child->container.pos.x = ptr.x + ((centered_horizontal) ? centering_offset : child->props.margin_left); 
-
-    child->container.pos.y = ptr.y;
+    lf_widget_set_pos_x(child, ptr.x + ((centered_horizontal) ? centering_offset : child->props.margin_left)); 
+    lf_widget_set_pos_y(child, ptr.y);
 
     if(widget->justify_type == JustifyStart)
       ptr.y += size.y + child->props.margin_bottom; 
@@ -179,12 +178,13 @@ void lf_layout_horizontal(lf_ui_state_t* ui, lf_widget_t* widget) {
     else if(widget->justify_type == JustifyEnd) 
       ptr.x -= size.x + child->props.margin_right;
    
-    child->container.pos.y = ptr.y + ((centered_vertical) ? (
+    lf_widget_set_pos_y(child, ptr.y + ((centered_vertical) ? (
       LF_WIDGET_SIZE_V2(widget).y - 
       LF_WIDGET_SIZE_V2(child).y) / 2.0f :
-      child->props.margin_top);
+      child->props.margin_top));
 
-    child->container.pos.x = ptr.x;
+    lf_widget_set_pos_x(child, ptr.x);
+
     if(widget->justify_type == JustifyStart)
       ptr.x += size.x + child->props.margin_right; 
     else if (widget->justify_type == JustifySpaceBetween) 
@@ -277,8 +277,8 @@ void lf_layout_responsive_grid(lf_ui_state_t* ui, lf_widget_t* widget) {
     child->props.padding_top = (h - child->container.size.y) / 2.0f;
     child->props.padding_bottom = child->props.padding_top;
 
-    child->container.pos.x = x_ptr + child->props.margin_left;
-    child->container.pos.y = y_ptr + child->props.margin_top;
+    lf_widget_set_pos_x(child,  x_ptr + child->props.margin_left);
+    lf_widget_set_pos_y(child, y_ptr + child->props.margin_top);
 
     x_ptr += column_widths[col_i];
   }

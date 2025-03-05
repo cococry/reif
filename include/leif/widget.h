@@ -76,6 +76,7 @@ struct lf_widget_t {
   lf_font_style_t font_style;
 
   vec2s total_child_size;
+  vec2s scroll_offset;
 
   float transition_time;
   lf_animation_func_t transition_func;
@@ -248,3 +249,8 @@ void lf_widget_invalidate_layout(lf_widget_t* widget);
 void lf_widget_invalidate_size_and_layout(lf_widget_t* widget);
 
 lf_widget_t* lf_widget_flag_for_layout(lf_ui_state_t* ui, lf_widget_t* widget);
+
+void lf_widget_set_pos_x(lf_widget_t* widget, float pos);
+
+void lf_widget_set_pos_y(lf_widget_t* widget, float pos);
+

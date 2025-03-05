@@ -21,6 +21,7 @@ typedef struct {
   uint32_t keycode, keystate;
   uint32_t button;
   int16_t x, y;
+  int16_t delta_x, delta_y;
   char keyunicode[32];
   uint32_t atom;
 } lf_event_t;

@@ -7,6 +7,13 @@ typedef struct {
   lf_widget_t base;
 
   int32_t _column_count;
+
+  bool _held_scrollbar, _hovered_scrollbar;
+  lf_container_t _scrollbar_container;
+  lf_color_t _scrollbar_color;
+
+  vec2s _scrollbar_drag_start;
+  vec2s _scroll_offset_start;
 } lf_div_t;
 
 lf_div_t* lf_div_create(

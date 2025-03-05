@@ -27,6 +27,9 @@ static uint32_t n_windows = 0;
 static lf_ui_state_t* ui;
 static lf_event_type_t current_event;
 
+static int last_mouse_x = 0;
+static int last_mouse_y = 0;
+
 static lf_window_t create_window(
   uint32_t width, 
   uint32_t height, 
@@ -106,16 +109,22 @@ glfw_mouse_button_callback(
   int32_t button, 
   int32_t action, 
   int32_t mods) {
-  double x, y;
+  double xpos, ypos;
   (void)window;
   (void)mods;
   lf_event_t ev;
   ev.button = button;
   ev.type = (action != GLFW_RELEASE) ? WinEventMousePress : WinEventMouseRelease;
 
-  glfwGetCursorPos(window, &x, &y);
-  ev.y = (int16_t)y; 
-  ev.x = (int16_t)x; 
+  glfwGetCursorPos(window, &xpos, &ypos);
+  if(last_mouse_x == 0) last_mouse_x = xpos;
+  if(last_mouse_y == 0) last_mouse_y = ypos;
+  ev.x = (uint16_t)xpos;
+  ev.y = (uint16_t)ypos;
+  ev.delta_x = xpos - last_mouse_x;
+  ev.delta_y = ypos - last_mouse_y;
+  last_mouse_x = xpos;
+  last_mouse_y = ypos;
   lf_widget_handle_event(ui, ui->root, ev);
   
   if(action != GLFW_RELEASE) {
@@ -183,8 +192,15 @@ glfw_mouse_move_callback(
   }
 
   lf_event_t ev;
+  if(last_mouse_x == 0) last_mouse_x = xpos;
+  if(last_mouse_y == 0) last_mouse_y = ypos;
   ev.x = (uint16_t)xpos;
   ev.y = (uint16_t)ypos;
+  ev.delta_x = xpos - last_mouse_x;
+  ev.delta_y = ypos - last_mouse_y;
+  last_mouse_x = xpos;
+  last_mouse_y = ypos;
+
   ev.type = WinEventMouseMove;
   current_event = WinEventMouseMove; 
   lf_widget_handle_event(ui, ui->root, ev);

@@ -38,6 +38,9 @@ static Atom wm_protocols_atom, wm_delete_window_atom;
 static XVisualInfo* glvis; 
 static GLXContext glcontext;
 
+static int last_mouse_x = 0;
+static int last_mouse_y = 0;
+
 static void handle_event(XEvent *event);
 
 static lf_window_t create_window(uint32_t width, uint32_t height, const char* title, uint32_t flags, lf_windowing_hint_kv_t* hints, uint32_t nhints);
@@ -73,9 +76,17 @@ handle_event(XEvent *event) {
           break;
         case ButtonPress:
           ev.button = event->xbutton.button;
-          ev.type = WinEventMousePress; 
+          ev.type = WinEventMousePress;
+
+          if(last_mouse_x == 0) last_mouse_x = event->xbutton.x;
+          if(last_mouse_y == 0) last_mouse_y = event->xbutton.y;
           ev.x = event->xbutton.x;
           ev.y = event->xbutton.y;
+          ev.delta_x = last_mouse_x - event->xbutton.x;
+          ev.delta_y = last_mouse_y - event->xbutton.y;
+          last_mouse_x = event->xbutton.x;
+          last_mouse_y = event->xbutton.y;
+
           current_event = ev.type;
           lf_widget_handle_event(ui, ui->root, ev);
           if (window_callbacks[i].ev_mouse_press_cb)
@@ -87,8 +98,15 @@ handle_event(XEvent *event) {
         case ButtonRelease:
           ev.button = event->xbutton.button;
           ev.type = WinEventMouseRelease; 
+          if(last_mouse_x == 0) last_mouse_x = event->xbutton.x;
+          if(last_mouse_y == 0) last_mouse_y = event->xbutton.y;
           ev.x = event->xbutton.x;
           ev.y = event->xbutton.y;
+          ev.delta_x = last_mouse_x - event->xbutton.x;
+          ev.delta_y = last_mouse_y - event->xbutton.y;
+          last_mouse_x = event->xbutton.x;
+          last_mouse_y = event->xbutton.y;
+
           current_event = ev.type;
           lf_widget_handle_event(ui, ui->root, ev);
           if (window_callbacks[i].ev_mouse_release_cb)
@@ -98,8 +116,15 @@ handle_event(XEvent *event) {
               event->xbutton.button);
           break;
         case MotionNotify:
+          if(last_mouse_x == 0) last_mouse_x = event->xbutton.x;
+          if(last_mouse_y == 0) last_mouse_y = event->xbutton.y;
           ev.x = (uint16_t)event->xmotion.x;
           ev.y = (uint16_t)event->xmotion.y;
+          ev.delta_x = last_mouse_x - event->xmotion.x;
+          ev.delta_y = last_mouse_y - event->xmotion.y;
+          last_mouse_x = event->xmotion.x;
+          last_mouse_y = event->xmotion.y;
+
           ev.type = WinEventMouseMove;
           current_event = ev.type; 
           lf_widget_handle_event(ui, ui->root, ev);

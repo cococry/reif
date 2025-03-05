@@ -216,7 +216,6 @@ root_resize(lf_ui_state_t* ui, lf_widget_t* widget, lf_event_t ev) {
   if(widget->type != WidgetTypeRoot) return;
   ui->root->container = LF_SCALE_CONTAINER(ev.width, ev.height);
   ui->needs_render = true;
-  printf("height: %i\n", ev.height);
   lf_widget_invalidate_size_and_layout(ui->root);
 }
   
@@ -378,6 +377,13 @@ lf_ui_core_default_theme(void) {
     .text_align = ParagraphAlignmentLeft,
   };
 
+  theme->scrollbar_static_size = 10;
+  theme->scrollbar_props = (lf_widget_props_t){
+    .color = lf_color_from_hex(0x444444),
+    .border_color = LF_NO_COLOR,
+    .corner_radius = theme->scrollbar_static_size / 2.0f, 
+    .border_width = 0.0f, 
+  };
 
   return theme;
 }
