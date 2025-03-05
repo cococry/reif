@@ -111,6 +111,7 @@ int main(void) {
   s.ui->_idle_delay_func = delay;
 
   lf_div(s.ui);
+  lf_widget_set_layout(lf_crnt(s.ui), LayoutHorizontal);
   lf_widget_set_fixed_height_percent(s.ui, lf_crnt(s.ui), 100.0f);
 
   for(uint32_t i = 0; i < 50; i++) {

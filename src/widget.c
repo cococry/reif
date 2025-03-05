@@ -132,30 +132,45 @@ lf_widget_render(lf_ui_state_t* ui,  lf_widget_t* widget) {
       return;
     }
 
-      float parent_end_y = 
-        widget->parent->container.pos.y + lf_widget_height(widget->parent) - widget->parent->props.padding_bottom; 
-      float parent_start_y = 
-        widget->parent->container.pos.y + widget->parent->props.padding_top; 
+    float parent_end_y = widget->parent->container.pos.y + 
+      lf_widget_height(widget->parent) - widget->parent->props.padding_bottom; 
+    float parent_start_y = widget->parent->container.pos.y +
+      widget->parent->props.padding_top; 
+
+    float parent_end_x = widget->parent->container.pos.x + 
+      lf_widget_width(widget->parent) - widget->parent->props.padding_right; 
+    float parent_start_x = widget->parent->container.pos.x +
+      widget->parent->props.padding_left;
+
+#ifdef LF_RUNARA
     if(widget->type == WidgetTypeDiv) {
-      rn_set_cull_end_y(
-        (RnState*)ui->render_state,
-        parent_end_y
-      );
       rn_set_cull_start_y(
         (RnState*)ui->render_state,
         parent_start_y
       );
+      rn_set_cull_end_y(
+        (RnState*)ui->render_state,
+        parent_end_y
+      );
+      rn_set_cull_start_x(
+        (RnState*)ui->render_state,
+        parent_start_x
+      );
+      rn_set_cull_end_x(
+        (RnState*)ui->render_state,
+        parent_end_x
+      );
     }
+#endif
     widget->render(ui, widget);
 #ifdef LF_RUNARA
     if(widget->type == WidgetTypeDiv) {
 
       float widget_end_y = widget->container.pos.y + lf_widget_height(widget) - widget->props.padding_bottom;
       float widget_start_y = widget->container.pos.y + widget->props.padding_top; 
-
-      /*rn_set_cull_end_x(
-        (RnState*)ui->render_state,
-        end_x);*/
+      
+      float widget_end_x = widget->container.pos.x + lf_widget_width(widget) - widget->props.padding_right;
+      float widget_start_x = widget->container.pos.x + widget->props.padding_left; 
 
       rn_set_cull_start_y(
         (RnState*)ui->render_state, 
@@ -164,6 +179,15 @@ lf_widget_render(lf_ui_state_t* ui,  lf_widget_t* widget) {
       rn_set_cull_end_y(
         (RnState*)ui->render_state, 
         widget_end_y < parent_end_y ? widget_end_y : parent_end_y 
+      );
+      
+      rn_set_cull_start_x(
+        (RnState*)ui->render_state, 
+        widget_start_x > parent_start_x ? widget_start_x : parent_start_x 
+      );
+      rn_set_cull_end_x(
+        (RnState*)ui->render_state, 
+        widget_end_x < parent_end_x ? widget_end_x : parent_end_x 
       );
 
     }
@@ -176,28 +200,34 @@ lf_widget_render(lf_ui_state_t* ui,  lf_widget_t* widget) {
   if(widget->type == WidgetTypeDiv) {
     lf_div_t* div = (lf_div_t*)widget;
  
-    float scroll_offset = widget->scroll_offset.y;
-  float total_scrollable_area = widget->total_child_size.y - widget->container.size.y;
-
-  if (widget->total_child_size.y > widget->container.size.y) {
-    float scroll_progress = -scroll_offset / total_scrollable_area;
-    float scrollbar_height = MAX(ui->theme->scrollbar_static_size, (widget->container.size.y / widget->total_child_size.y) * widget->container.size.y);
-    float scrollbar_y = widget->container.pos.y + widget->props.padding_top + 
-      (scroll_progress * (widget->container.size.y - scrollbar_height));
-
-    lf_container_t scrollbar = (lf_container_t){
-      .pos = (vec2s){
-        .x = widget->container.pos.x + widget->container.size.x + widget->props.padding_left, 
-        .y = scrollbar_y
-      },
-      .size = (vec2s){
-        .x = ui->theme->scrollbar_static_size,
-        .y = scrollbar_height
-      },
-
+    vec2s total_scrollable_area = (vec2s){
+      .x = widget->total_child_size.x - widget->container.size.x,
+      .y = widget->total_child_size.y - widget->container.size.y
     };
 
-    div->_scrollbar_container = scrollbar;
+    // VERTICAL SCROLLBAR
+    if (widget->total_child_size.y > widget->container.size.y) {
+      float scroll_progress = -widget->scroll_offset.y / total_scrollable_area.y;
+      float scrollbar_height = MAX(
+        ui->theme->scrollbar_static_size, 
+        (widget->container.size.y / widget->total_child_size.y) * widget->container.size.y);
+
+      float scrollbar_y = widget->container.pos.y + widget->props.padding_top + 
+        (scroll_progress * (widget->container.size.y - scrollbar_height));
+
+      lf_container_t scrollbar = (lf_container_t){
+        .pos = (vec2s){
+          .x = widget->container.pos.x + widget->container.size.x + widget->props.padding_left, 
+          .y = scrollbar_y
+        },
+        .size = (vec2s){
+          .x = ui->theme->scrollbar_static_size,
+          .y = scrollbar_height
+        },
+
+      };
+
+      div->scrollbars[LF_SCROLLBAR_VERTICAL].container = scrollbar;
 
       vec2s cull_before_start = ((RnState*)ui->render_state)->cull_start;
       vec2s cull_before_end = ((RnState*)ui->render_state)->cull_end;
@@ -205,18 +235,65 @@ lf_widget_render(lf_ui_state_t* ui,  lf_widget_t* widget) {
       rn_unset_cull_end_x(ui->render_state);
       rn_unset_cull_start_y(ui->render_state);
       rn_unset_cull_start_x(ui->render_state);
-    ui->render_rect(
-      ui->render_state,
-      scrollbar.pos, scrollbar.size,
-      div->_scrollbar_color, ui->theme->scrollbar_props.border_color,
-      ui->theme->scrollbar_props.border_width, 
+      ui->render_rect(
+        ui->render_state,
+        scrollbar.pos, scrollbar.size,
+        div->scrollbars[LF_SCROLLBAR_VERTICAL].color, ui->theme->scrollbar_props.border_color,
+        ui->theme->scrollbar_props.border_width, 
         ui->theme->scrollbar_props.corner_radius
-    );
+      );
       rn_set_cull_start_x(ui->render_state, cull_before_start.x);
       rn_set_cull_start_y(ui->render_state, cull_before_start.y);
       rn_set_cull_end_x(ui->render_state, cull_before_end.x);
       rn_set_cull_end_y(ui->render_state, cull_before_end.y);
-  }
+    }
+
+    // HORIZONTAL SCROLLBAR
+    if (widget->total_child_size.x > widget->container.size.x) {
+      float scroll_progress = -widget->scroll_offset.x / total_scrollable_area.x;
+      float scrollbar_width = MAX(
+        ui->theme->scrollbar_static_size, 
+        (widget->container.size.x / widget->total_child_size.x) * widget->container.size.x);
+
+      float scrollbar_x = widget->container.pos.x + widget->props.padding_left + 
+        (scroll_progress * (widget->container.size.x - scrollbar_width));
+
+      lf_container_t scrollbar = (lf_container_t){
+        .pos = (vec2s){
+          .x = scrollbar_x,
+          .y = widget->container.pos.y + widget->container.size.y + widget->props.padding_top, 
+        },
+        .size = (vec2s){
+          .x = scrollbar_width,
+          .y = ui->theme->scrollbar_static_size,
+        },
+
+      };
+
+      div->scrollbars[LF_SCROLLBAR_HORIZONTAL].container = scrollbar;
+
+      vec2s cull_before_start = ((RnState*)ui->render_state)->cull_start;
+      vec2s cull_before_end = ((RnState*)ui->render_state)->cull_end;
+      rn_unset_cull_end_y(ui->render_state);
+      rn_unset_cull_end_x(ui->render_state);
+      rn_unset_cull_start_y(ui->render_state);
+      rn_unset_cull_start_x(ui->render_state);
+      ui->render_rect(
+        ui->render_state,
+        scrollbar.pos, scrollbar.size,
+        div->scrollbars[LF_SCROLLBAR_HORIZONTAL].color, ui->theme->scrollbar_props.border_color,
+        ui->theme->scrollbar_props.border_width, 
+        ui->theme->scrollbar_props.corner_radius
+      );
+      rn_set_cull_start_x(ui->render_state, cull_before_start.x);
+      rn_set_cull_start_y(ui->render_state, cull_before_start.y);
+      rn_set_cull_end_x(ui->render_state, cull_before_end.x);
+      rn_set_cull_end_y(ui->render_state, cull_before_end.y);
+    }
+
+
+
+
   }
 
 }

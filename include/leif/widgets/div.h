@@ -4,13 +4,23 @@
 #include "../ui_core.h"
 
 typedef struct {
+  bool held, hovered;
+  lf_container_t container;
+  lf_color_t color;
+} lf_scrollbar_t; 
+
+typedef enum {
+  LF_SCROLLBAR_VERTICAL = 0,
+  LF_SCROLLBAR_HORIZONTAL = 1,
+  LF_SCROLLBAR_COUNT = 2,
+} lf_scrollbar_type_t;
+
+typedef struct {
   lf_widget_t base;
 
   int32_t _column_count;
 
-  bool _held_scrollbar, _hovered_scrollbar;
-  lf_container_t _scrollbar_container;
-  lf_color_t _scrollbar_color;
+  lf_scrollbar_t scrollbars[LF_SCROLLBAR_COUNT];
 
   vec2s _scrollbar_drag_start;
   vec2s _scroll_offset_start;

@@ -340,7 +340,8 @@ void lf_size_calc_vertical(lf_ui_state_t* ui, lf_widget_t* widget) {
   lf_widget_apply_size_hints(widget);
 
   widget->_needs_size_calc = false;
-  widget->total_child_size = child_size;
+  widget->total_child_size.y = child_size.y;
+  widget->total_child_size.x = child_max.y;
   widget->_changed_size = false;
 }
 
@@ -386,7 +387,8 @@ lf_size_calc_horizontal(lf_ui_state_t* ui, lf_widget_t* widget) {
 
   lf_widget_apply_size_hints(widget);
   widget->_needs_size_calc = false;
-  widget->total_child_size = child_size;
+  widget->total_child_size.x = child_size.x;
+  widget->total_child_size.y = child_max.y;
   widget->_changed_size = false;
 }
 
