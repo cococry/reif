@@ -116,7 +116,7 @@ lf_widget_create(
   return widget;
 }
 
-static float widget_get_cull_end_y(lf_widget_t* widget) {
+/*static float widget_get_cull_end_y(lf_widget_t* widget) {
   if(!widget) return 0.0f;
   return 
         widget->container.pos.y + 
@@ -124,7 +124,7 @@ static float widget_get_cull_end_y(lf_widget_t* widget) {
         widget->props.padding_bottom +
         widget->container.size.y - 
         widget->props.border_width;
-} 
+} */
 
 static float widget_get_cull_end_x(lf_widget_t* widget) {
   if(!widget) return 0.0f;
@@ -148,6 +148,15 @@ lf_widget_render(lf_ui_state_t* ui,  lf_widget_t* widget) {
       return;
     }
 
+      float parent_end_y = 
+        widget->parent->container.pos.y + lf_widget_height(widget->parent) - widget->parent->props.padding_bottom; 
+    if(widget->type == WidgetTypeDiv) {
+      rn_unset_cull_end_y(ui->render_state);
+      rn_set_cull_end_y(
+        (RnState*)ui->render_state,
+        parent_end_y
+      );
+    }
     widget->render(ui, widget);
 #ifdef LF_RUNARA
     if(widget->type == WidgetTypeDiv) {
@@ -156,9 +165,7 @@ lf_widget_render(lf_ui_state_t* ui,  lf_widget_t* widget) {
       float widget_end_x = widget_get_cull_end_x(widget); 
       float end_x = MIN(widget_end_x, parent_end_x);
 
-      float parent_end_y = widget_get_cull_end_y(widget->parent); 
-      float widget_end_y = widget_get_cull_end_y(widget); 
-      float end_y = MIN(widget_end_y, parent_end_y);
+      float widget_end_y = widget->container.pos.y + lf_widget_height(widget) - widget->props.padding_bottom;
 
       rn_set_cull_end_x(
         (RnState*)ui->render_state,
@@ -166,12 +173,8 @@ lf_widget_render(lf_ui_state_t* ui,  lf_widget_t* widget) {
 
       rn_set_cull_end_y(
         (RnState*)ui->render_state, 
-        end_y
+        widget_end_y < parent_end_y ? widget_end_y : parent_end_y 
       );
-      rn_set_cull_start_x(ui->render_state,
-                          widget->container.pos.x + widget->props.border_width); 
-      rn_set_cull_start_y(ui->render_state,
-                          widget->container.pos.y + widget->props.border_width); 
     }
 
 #endif
@@ -180,14 +183,6 @@ lf_widget_render(lf_ui_state_t* ui,  lf_widget_t* widget) {
   for(uint32_t i = 0; i < widget->num_childs; i++) {
     lf_widget_render(ui, widget->childs[i]);
   }
-#ifdef LF_RUNARA
-    if(widget->type == WidgetTypeDiv) {
-      rn_unset_cull_end_x((RnState*)ui->render_state);
-      rn_unset_cull_end_y((RnState*)ui->render_state);
-      rn_unset_cull_start_x((RnState*)ui->render_state);
-      rn_unset_cull_start_y((RnState*)ui->render_state);
-  }
-#endif
 }
 
 void lf_widget_shape(lf_ui_state_t* ui, lf_widget_t* widget) {
@@ -229,6 +224,7 @@ bool lf_widget_animate(
     widget_animate(ui, widget);
     widget->_changed_size = true;
     lf_widget_submit_props(widget);
+    lf_widget_shape(ui, lf_widget_flag_for_layout(ui, widget));
     animated = true;
     if (*o_shape == NULL) {
       *o_shape = widget;
@@ -281,28 +277,25 @@ lf_widget_add_child(lf_widget_t* parent, lf_widget_t* child) {
   return;
 }
 
-void
-lf_widget_remove(lf_widget_t* widget) {
-  if (!widget) return;
-  widget->_marked_for_removal = true;
+void lf_widget_remove(lf_widget_t* widget) {
+    if (!widget) return;
+    widget->_marked_for_removal = true;
 
-  for (uint32_t i = 0; i < widget->num_childs; i++) {
-    lf_widget_remove(widget->childs[i]);
-  }
+    // Reverse order removal prevents shifting issues
+    for (int32_t i = (int32_t)widget->num_childs - 1; i >= 0; i--) {
+        lf_widget_remove(widget->childs[i]);
+    }
 }
 
-void
-lf_widget_remove_from_memory(lf_widget_t* widget) {
+void lf_widget_remove_from_memory(lf_widget_t* widget) {
   if (!widget) return;
 
-  for (uint32_t i = 0; i < widget->num_childs; i++) {
-    lf_widget_remove(widget->childs[i]);
+  for (int32_t i = (int32_t)widget->num_childs - 1; i >= 0; i--) {
+    lf_widget_remove_from_memory(widget->childs[i]);
   }
 
-  if (widget->childs) {
-    free(widget->childs);
-    widget->childs = NULL;
-  }
+  free(widget->childs);
+  widget->childs = NULL;
 
   if (widget->parent) {
     int32_t child_idx = -1;
@@ -321,23 +314,26 @@ lf_widget_remove_from_memory(lf_widget_t* widget) {
   }
 
   free(widget);
+  widget = NULL;  
 }
 
 void lf_widget_remove_child_from_memory(lf_widget_t* parent, uint32_t child_idx) {
-  if (!parent || child_idx >= parent->num_childs) return;
+    if (!parent || child_idx >= parent->num_childs) return;
+    lf_widget_t* child = parent->childs[child_idx];
+    free(child);
+    child = NULL;
 
-  lf_widget_t* child = parent->childs[child_idx];
-  free(child);
+    for (uint32_t i = child_idx; i < parent->num_childs - 1; i++) {
+        parent->childs[i] = parent->childs[i + 1];
+    }
 
-  for (uint32_t i = child_idx; i < parent->num_childs - 1; i++) {
-    parent->childs[i] = parent->childs[i + 1];
-  }
-  parent->num_childs--;
+    parent->num_childs--;
 
-  parent->childs = realloc(parent->childs, 
-      ((parent->num_childs != 0) ? parent->num_childs : INIT_CHILD_CAP)
-       * sizeof(lf_widget_t*));
-  parent->cap_childs = MAX(parent->num_childs, INIT_CHILD_CAP); 
+    if (parent->num_childs == 0) {
+        free(parent->childs);
+        parent->childs = NULL;
+        parent->cap_childs = 0;
+    } 
 }
 
 float 
@@ -575,35 +571,42 @@ lf_widget_submit_props(lf_widget_t* widget) {
 }
 
 void 
-lf_widget_set_fixed_width(lf_widget_t* widget, float width) {
+lf_widget_set_fixed_width(lf_ui_state_t* ui, lf_widget_t* widget, float width) {
   if(!widget) return;
-  widget->container.size.x = width;
+  if(widget->container.size.x == width) return;
+  lf_widget_set_prop(ui, widget, &widget->container.size.x, width);
   widget->_fixed_width = true;
   widget->_changed_size = true;
+  lf_widget_shape(ui, lf_widget_flag_for_layout(ui, widget));
 }
 
 void 
-lf_widget_set_fixed_height(lf_widget_t* widget, float height) {
+lf_widget_set_fixed_height(lf_ui_state_t* ui, lf_widget_t* widget, float height) {
   if(!widget) return;
-  widget->container.size.y = height;
+  lf_widget_set_prop(ui, widget, &widget->container.size.y, height);
   widget->_fixed_height = true;
   widget->_changed_size = true;
+  lf_widget_shape(ui, lf_widget_flag_for_layout(ui, widget));
 }
 
 void 
-lf_widget_set_fixed_width_percent(lf_widget_t* widget, float percent) {
+lf_widget_set_fixed_width_percent(lf_ui_state_t* ui, lf_widget_t* widget, float percent) {
   if(!widget) return;
+  if(widget->_width_percent == percent / 100.0f) return;
   widget->_width_percent = percent / 100.0f;
   widget->_fixed_width = true;
   widget->_changed_size = true;
+  lf_widget_shape(ui, lf_widget_flag_for_layout(ui, widget));
 }
 
 void 
-lf_widget_set_fixed_height_percent(lf_widget_t* widget, float percent) {
+lf_widget_set_fixed_height_percent(lf_ui_state_t* ui, lf_widget_t* widget, float percent) {
   if(!widget) return;
+  if(widget->_height_percent == percent / 100.0f) return;
   widget->_height_percent = percent / 100.0f;
   widget->_fixed_height = true;
   widget->_changed_size = true;
+  lf_widget_shape(ui, lf_widget_flag_for_layout(ui, widget));
 }
 
 void lf_widget_set_alignment(lf_widget_t* widget, uint32_t flags) {

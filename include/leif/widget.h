@@ -75,6 +75,8 @@ struct lf_widget_t {
   int32_t font_size;
   lf_font_style_t font_style;
 
+  vec2s total_child_size;
+
   float transition_time;
   lf_animation_func_t transition_func;
 };
@@ -191,13 +193,13 @@ void lf_widget_interrupt_all_animations(
 
 void lf_widget_submit_props(lf_widget_t* widget);
 
-void lf_widget_set_fixed_width(lf_widget_t* widget, float width);
+void lf_widget_set_fixed_width(lf_ui_state_t* ui, lf_widget_t* widget, float width);
 
-void lf_widget_set_fixed_height(lf_widget_t* widget, float height);
+void lf_widget_set_fixed_height(lf_ui_state_t* ui, lf_widget_t* widget, float height);
 
-void lf_widget_set_fixed_width_percent(lf_widget_t* widget, float percent);
+void lf_widget_set_fixed_width_percent(lf_ui_state_t* ui, lf_widget_t* widget, float percent);
 
-void lf_widget_set_fixed_height_percent(lf_widget_t* widget, float percent);
+void lf_widget_set_fixed_height_percent(lf_ui_state_t* ui, lf_widget_t* widget, float percent);
 
 void lf_widget_set_alignment(lf_widget_t* widget, uint32_t flags);
 

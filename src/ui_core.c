@@ -216,6 +216,7 @@ root_resize(lf_ui_state_t* ui, lf_widget_t* widget, lf_event_t ev) {
   if(widget->type != WidgetTypeRoot) return;
   ui->root->container = LF_SCALE_CONTAINER(ev.width, ev.height);
   ui->needs_render = true;
+  printf("height: %i\n", ev.height);
   lf_widget_invalidate_size_and_layout(ui->root);
 }
   
@@ -475,10 +476,6 @@ void lf_ui_core_next_event(lf_ui_state_t* ui) {
   lf_widget_t* animated = NULL;
   if (lf_widget_animate(ui, ui->root, &animated)) {
     ui->needs_render = true;
-    lf_widget_t* to_shape = lf_widget_flag_for_layout(ui, animated);
-    if(to_shape) {
-      lf_widget_shape(ui, to_shape);
-    }
   }
 
   bool rendered = lf_windowing_get_current_event() == WinEventRefresh;

@@ -14,6 +14,18 @@ _div_render(lf_ui_state_t* ui, lf_widget_t* widget) {
     LF_WIDGET_SIZE_V2(widget),
     widget->props.color, widget->props.border_color, 
     widget->props.border_width, widget->props.corner_radius);
+
+  /*if(widget->total_child_size.y > lf_widget_height(widget)) {
+    ui->render_rect(
+      ui->render_state, 
+      (vec2s){
+        .x = widget->container.pos.x + widget->container.size.x + widget->props.padding_left - 10, 
+        .y = widget->container.pos.y + widget->props.padding_top
+      },
+      (vec2s){.x = 10, .y = 20},
+      lf_color_from_hex(0x555555), LF_NO_COLOR, 
+      0.0f, 0.0f);
+  }*/
 }
 
 void 

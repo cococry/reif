@@ -28,8 +28,8 @@ void _end_widget(lf_ui_state_t* ui) {
   ui->_ez.last_parent = ui->_ez.last_parent->parent;
   if (ui->_ez.index_depth > 0) {
     ui->_ez.index_depth--;
-    ui->_ez.index_stack[ui->_ez.index_depth]++;  
   }
+  ui->_ez.index_stack[ui->_ez.index_depth]++;  
 }
 
 lf_widget_t*
@@ -44,9 +44,7 @@ _get_assignment_widget(lf_ui_state_t* ui, lf_widget_type_t type) {
     return NULL;
   }
 
-
-  lf_widget_t* widget = ui->_ez.last_parent->childs[ui->_ez.index_stack[
-    ui->_ez.index_depth]];
+  lf_widget_t* widget = ui->_ez.last_parent->childs[_assign_idx(ui)];
   widget->_rendered_within_comp = true;
 
   if (widget->type != type) {
@@ -72,7 +70,7 @@ _get_font_size(lf_ui_state_t* ui, lf_text_level lvl) {
 
 lf_text_t* 
 _text_create_from_level(lf_ui_state_t* ui, const char* label, lf_text_level lvl) {
-  bool overflowing = _assign_idx(ui) >= ui->_ez.last_parent->num_childs && ui->_ez.last_parent->num_childs != 0;
+  bool overflowing = _assign_idx(ui) >= ui->_ez.last_parent->num_childs;
   if (!ui->_ez._assignment_only || overflowing) {
     lf_mapped_font_t font = lf_asset_manager_request_font(
         ui, 
@@ -88,8 +86,8 @@ _text_create_from_level(lf_ui_state_t* ui, const char* label, lf_text_level lvl)
     if(overflowing) {
       ui->needs_render = true;
       txt->base.parent->_changed_size = true;
-      lf_widget_flag_for_layout(ui, txt->base.parent);
-      lf_widget_invalidate_size(txt->base.parent);
+      lf_widget_invalidate_size_and_layout(txt->base.parent);
+      lf_widget_shape(ui, lf_widget_flag_for_layout(ui, txt->base.parent));
     }
 
     txt->base._rendered_within_comp = true;
@@ -144,13 +142,21 @@ lf_ez_api_set_assignment_only_mode(lf_ui_state_t* ui, bool assignment_only) {
 lf_div_t*
 lf_div(lf_ui_state_t* ui) {
   if (!ui->_ez.last_parent) return NULL;
-  if (!ui->_ez._assignment_only) {
+  bool overflowing = _assign_idx(ui) >= ui->_ez.last_parent->num_childs;
+
+  if (!ui->_ez._assignment_only || overflowing) {
     lf_div_t* div = lf_div_create(ui, ui->_ez.last_parent);
     ui->_ez.last_parent = &div->base;
     ui->_ez.current_widget = &div->base;
 
     _level_deeper(ui);
 
+    if(overflowing) {
+      ui->needs_render = true;
+      div->base.parent->_changed_size = true;
+      lf_widget_flag_for_layout(ui, div->base.parent);
+      lf_widget_invalidate_size(div->base.parent);
+    }
     div->base._rendered_within_comp = true;
 
     return div;
@@ -161,14 +167,24 @@ lf_div(lf_ui_state_t* ui) {
 
 lf_button_t*
 lf_button(lf_ui_state_t* ui) {
-  if (!ui->_ez._assignment_only) {
+  if (!ui->_ez.last_parent) return NULL;
+  bool overflowing = _assign_idx(ui) >= ui->_ez.last_parent->num_childs;
+  if (!ui->_ez._assignment_only || overflowing) {
     lf_button_t* btn = lf_button_create(ui, ui->_ez.last_parent);
+
     ui->_ez.last_parent = &btn->base;
     ui->_ez.current_widget = &btn->base;
 
     _level_deeper(ui);
 
+    if(overflowing) {
+      ui->needs_render = true;
+      btn->base.parent->_changed_size = true;
+      lf_widget_flag_for_layout(ui, btn->base.parent);
+      lf_widget_invalidate_size(btn->base.parent);
+    }
     btn->base._rendered_within_comp = true;
+
     return btn;
   } else {
     return (lf_button_t*)_get_assignment_widget(ui, WidgetTypeButton);
@@ -383,8 +399,7 @@ void reset_widgets(lf_ui_state_t* ui, lf_widget_t* widget) {
   }
 }
 
-void remove_widgets(lf_ui_state_t* ui, lf_widget_t* widget, lf_widget_t* end,
-    lf_widget_t* comp_widget) {
+void remove_widgets(lf_ui_state_t* ui, lf_widget_t* widget, lf_widget_t* end, lf_widget_t* comp_widget) {
   if (!widget) return;  
 
   if (!widget->_rendered_within_comp) {
@@ -394,7 +409,7 @@ void remove_widgets(lf_ui_state_t* ui, lf_widget_t* widget, lf_widget_t* end,
     lf_widget_remove(widget);
   }
 
-  for (uint32_t i = 0; i < widget->num_childs; i++) {
+  for (int32_t i = (int32_t)widget->num_childs - 1; i >= 0; i--) {
     remove_widgets(ui, widget->childs[i], end, comp_widget);
   }
 
@@ -420,6 +435,9 @@ void lf_component_rerender(lf_ui_state_t* ui, lf_component_func_t comp_func) {
           comp_widget);
 
       lf_ez_api_set_assignment_only_mode(ui, false);
+        if(comp_widget->_changed_size) {
+          printf("  => comp changed size.\n");
+        }
 
       if (comp->_parent && comp->_parent->num_childs > comp->_child_idx) {
         lf_widget_flag_for_layout(ui, comp_widget);
