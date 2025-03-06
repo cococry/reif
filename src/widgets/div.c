@@ -9,7 +9,6 @@ static void _div_calc_size(lf_ui_state_t* ui, lf_widget_t* widget);
 
 void 
 _div_handle_event(lf_ui_state_t* ui, lf_widget_t* widget, lf_event_t* event) {
-  printf("Handled.\n");
   if(!lf_container_intersets_container(
     widget->container, ui->root->container)) {
     return;

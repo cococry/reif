@@ -115,7 +115,9 @@ void list_files_and_dirs(const char *path) {
     if (entry->d_name[0] == '.' && (entry->d_name[1] == '\0' || (entry->d_name[1] == '.' && entry->d_name[2] == '\0'))) {
       continue;
     }
+    lf_button(s.ui);
     lf_text_h4(s.ui, entry->d_name);
+    lf_button_end(s.ui);
     
   }
 
