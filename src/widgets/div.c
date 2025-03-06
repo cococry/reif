@@ -24,14 +24,23 @@ _div_handle_event(lf_ui_state_t* ui, lf_widget_t* widget, lf_event_t* event) {
   };
   lf_div_t* div = (lf_div_t*)widget;
   if(event->type == WinEventMouseWheel && lf_point_intersets_container(mouse, div_container)) {
-    float total_scrollable_area = widget->total_child_size.y - widget->container.size.y;
+    if(!(event->scroll_x != 0 || event->scroll_y != 0)) return; 
+    float total_scrollable_area = 
+      ((event->scroll_x != 0) ? widget->total_child_size.x : widget->total_child_size.y) -
+      ((event->scroll_x != 0) ? widget->container.size.x : widget->container.size.y); 
     if (total_scrollable_area > 0) {
-      float scroll_end = widget->scroll_offset.y + 
-        (event->scroll_y * 50);
+      float scroll = (event->scroll_x != 0) ? event->scroll_x : event->scroll_y;
+      float scroll_end = 
+        ((event->scroll_x != 0) ? widget->scroll_offset.x : widget->scroll_offset.y) + scroll * 50;
+
       if(scroll_end > 0) scroll_end = 0;
       if(scroll_end < -total_scrollable_area) scroll_end = -total_scrollable_area;
+
       lf_widget_add_animation(
-        widget, &widget->scroll_offset.y, widget->scroll_offset.y, scroll_end, 0.05f, lf_ease_out_quad);
+        widget, 
+        (event->scroll_x != 0.0f) ? &widget->scroll_offset.x : &widget->scroll_offset.y, 
+        (event->scroll_x != 0.0f) ? widget->scroll_offset.x : widget->scroll_offset.y, 
+        scroll_end, 0.05f, lf_ease_out_quad);
       div->_last_scroll_end = scroll_end;
       
       lf_widget_invalidate_layout(widget);
