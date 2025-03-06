@@ -26,7 +26,7 @@ typedef void (*lf_widget_render_cb)(
 typedef void (*lf_widget_handle_event_cb)(
       lf_ui_state_t* ui,
       lf_widget_t* widget,
-      lf_event_t event);
+      lf_event_t* event);
 
 typedef void (*lf_widget_shape_cb)(
       lf_ui_state_t* ui,
@@ -80,6 +80,9 @@ struct lf_widget_t {
 
   float transition_time;
   lf_animation_func_t transition_func;
+
+  float cull_end_y, cull_start_y;
+  float cull_end_x, cull_start_x;
 };
 
 lf_widget_t* lf_widget_create(
@@ -103,7 +106,7 @@ void lf_widget_render(
 void lf_widget_handle_event(
     lf_ui_state_t* ui,
     lf_widget_t* widget,
-    lf_event_t event);
+    lf_event_t* event);
 
 void lf_widget_shape(
     lf_ui_state_t* ui,

@@ -1,5 +1,4 @@
 #include "../../include/leif/widgets/text.h"
-#include "../../include/leif/ez_api.h"
 #include <cglm/types-struct.h>
 
 #ifdef LF_RUNARA
@@ -38,6 +37,7 @@ _recalculate_label(
   text->base.container.size.y = text_dimension.height;
 
   text->_text_dimension = text_dimension;
+
 }
 
 void

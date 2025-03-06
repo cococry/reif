@@ -7,7 +7,7 @@
 static void _button_handle_event(
   lf_ui_state_t* ui, 
   lf_widget_t* widget, 
-  lf_event_t event);
+  lf_event_t* event);
 
 static void _button_render(
   lf_ui_state_t* ui,
@@ -25,16 +25,15 @@ void
 _button_handle_event(
   lf_ui_state_t* ui, 
   lf_widget_t* widget, 
-  lf_event_t event) {
-  if(event.button != LeftMouse) return;
+  lf_event_t* event) {
   if(!lf_container_intersets_container(
     widget->container, ui->root->container)) {
     return;
   }
 
   vec2s mouse = (vec2s){
-    .x = (float)event.x, 
-    .y = (float)event.y}; 
+    .x = (float)event->x, 
+    .y = (float)event->y}; 
 
   lf_container_t container = (lf_container_t){
     .pos = widget->container.pos, 
@@ -42,54 +41,10 @@ _button_handle_event(
   };
 
   lf_button_t* button = (lf_button_t*)widget;
-  if(!lf_point_intersets_container(mouse, container)) {
-    if(button->_hovered) {
-      button->_held = false;
-      button->_hovered = false;
-      ui->needs_render = true;
-      lf_widget_set_prop_color(
-        ui, widget, 
-        &widget->props.color, 
-        button->base._initial_props.color);
-      
-      if(button->on_leave) {
-        button->on_leave(ui, widget);
-      }
-    }
-    return;
-  }
-
-  if(event.type == WinEventMouseRelease && lf_point_intersets_container(mouse, container)) {
-    button->_held = false;
-    if(button->_hovered) {
-      lf_widget_set_prop_color(
-        ui, widget, 
-        &widget->props.color, 
-        lf_color_dim(button->base._initial_props.color, 0.9f));
-    } else {
-      lf_widget_set_prop_color(
-        ui, widget, 
-        &widget->props.color, 
-        button->base._initial_props.color);
-    }
-    ui->needs_render = true;
-    if(button->on_click) {
-      button->on_click(ui, widget);
-    }
-    return;
-  }
-  if(event.type == WinEventMousePress) {
-    button->_held = true;
-    ui->needs_render = true;
-    lf_widget_set_prop_color(
-      ui, widget,
-      &widget->props.color, 
-      lf_color_dim(button->base._initial_props.color, 0.8f));
-    return;
-  }
-
-  else if(event.type == WinEventMouseMove &&
-    !button->_hovered) {
+  bool on_button = lf_point_intersets_container(mouse, container);
+ if(on_button && event->type == WinEventMouseMove &&
+    !button->_hovered && ui->active_widget_id == 0) {
+    printf("got here.\n");
     button->_hovered = true;
     lf_widget_set_prop_color(
       ui, widget, 
@@ -99,6 +54,46 @@ _button_handle_event(
     if(button->on_enter) {
       button->on_enter(ui, widget);
     }
+    return;
+  }
+  if(!on_button && !button->_held && button->_hovered) {
+    button->_held = false;
+    button->_hovered = false;
+    ui->needs_render = true;
+    lf_widget_set_prop_color(
+      ui, widget, 
+      &widget->props.color, 
+      button->base._initial_props.color);
+
+    if(button->on_leave) {
+      button->on_leave(ui, widget);
+    }
+    return;
+  }
+
+  if(event->type == WinEventMouseRelease && button->_held) {
+    button->_held = false;
+    ui->active_widget_id = 0;
+      lf_widget_set_prop_color(
+        ui, widget, 
+        &widget->props.color, 
+        button->base._initial_props.color);
+    ui->needs_render = true;
+    if(widget->id == ui->active_widget_id) {
+      if(button->on_click && on_button) {
+        button->on_click(ui, widget);
+      }
+    }
+    return;
+  }
+  if(event->type == WinEventMousePress && on_button) {
+    button->_held = true;
+    ui->active_widget_id = widget->id;
+    ui->needs_render = true;
+    lf_widget_set_prop_color(
+      ui, widget,
+      &widget->props.color, 
+      lf_color_dim(button->base._initial_props.color, 0.8f));
     return;
   }
 }

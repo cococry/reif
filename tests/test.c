@@ -20,6 +20,7 @@
 #include <runara/runara.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <dirent.h>
 
 typedef struct {
   lf_ui_state_t* ui;
@@ -100,6 +101,28 @@ void comp(void) {
   }
   lf_div_end(s.ui);
 }
+
+void list_files_and_dirs(const char *path) {
+  struct dirent *entry;
+  DIR *dir = opendir(path);
+
+  if (dir == NULL) {
+    perror("opendir");
+    return;
+  }
+
+  while ((entry = readdir(dir)) != NULL) {
+    if (entry->d_name[0] == '.' && (entry->d_name[1] == '\0' || (entry->d_name[1] == '.' && entry->d_name[2] == '\0'))) {
+      continue;
+    }
+    
+    lf_text_h4(s.ui, "olafolafolafolafolafolafolafolafolafolafolafolafolafolafolafolafolaf");
+    
+  }
+
+  closedir(dir);
+}
+
 int main(void) {
 
   if(lf_windowing_init() != 0) return EXIT_FAILURE;
@@ -110,32 +133,47 @@ int main(void) {
  
   s.ui->_idle_delay_func = delay;
 
+
+  //lf_widget_set_font_family(s.ui, lf_crnt(s.ui), "Lora");
+
+  lf_div(s.ui);
+  lf_widget_set_fixed_height_percent(s.ui, lf_crnt(s.ui), 100.f);
+
+  lf_div(s.ui);
+  lf_style_widget_prop_color(s.ui, lf_crnt(s.ui), color, lf_color_from_hex(0x33333));
+  lf_widget_set_padding(s.ui, lf_crnt(s.ui), 20);
+  lf_widget_set_fixed_width(s.ui, lf_crnt(s.ui), 300); 
+  lf_widget_set_fixed_height(s.ui, lf_crnt(s.ui), 300); 
+
+  lf_text_h1(s.ui, "Your files");
+
+  list_files_and_dirs("/home/cococry/"); 
+
+  lf_div_end(s.ui);
+
+
+  lf_div(s.ui);
+  lf_widget_set_max_width(lf_crnt(s.ui), 500.0f);
+  lf_widget_set_max_height(lf_crnt(s.ui), 300.0f);
+  lf_text_h3(s.ui, "The Industrial Revolution and its consequences have been a disaster for the human race. They have greatly increased the life-expectancy of those of us who live in “advanced” countries, but they have destabilized society, have made life unfulfilling, have subjected human beings to indignities, have led to widespread psychological suffering (in the Third World to physical suffering as well) and have inflicted severe damage on the natural world. The continued development of technology will worsen the situation. It will certainly subject human beings to greater indignities and inflict greater damage on the natural world, it will probably lead to greater social disruption and psychological suffering, and it may lead to increased physical suffering even in “advanced” countries.");
+
   lf_div(s.ui);
   lf_widget_set_layout(lf_crnt(s.ui), LayoutHorizontal);
-  lf_widget_set_fixed_height_percent(s.ui, lf_crnt(s.ui), 100.0f);
+  lf_button(s.ui);
+  lf_text_h4(s.ui, "Click me");
+  lf_button_end(s.ui);
 
-  for(uint32_t i = 0; i < 50; i++) {
-    lf_div(s.ui);
-    lf_style_widget_prop_color(s.ui, lf_crnt(s.ui), color, lf_color_from_hex(0x33333));
-    lf_style_widget_prop(s.ui, lf_crnt(s.ui), margin_bottom, 10); 
-    lf_widget_set_sizing(lf_crnt(s.ui), SizingFitToContent);
-    lf_widget_set_fixed_height(s.ui, lf_crnt(s.ui), 200);
-    
-    {
-      for(uint32_t i = 0; i < 4; i++) {
-        lf_button(s.ui);
-        lf_style_widget_prop(s.ui, lf_crnt(s.ui), corner_radius, i % 2 == 0 ? 20 : 0);
-        lf_style_widget_prop(s.ui, lf_crnt(s.ui), border_width, i % 2 != 0 ? 3 : 0);
-        lf_style_widget_prop_color(s.ui, lf_crnt(s.ui), border_color, LF_RED); 
-        lf_widget_set_transition_props(lf_crnt(s.ui), 0.2f, lf_ease_out_quad);
-        {
-          lf_text_h1(s.ui, "Click Me!");
-        }
-        lf_button_end(s.ui);
-      }
-    }
-    lf_div_end(s.ui);
-  }
+  lf_button(s.ui);
+  lf_text_h4(s.ui, "Click me");
+  lf_button_end(s.ui);
+
+  lf_button(s.ui);
+  lf_text_h4(s.ui, "Click me");
+  lf_button_end(s.ui);
+  lf_div_end(s.ui);
+
+  lf_div_end(s.ui);
+
   lf_div_end(s.ui);
 
   while(s.ui->running) {

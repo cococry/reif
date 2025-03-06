@@ -2,28 +2,51 @@
 #include "../../include/leif/util.h"
 #include "../../include/leif/layout.h"
 
-static void _div_handle_event(lf_ui_state_t* ui, lf_widget_t* widget, lf_event_t event);
+static void _div_handle_event(lf_ui_state_t* ui, lf_widget_t* widget, lf_event_t* event);
 static void _div_render(lf_ui_state_t* ui, lf_widget_t* widget);
 static void _div_shape(lf_ui_state_t* ui, lf_widget_t* widget);
 static void _div_calc_size(lf_ui_state_t* ui, lf_widget_t* widget);
 
 void 
-_div_handle_event(lf_ui_state_t* ui, lf_widget_t* widget, lf_event_t event) {
+_div_handle_event(lf_ui_state_t* ui, lf_widget_t* widget, lf_event_t* event) {
   if(!lf_container_intersets_container(
     widget->container, ui->root->container)) {
     return;
   }
 
   vec2s mouse = (vec2s){
-    .x = (float)event.x, 
-    .y = (float)event.y};
+    .x = (float)event->x, 
+    .y = (float)event->y};
 
+  lf_container_t div_container = (lf_container_t){
+    .pos = widget->container.pos, 
+    .size = LF_WIDGET_SIZE_V2(widget)
+  };
   lf_div_t* div = (lf_div_t*)widget;
+  if(event->type == WinEventMouseWheel && lf_point_intersets_container(mouse, div_container)) {
+    float total_scrollable_area = widget->total_child_size.y - widget->container.size.y;
+    if (total_scrollable_area > 0) {
+      float scroll_end = widget->scroll_offset.y + 
+        (event->scroll_y * 50);
+      if(scroll_end > 0) scroll_end = 0;
+      if(scroll_end < -total_scrollable_area) scroll_end = -total_scrollable_area;
+      lf_widget_add_animation(
+        widget, &widget->scroll_offset.y, widget->scroll_offset.y, scroll_end, 0.05f, lf_ease_out_quad);
+      div->_last_scroll_end = scroll_end;
+      
+      lf_widget_invalidate_layout(widget);
+      lf_widget_shape(ui, widget);
+      ui->needs_render = true;
+      event->handled = true;
+    }
+  }
+
   for(uint32_t i = 0; i < LF_SCROLLBAR_COUNT; i++) {
     lf_scrollbar_t* scrollbar = &div->scrollbars[i];
     lf_container_t container = scrollbar->container;
 
-    if(!lf_point_intersets_container(mouse, container) && !scrollbar->held && scrollbar->hovered) {
+    bool on_scrollbar = lf_point_intersets_container(mouse, container);
+    if(!on_scrollbar && !scrollbar->held && scrollbar->hovered) {
       scrollbar->held = false;
       scrollbar->hovered = false;
       ui->needs_render = true;
@@ -33,8 +56,9 @@ _div_handle_event(lf_ui_state_t* ui, lf_widget_t* widget, lf_event_t event) {
         ui->theme->scrollbar_props.color);
     }
 
-    if(event.type == WinEventMouseRelease && scrollbar->held) {
+    if(event->type == WinEventMouseRelease && scrollbar->held) {
       scrollbar->held = false;
+      ui->active_widget_id = 0;
       scrollbar->hovered = false;
       lf_widget_set_prop_color(
         ui, widget, 
@@ -42,8 +66,9 @@ _div_handle_event(lf_ui_state_t* ui, lf_widget_t* widget, lf_event_t event) {
         ui->theme->scrollbar_props.color);
       ui->needs_render = true;
     }
-    if(event.type == WinEventMousePress && lf_point_intersets_container(mouse, container)) {
+    if(event->type == WinEventMousePress && lf_point_intersets_container(mouse, container)) {
       scrollbar->held = true;
+      ui->active_widget_id = widget->id;
       ui->needs_render = true;
       div->_scrollbar_drag_start = mouse;
       div->_scroll_offset_start = widget->scroll_offset;
@@ -53,8 +78,8 @@ _div_handle_event(lf_ui_state_t* ui, lf_widget_t* widget, lf_event_t event) {
         lf_color_dim(ui->theme->scrollbar_props.color, 0.8f));
     }
 
-    else if(lf_point_intersets_container(mouse, container) && event.type == WinEventMouseMove &&
-      !scrollbar->hovered) {
+    else if(on_scrollbar && (event->type == WinEventMouseMove || event->type == WinEventMouseWheel) &&
+      !scrollbar->hovered && ui->active_widget_id == 0) {
       scrollbar->hovered = true;
       lf_widget_set_prop_color(
         ui, widget, 
@@ -62,14 +87,14 @@ _div_handle_event(lf_ui_state_t* ui, lf_widget_t* widget, lf_event_t event) {
         lf_color_dim(ui->theme->scrollbar_props.color, 0.9f));
       ui->needs_render = true;
     }
-    else if (event.type == WinEventMouseMove && scrollbar->held) {
+    else if (event->type == WinEventMouseMove && scrollbar->held) {
       if(i == LF_SCROLLBAR_VERTICAL) {
         float total_scrollable_area = widget->total_child_size.y - widget->container.size.y;
         float total_scrollbar_movable_area = widget->container.size.y - 
           (widget->container.size.y / widget->total_child_size.y) * widget->container.size.y;
 
         if (total_scrollable_area > 0) {
-          float delta_mouse = event.y - div->_scrollbar_drag_start.y;  
+          float delta_mouse = event->y - div->_scrollbar_drag_start.y;  
           float scroll_ratio = total_scrollable_area / total_scrollbar_movable_area; 
 
           widget->scroll_offset.y = div->_scroll_offset_start.y - (delta_mouse * scroll_ratio);
@@ -91,7 +116,7 @@ _div_handle_event(lf_ui_state_t* ui, lf_widget_t* widget, lf_event_t event) {
           (widget->container.size.x / widget->total_child_size.x) * widget->container.size.x;
 
         if (total_scrollable_area > 0) {
-          float delta_mouse = event.x - div->_scrollbar_drag_start.x;  
+          float delta_mouse = event->x - div->_scrollbar_drag_start.x;  
           float scroll_ratio = total_scrollable_area / total_scrollbar_movable_area; 
 
           widget->scroll_offset.x = div->_scroll_offset_start.x - (delta_mouse * scroll_ratio);
@@ -148,7 +173,9 @@ lf_div_create(
     div->scrollbars[i].color = ui->theme->scrollbar_props.color;
   }
   div->_scrollbar_drag_start = (vec2s){.x = 0,.y = 0};
-  div->_scroll_offset_start = (vec2s){.x = 0, .y = 0} ;
+  div->_scroll_offset_start = (vec2s){.x = 0, .y = 0};
+  div->_scroll_velocity = 0.0f;
+  div->_last_scroll_end = 0.0f;
 
   div->base = *lf_widget_create(
     ui->crnt_widget_id++,
@@ -162,7 +189,7 @@ lf_div_create(
     );
 
   lf_widget_listen_for(&div->base, 
-                       WinEventMouseRelease | WinEventMousePress | WinEventMouseMove);
+                       WinEventMouseRelease | WinEventMousePress | WinEventMouseMove | WinEventMouseWheel);
 
   ui->crnt_widget_id++;
 

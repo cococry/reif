@@ -41,7 +41,7 @@ static void render_widget_and_submit(
   lf_container_t clear_area); 
 
 static void root_shape(lf_ui_state_t* ui, lf_widget_t* widget);
-static void root_resize(lf_ui_state_t* ui, lf_widget_t* widget, lf_event_t ev);
+static void root_resize(lf_ui_state_t* ui, lf_widget_t* widget, lf_event_t* ev);
 static void root_size_calc(lf_ui_state_t* ui, lf_widget_t* widget);
 static void win_close_callback(lf_ui_state_t* ui, lf_window_t window);
 static void win_refresh_callback(lf_ui_state_t* ui, lf_window_t window);
@@ -158,6 +158,7 @@ init_state(lf_ui_state_t* state, lf_window_t win) {
   state->delta_time = 0.0f;
 
   state->_idle_delay_func = default_idle_delay_func;
+  state->active_widget_id = 0; 
 }
 
 float 
@@ -210,11 +211,11 @@ root_shape(lf_ui_state_t* ui, lf_widget_t* widget) {
 }
 
 void 
-root_resize(lf_ui_state_t* ui, lf_widget_t* widget, lf_event_t ev) {
+root_resize(lf_ui_state_t* ui, lf_widget_t* widget, lf_event_t* ev) {
   (void)ev;
   if(!widget) return;
   if(widget->type != WidgetTypeRoot) return;
-  ui->root->container = LF_SCALE_CONTAINER(ev.width, ev.height);
+  ui->root->container = LF_SCALE_CONTAINER(ev->width, ev->height);
   ui->needs_render = true;
   lf_widget_invalidate_size_and_layout(ui->root);
 }

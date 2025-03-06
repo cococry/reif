@@ -48,14 +48,14 @@ static lf_window_t create_window(uint32_t width, uint32_t height, const char* ti
 
 void 
 handle_event(XEvent *event) {
-  lf_event_t ev;
+  lf_event_t ev = {0};
   for (uint32_t i = 0; i < n_windows; ++i) {
     if (window_callbacks[i].win == event->xany.window) {
       switch (event->type) {
         case Expose:
           ev.type = WinEventRefresh;
           current_event = ev.type;
-          lf_widget_handle_event(ui, ui->root, ev);
+          lf_widget_handle_event(ui, ui->root, &ev);
           if (window_callbacks[i].ev_refresh_cb) {
             window_callbacks[i].ev_refresh_cb(
               ui, 
@@ -67,7 +67,7 @@ handle_event(XEvent *event) {
           ev.width = event->xconfigure.width;
           ev.height = event->xconfigure.height;
           current_event = ev.type;
-          lf_widget_handle_event(ui, ui->root, ev);
+          lf_widget_handle_event(ui, ui->root, &ev);
           if (window_callbacks[i].ev_resize_cb)
             window_callbacks[i].ev_resize_cb(
               ui, 
@@ -75,8 +75,31 @@ handle_event(XEvent *event) {
               event->xconfigure.width, event->xconfigure.height);
           break;
         case ButtonPress:
+          if(event->xbutton.button == Button2) { // Scrollwheel press
+            ev.type = WinEventMouseWheel;
+            ev.x = 0;
+            ev.y = 0;
+          }
+          if(event->xbutton.button == Button4) { // Scrollwheel up
+            ev.type = WinEventMouseWheel;
+            ev.scroll_x = 0;
+            ev.scroll_y = 1;
+          } else if(event->xbutton.button == Button5){ // Scrollwheel down
+            ev.type = WinEventMouseWheel;
+            ev.scroll_x = 0;
+            ev.scroll_y = -1;
+          } else if(event->xbutton.button == 6){ // Scrollwheel left
+            ev.type = WinEventMouseWheel;
+            ev.scroll_x = -1;
+            ev.scroll_y = 0;
+          } else if(event->xbutton.button == 7){ // SCrollwheel right
+            ev.type = WinEventMouseWheel;
+            ev.scroll_x = 1;
+            ev.scroll_y = 0;
+          } else {
+            ev.type = WinEventMousePress;
+          }
           ev.button = event->xbutton.button;
-          ev.type = WinEventMousePress;
 
           if(last_mouse_x == 0) last_mouse_x = event->xbutton.x;
           if(last_mouse_y == 0) last_mouse_y = event->xbutton.y;
@@ -88,7 +111,7 @@ handle_event(XEvent *event) {
           last_mouse_y = event->xbutton.y;
 
           current_event = ev.type;
-          lf_widget_handle_event(ui, ui->root, ev);
+          lf_widget_handle_event(ui, ui->root, &ev);
           if (window_callbacks[i].ev_mouse_press_cb)
             window_callbacks[i].ev_mouse_press_cb(
               ui, 
@@ -108,7 +131,7 @@ handle_event(XEvent *event) {
           last_mouse_y = event->xbutton.y;
 
           current_event = ev.type;
-          lf_widget_handle_event(ui, ui->root, ev);
+          lf_widget_handle_event(ui, ui->root, &ev);
           if (window_callbacks[i].ev_mouse_release_cb)
             window_callbacks[i].ev_mouse_release_cb(
               ui, 
@@ -127,7 +150,7 @@ handle_event(XEvent *event) {
 
           ev.type = WinEventMouseMove;
           current_event = ev.type; 
-          lf_widget_handle_event(ui, ui->root, ev);
+          lf_widget_handle_event(ui, ui->root, &ev);
           if (window_callbacks[i].ev_move_cb)
             window_callbacks[i].ev_move_cb(
               ui, 
@@ -139,7 +162,7 @@ handle_event(XEvent *event) {
             (Atom)event->xclient.data.l[0] == wm_delete_window_atom) {
             ev.type = WinEventClose;
             current_event = ev.type;
-            lf_widget_handle_event(ui, ui->root, ev);
+            lf_widget_handle_event(ui, ui->root, &ev);
             if (window_callbacks[i].ev_close_cb) {
               window_callbacks[i].ev_close_cb(ui, (lf_window_t)event->xany.window);
             }

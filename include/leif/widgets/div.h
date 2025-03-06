@@ -22,6 +22,8 @@ typedef struct {
 
   lf_scrollbar_t scrollbars[LF_SCROLLBAR_COUNT];
 
+  float _scroll_velocity, _last_scroll_end;
+
   vec2s _scrollbar_drag_start;
   vec2s _scroll_offset_start;
 } lf_div_t;

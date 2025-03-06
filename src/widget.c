@@ -33,7 +33,7 @@ widget_animate(lf_ui_state_t* ui, lf_widget_t* widget) {
   while (anim) {
     if (anim->active) {
       lf_animation_update(anim, ui->delta_time);
-    }
+      }
     if (!anim->active) {
       if (prev) {
         prev->next = anim->next;
@@ -124,6 +124,45 @@ void
 lf_widget_render(lf_ui_state_t* ui,  lf_widget_t* widget) {
   if(!widget) return;
   if(!widget->visible) return;
+
+    float parent_end_y = 0.0f;
+    float parent_start_y = 0.0f;
+    float parent_end_x = 0.0f;
+    float parent_start_x = 0.0f;
+
+    if (widget->parent) {
+      parent_end_y = widget->parent->container.pos.y + 
+        lf_widget_height(widget->parent) - widget->parent->props.padding_bottom; 
+      if (widget->parent->cull_end_y != 0.0f) {
+        parent_end_y = widget->parent->cull_end_y;
+      }
+
+      parent_start_y = widget->parent->container.pos.y +
+        widget->parent->props.padding_top; 
+      if (widget->parent->cull_start_y != 0.0f) {
+        parent_start_y = widget->parent->cull_start_y;
+      }
+
+      parent_end_x = widget->parent->container.pos.x + 
+        lf_widget_width(widget->parent) - widget->parent->props.padding_right; 
+      if (widget->parent->cull_end_x != 0.0f) {
+        parent_end_x = widget->parent->cull_end_x;
+      }
+
+      parent_start_x = widget->parent->container.pos.x +
+        widget->parent->props.padding_left;
+      if (widget->parent->cull_start_x != 0.0f) {
+        parent_start_x = widget->parent->cull_start_x;
+      }
+    }
+
+    float widget_end_y = widget->container.pos.y + lf_widget_height(widget) - widget->props.padding_bottom;
+    float widget_start_y = widget->container.pos.y + widget->props.padding_top; 
+
+    float widget_end_x = widget->container.pos.x + lf_widget_width(widget) - widget->props.padding_right;
+    float widget_start_x = widget->container.pos.x + widget->props.padding_left;
+
+
   if(widget->render) {
     if(!lf_container_intersets_container(
       LF_WIDGET_CONTAINER(widget), ui->root->container) || 
@@ -131,19 +170,8 @@ lf_widget_render(lf_ui_state_t* ui,  lf_widget_t* widget) {
         LF_WIDGET_CONTAINER(widget), LF_WIDGET_CONTAINER(widget->parent))) {
       return;
     }
-
-    float parent_end_y = widget->parent->container.pos.y + 
-      lf_widget_height(widget->parent) - widget->parent->props.padding_bottom; 
-    float parent_start_y = widget->parent->container.pos.y +
-      widget->parent->props.padding_top; 
-
-    float parent_end_x = widget->parent->container.pos.x + 
-      lf_widget_width(widget->parent) - widget->parent->props.padding_right; 
-    float parent_start_x = widget->parent->container.pos.x +
-      widget->parent->props.padding_left;
-
 #ifdef LF_RUNARA
-    if(widget->type == WidgetTypeDiv) {
+    if(widget->type == WidgetTypeDiv && widget->parent) {
       rn_set_cull_start_y(
         (RnState*)ui->render_state,
         parent_start_y
@@ -165,13 +193,6 @@ lf_widget_render(lf_ui_state_t* ui,  lf_widget_t* widget) {
     widget->render(ui, widget);
 #ifdef LF_RUNARA
     if(widget->type == WidgetTypeDiv) {
-
-      float widget_end_y = widget->container.pos.y + lf_widget_height(widget) - widget->props.padding_bottom;
-      float widget_start_y = widget->container.pos.y + widget->props.padding_top; 
-      
-      float widget_end_x = widget->container.pos.x + lf_widget_width(widget) - widget->props.padding_right;
-      float widget_start_x = widget->container.pos.x + widget->props.padding_left; 
-
       rn_set_cull_start_y(
         (RnState*)ui->render_state, 
         widget_start_y > parent_start_y ? widget_start_y : parent_start_y 
@@ -187,9 +208,13 @@ lf_widget_render(lf_ui_state_t* ui,  lf_widget_t* widget) {
       );
       rn_set_cull_end_x(
         (RnState*)ui->render_state, 
-        widget_end_x < parent_end_x ? widget_end_x : parent_end_x 
+        (widget_end_x < parent_end_x ? widget_end_x : parent_end_x) 
       );
 
+      widget->cull_start_y = widget_start_y > parent_start_y ? widget_start_y : parent_start_y; 
+      widget->cull_end_y =  widget_end_y < parent_end_y ? widget_end_y : parent_end_y;
+      widget->cull_start_x = widget_start_x > parent_start_x ? widget_start_x : parent_start_x ;
+      widget->cull_end_x = widget_end_x < parent_end_x ? widget_end_x : parent_end_x;
     }
 #endif
   }    
@@ -229,23 +254,37 @@ lf_widget_render(lf_ui_state_t* ui,  lf_widget_t* widget) {
 
       div->scrollbars[LF_SCROLLBAR_VERTICAL].container = scrollbar;
 
-      vec2s cull_before_start = ((RnState*)ui->render_state)->cull_start;
-      vec2s cull_before_end = ((RnState*)ui->render_state)->cull_end;
-      rn_unset_cull_end_y(ui->render_state);
-      rn_unset_cull_end_x(ui->render_state);
-      rn_unset_cull_start_y(ui->render_state);
-      rn_unset_cull_start_x(ui->render_state);
-      ui->render_rect(
-        ui->render_state,
-        scrollbar.pos, scrollbar.size,
-        div->scrollbars[LF_SCROLLBAR_VERTICAL].color, ui->theme->scrollbar_props.border_color,
-        ui->theme->scrollbar_props.border_width, 
-        ui->theme->scrollbar_props.corner_radius
-      );
-      rn_set_cull_start_x(ui->render_state, cull_before_start.x);
-      rn_set_cull_start_y(ui->render_state, cull_before_start.y);
-      rn_set_cull_end_x(ui->render_state, cull_before_end.x);
-      rn_set_cull_end_y(ui->render_state, cull_before_end.y);
+      if(lf_container_intersets_container(
+        div->scrollbars[LF_SCROLLBAR_VERTICAL].container,
+        (lf_container_t){
+          .pos = (vec2s){
+            .x = widget->parent->container.pos.x + widget->props.padding_left,
+            .y = widget->parent->container.pos.y + widget->props.padding_top
+          }, 
+          .size = widget->parent->container.size
+        }
+      )) {
+        rn_set_cull_start_y(
+          (RnState*)ui->render_state, 
+          widget_start_y > parent_start_y ? widget_start_y : parent_start_y 
+        );
+        rn_set_cull_end_y(
+          (RnState*)ui->render_state, 
+          (widget_end_y < parent_end_y ? widget_end_y : parent_end_y) 
+        );
+
+        rn_set_cull_end_x(
+          (RnState*)ui->render_state, 
+          (widget_end_x < parent_end_x ? widget_end_x : parent_end_x) + widget->props.padding_right 
+        );
+        ui->render_rect(
+          ui->render_state,
+          scrollbar.pos, scrollbar.size,
+          div->scrollbars[LF_SCROLLBAR_VERTICAL].color, ui->theme->scrollbar_props.border_color,
+          ui->theme->scrollbar_props.border_width, 
+          ui->theme->scrollbar_props.corner_radius
+        );
+      }
     }
 
     // HORIZONTAL SCROLLBAR
@@ -269,31 +308,45 @@ lf_widget_render(lf_ui_state_t* ui,  lf_widget_t* widget) {
         },
 
       };
-
       div->scrollbars[LF_SCROLLBAR_HORIZONTAL].container = scrollbar;
+      if(lf_container_intersets_container(
+        div->scrollbars[LF_SCROLLBAR_HORIZONTAL].container,
+        (lf_container_t){
+          .pos = (vec2s){
+            .x = widget->parent->container.pos.x + widget->props.padding_left,
+            .y = widget->parent->container.pos.y + widget->props.padding_top
+          }, 
+          .size = widget->parent->container.size
+        }
+      )) {
+        rn_set_cull_start_y(
+          (RnState*)ui->render_state, 
+          widget_start_y > parent_start_y ? widget_start_y : parent_start_y 
+        );
+        rn_set_cull_end_y(
+          (RnState*)ui->render_state, 
+          (widget_end_y < parent_end_y ? widget_end_y : parent_end_y) + widget->props.padding_top + widget->props.padding_bottom 
+        );
 
-      vec2s cull_before_start = ((RnState*)ui->render_state)->cull_start;
-      vec2s cull_before_end = ((RnState*)ui->render_state)->cull_end;
-      rn_unset_cull_end_y(ui->render_state);
-      rn_unset_cull_end_x(ui->render_state);
-      rn_unset_cull_start_y(ui->render_state);
-      rn_unset_cull_start_x(ui->render_state);
-      ui->render_rect(
-        ui->render_state,
-        scrollbar.pos, scrollbar.size,
-        div->scrollbars[LF_SCROLLBAR_HORIZONTAL].color, ui->theme->scrollbar_props.border_color,
-        ui->theme->scrollbar_props.border_width, 
-        ui->theme->scrollbar_props.corner_radius
-      );
-      rn_set_cull_start_x(ui->render_state, cull_before_start.x);
-      rn_set_cull_start_y(ui->render_state, cull_before_start.y);
-      rn_set_cull_end_x(ui->render_state, cull_before_end.x);
-      rn_set_cull_end_y(ui->render_state, cull_before_end.y);
+        rn_set_cull_start_x(
+          (RnState*)ui->render_state, 
+          (widget_start_x > parent_start_x ? widget_start_x : parent_start_x)
+        );
+
+        rn_set_cull_end_x(
+          (RnState*)ui->render_state, 
+          (widget_end_x < parent_end_x ? widget_end_x : parent_end_x) 
+        );
+
+        ui->render_rect(
+          ui->render_state,
+          scrollbar.pos, scrollbar.size,
+          div->scrollbars[LF_SCROLLBAR_HORIZONTAL].color, ui->theme->scrollbar_props.border_color,
+          ui->theme->scrollbar_props.border_width, 
+          ui->theme->scrollbar_props.corner_radius
+        );
+      }
     }
-
-
-
-
   }
 
 }
@@ -361,14 +414,16 @@ lf_widget_is_animating(lf_widget_t* widget) {
 }
 
 void
-lf_widget_handle_event(lf_ui_state_t* ui, lf_widget_t* widget, lf_event_t event) {
-  if(!widget) return;
-  if(widget->handle_event && lf_widget_is_listening(widget, event.type)) {
-    widget->handle_event(ui, widget, event); 
-  }
-  if(!widget) return;
-  for(uint32_t i = 0; i < widget->num_childs; i++) {
+lf_widget_handle_event(lf_ui_state_t* ui, lf_widget_t* widget, lf_event_t* event) {
+  if (!widget) return;
+
+  for (uint32_t i = 0; i < widget->num_childs; i++) {
     lf_widget_handle_event(ui, widget->childs[i], event);
+    if (event->handled) return;
+  }
+
+  if (!event->handled && widget->handle_event && lf_widget_is_listening(widget, event->type)) {
+    widget->handle_event(ui, widget, event); 
   }
 }
 

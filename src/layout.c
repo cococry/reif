@@ -115,9 +115,6 @@ lf_layout_vertical(lf_ui_state_t* ui, lf_widget_t* widget) {
     if (!child->visible) continue;
 
     vec2s size = LF_WIDGET_SIZE_V2(child);
-    /*if(widget->type == WidgetTypeDiv) {
-      printf("  => Child %i: %f\n", i, size.y); 
-    }*/
     if(widget->justify_type == JustifyStart)
       ptr.y += child->props.margin_top;
     else if(widget->justify_type == JustifyEnd) 
@@ -164,7 +161,7 @@ void lf_layout_horizontal(lf_ui_state_t* ui, lf_widget_t* widget) {
     ptr.x = widget->container.pos.x + widget->container.size.x;
   }
 
-  float s = (widget->container.size.x - child_size.x) / (widget->num_childs - 1);
+  float s = (MAX(widget->total_child_size.x, widget->container.size.x) - child_size.x) / (widget->num_childs - 1);
 
   for(uint32_t i = 0; i < widget->num_childs; i++) {
     lf_widget_t* child = widget->childs[i];
@@ -331,9 +328,6 @@ void lf_size_calc_vertical(lf_ui_state_t* ui, lf_widget_t* widget) {
 
   if (widget->sizing_type != SizingGrow &&
       !widget->_fixed_height) {
-    if(child_size.x == -1.0f && child_size.y == -1.0f) {
-      child_size = lf_widget_measure_children(widget, NULL);
-    }
     widget->container.size.y = child_size.y;
   }
 
@@ -341,7 +335,16 @@ void lf_size_calc_vertical(lf_ui_state_t* ui, lf_widget_t* widget) {
 
   widget->_needs_size_calc = false;
   widget->total_child_size.y = child_size.y;
-  widget->total_child_size.x = child_max.y;
+  widget->total_child_size.x = child_max.x;
+
+  if(fabs(widget->scroll_offset.y) > 
+    fabs(widget->container.size.y - widget->total_child_size.y)) {
+    widget->scroll_offset.y = 0; 
+  }
+  if(fabs(widget->scroll_offset.x) > 
+    fabs(widget->container.size.x - widget->total_child_size.x)) {
+    widget->scroll_offset.x = 0; 
+  }
   widget->_changed_size = false;
 }
 
@@ -389,6 +392,14 @@ lf_size_calc_horizontal(lf_ui_state_t* ui, lf_widget_t* widget) {
   widget->_needs_size_calc = false;
   widget->total_child_size.x = child_size.x;
   widget->total_child_size.y = child_max.y;
+  if(fabs(widget->scroll_offset.y) > 
+    fabs(widget->container.size.y - widget->total_child_size.y)) {
+    widget->scroll_offset.y = 0; 
+  }
+  if(fabs(widget->scroll_offset.x) > 
+    fabs(widget->container.size.x - widget->total_child_size.x)) {
+    widget->scroll_offset.x = 0; 
+  }
   widget->_changed_size = false;
 }
 

@@ -89,7 +89,7 @@ struct lf_ui_state_t {
 
   lf_ez_state_t _ez;
 
-
+  uint32_t active_widget_id;
 };
 
 struct lf_page_t {
