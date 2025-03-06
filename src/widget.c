@@ -115,6 +115,11 @@ lf_widget_create(
   widget->transition_func   = NULL;
 
   widget->scroll_offset = (vec2s){.x = 0, .y = 0};
+  
+  widget->cull_end_x = 0;
+  widget->cull_end_y = 0;
+  widget->cull_start_x = 0;
+  widget->cull_start_y = 0;
 
   return widget;
 }

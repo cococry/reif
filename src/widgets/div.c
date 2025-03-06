@@ -9,6 +9,7 @@ static void _div_calc_size(lf_ui_state_t* ui, lf_widget_t* widget);
 
 void 
 _div_handle_event(lf_ui_state_t* ui, lf_widget_t* widget, lf_event_t* event) {
+  printf("Handled.\n");
   if(!lf_container_intersets_container(
     widget->container, ui->root->container)) {
     return;
@@ -31,7 +32,7 @@ _div_handle_event(lf_ui_state_t* ui, lf_widget_t* widget, lf_event_t* event) {
     if (total_scrollable_area > 0) {
       float scroll = (event->scroll_x != 0) ? event->scroll_x : event->scroll_y;
       float scroll_end = 
-        ((event->scroll_x != 0) ? widget->scroll_offset.x : widget->scroll_offset.y) + scroll * 50;
+        ((event->scroll_x != 0) ? widget->scroll_offset.x : widget->scroll_offset.y) + scroll * 60;
 
       if(scroll_end > 0) scroll_end = 0;
       if(scroll_end < -total_scrollable_area) scroll_end = -total_scrollable_area;
@@ -40,7 +41,7 @@ _div_handle_event(lf_ui_state_t* ui, lf_widget_t* widget, lf_event_t* event) {
         widget, 
         (event->scroll_x != 0.0f) ? &widget->scroll_offset.x : &widget->scroll_offset.y, 
         (event->scroll_x != 0.0f) ? widget->scroll_offset.x : widget->scroll_offset.y, 
-        scroll_end, 0.05f, lf_ease_out_quad);
+        scroll_end, 0.075f, lf_ease_out_quad);
       div->_last_scroll_end = scroll_end;
       
       lf_widget_invalidate_layout(widget);

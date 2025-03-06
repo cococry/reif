@@ -61,6 +61,12 @@ typedef void (*lf_windowing_event_func)(
     void* ev
     );
 
+typedef void (*lf_win_mouse_wheel_func)(
+    lf_ui_state_t*,
+    lf_window_t,
+    int16_t scroll_x, int16_t scroll_y
+    );
+
 int32_t lf_windowing_init(void);
 
 int32_t lf_windowing_terminate(void);

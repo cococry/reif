@@ -115,8 +115,7 @@ void list_files_and_dirs(const char *path) {
     if (entry->d_name[0] == '.' && (entry->d_name[1] == '\0' || (entry->d_name[1] == '.' && entry->d_name[2] == '\0'))) {
       continue;
     }
-    
-    lf_text_h4(s.ui, "olafolafolafolafolafolafolafolafolafolafolafolafolafolafolafolafolaf");
+    lf_text_h4(s.ui, entry->d_name);
     
   }
 
@@ -133,13 +132,16 @@ int main(void) {
  
   s.ui->_idle_delay_func = delay;
 
-
+  s.ui->theme->scrollbar_props.corner_radius = 0.0f;
+  s.ui->theme->scrollbar_props.border_width = 1.0f;
+  s.ui->theme->scrollbar_props.border_color = lf_color_from_hex(0x888888);
   //lf_widget_set_font_family(s.ui, lf_crnt(s.ui), "Lora");
 
   lf_div(s.ui);
   lf_widget_set_fixed_height_percent(s.ui, lf_crnt(s.ui), 100.f);
 
   lf_div(s.ui);
+  lf_widget_set_transition_props(lf_crnt(s.ui), 0.2f, lf_ease_out_quad);
   lf_style_widget_prop_color(s.ui, lf_crnt(s.ui), color, lf_color_from_hex(0x33333));
   lf_widget_set_padding(s.ui, lf_crnt(s.ui), 20);
   lf_widget_set_fixed_width(s.ui, lf_crnt(s.ui), 300); 
@@ -149,8 +151,9 @@ int main(void) {
 
   list_files_and_dirs("/home/cococry/"); 
 
-  lf_div_end(s.ui);
 
+  lf_image_sized_w(s.ui, "/home/cococry/wallpapers/max.jpg", 100);
+  lf_div_end(s.ui);
 
   lf_div(s.ui);
   lf_widget_set_max_width(lf_crnt(s.ui), 500.0f);
