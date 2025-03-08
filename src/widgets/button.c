@@ -44,7 +44,6 @@ _button_handle_event(
   bool on_button = lf_point_intersets_container(mouse, container);
  if(on_button && event->type == WinEventMouseMove &&
     !button->_hovered && ui->active_widget_id == 0) {
-    printf("got here.\n");
     button->_hovered = true;
     lf_widget_set_prop_color(
       ui, widget, 

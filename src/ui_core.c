@@ -50,6 +50,7 @@ static void interrupt_all_animations_recursively(lf_widget_t* widget);
 static void default_root_layout_func(lf_ui_state_t* ui);
 static void default_idle_delay_func(lf_ui_state_t* ui);
 static void init_state(lf_ui_state_t* state, lf_window_t win);
+static void update_timers(lf_ui_state_t* state);
 
 static uint32_t window_flags = 0;
 struct timespec init_time;
@@ -159,6 +160,28 @@ init_state(lf_ui_state_t* state, lf_window_t win) {
 
   state->_idle_delay_func = default_idle_delay_func;
   state->active_widget_id = 0; 
+}
+
+void update_timers(lf_ui_state_t* ui) {
+  for (uint32_t i = 0; i < ui->timers.size;) {
+    lf_timer_t* timer = &ui->timers.items[i];
+    if (!timer->paused) {
+      lf_timer_tick(ui, timer, ui->delta_time, false);
+      if (timer->elapsed >= timer->duration) {
+        timer->expired = true;
+      }
+    }
+
+    if (timer->expired && !timer->looping && !timer->paused) {
+      lf_vector_remove_by_idx(&ui->timers, i);
+    } else {
+      if (timer->expired && timer->looping) {
+        timer->expired = false;
+        timer->elapsed = 0.0f;
+      }
+      i++;
+    }
+  }
 }
 
 float 
@@ -450,27 +473,7 @@ void lf_ui_core_next_event(lf_ui_state_t* ui) {
   }
 
   lf_windowing_next_event();
-  if(lf_windowing_get_current_event() != WinEventNone)
-
-    for (uint32_t i = 0; i < ui->timers.size;) {
-      lf_timer_t* timer = &ui->timers.items[i];
-      if (!timer->paused) {
-        lf_timer_tick(ui, timer, ui->delta_time, false);
-        if (timer->elapsed >= timer->duration) {
-          timer->expired = true;
-        }
-      }
-
-      if (timer->expired && !timer->looping && !timer->paused) {
-        lf_vector_remove_by_idx(&ui->timers, i);
-      } else {
-        if (timer->expired && timer->looping) {
-          timer->expired = false;
-          timer->elapsed = 0.0f;
-        }
-        i++;
-      }
-    }
+  update_timers(ui);
 
   if (ui->needs_render) {
     remove_marked_widgets(ui->root);
