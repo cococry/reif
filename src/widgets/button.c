@@ -72,7 +72,6 @@ _button_handle_event(
 
   if(event->type == WinEventMouseRelease && button->_held) {
     button->_held = false;
-    ui->active_widget_id = 0;
       lf_widget_set_prop_color(
         ui, widget, 
         &widget->props.color, 
@@ -83,6 +82,7 @@ _button_handle_event(
         button->on_click(ui, widget);
       }
     }
+    ui->active_widget_id = 0;
     return;
   }
   if(event->type == WinEventMousePress && on_button) {

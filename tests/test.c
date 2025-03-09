@@ -29,19 +29,34 @@ typedef struct {
 
 static state_t s;
 
-int32_t secs = 0;
+int32_t count = 0;
+
+static void comp(void);
+
+void on_cick(lf_ui_state_t* ui, lf_widget_t* widget) {
+  count++;
+  lf_component_rerender(ui, comp);
+}
 
 void comp(void) {
   lf_div(s.ui);
-  char buf[64];
-  sprintf(buf, "Seconds elapsed: %i", secs);
-  lf_text_h1(s.ui, buf);
-  lf_div_end(s.ui);
-}
+  lf_text_h4(s.ui, "Button test");
+  lf_button(s.ui);
+  ((lf_button_t*)lf_crnt(s.ui))->on_click = on_cick;
+  lf_text_h4(s.ui, "Click Me");
+  lf_button_end(s.ui);
 
-void done(lf_ui_state_t* ui, lf_timer_t* timer) {
-  secs++;
-  lf_component_rerender(ui, comp);
+  lf_div(s.ui);
+  lf_widget_set_fixed_height(s.ui, lf_crnt(s.ui), 500);
+  lf_style_widget_prop_color(s.ui, lf_crnt(s.ui), color, lf_color_from_hex(0x282828));
+  for(uint32_t i = 0; i < count; i++) {
+    lf_text_h4(s.ui, "Element");
+  }
+  lf_div_end(s.ui);
+  
+  lf_text_h1(s.ui, "Button test");
+  
+  lf_div_end(s.ui);
 }
 int main(void) {
 
@@ -49,6 +64,8 @@ int main(void) {
 
   lf_window_t win = lf_ui_core_create_window(1280, 720, "hello leif");
   s.ui = lf_ui_core_init(win);
+
+  lf_component(s.ui, comp);
   
   while(s.ui->running) {
     lf_ui_core_next_event(s.ui);

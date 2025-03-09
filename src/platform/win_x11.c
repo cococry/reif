@@ -168,14 +168,35 @@ handle_event(XEvent *event) {
             }
           }
           break;
-    }
+        case LeaveNotify: 
+          {
+            XWindowAttributes wa;
+            XGetWindowAttributes(display, event->xcrossing.window, &wa);
+
+            if (wa.override_redirect) {
+              ev.x = -1; 
+              ev.y = -1; 
+              ev.delta_x = 0; 
+              ev.delta_y = 0; 
+              ev.type = WinEventMouseMove;
+              current_event = ev.type; 
+              lf_widget_handle_event(ui, ui->root, &ev);
+              if (window_callbacks[i].ev_move_cb)
+                window_callbacks[i].ev_move_cb(
+                    ui, 
+                    (lf_window_t)event->xany.window, 
+                    -1, -1);
+            }
+            break;
+          }
+      }
     }
   }
 }
 
 lf_window_t
 create_window(
-  uint32_t width, 
+    uint32_t width, 
   uint32_t height, 
   const char* title,
   uint32_t flags, 
@@ -204,7 +225,7 @@ create_window(
   }
 
   XSelectInput(display, win, StructureNotifyMask | KeyPressMask | KeyReleaseMask |
-               ButtonPressMask | ButtonReleaseMask | PointerMotionMask | ExposureMask);
+               ButtonPressMask | ButtonReleaseMask | PointerMotionMask | ExposureMask | LeaveWindowMask);
   XMapWindow(display, win);
 
   XStoreName(display, win, title);

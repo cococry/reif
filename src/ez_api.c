@@ -85,9 +85,8 @@ _text_create_from_level(lf_ui_state_t* ui, const char* label, lf_text_level lvl)
 
     if(overflowing) {
       ui->needs_render = true;
-      txt->base.parent->_changed_size = true;
-      lf_widget_invalidate_size_and_layout(txt->base.parent);
-      lf_widget_shape(ui, lf_widget_flag_for_layout(ui, txt->base.parent));
+      txt->base._changed_size = true;
+      lf_widget_shape(ui, lf_widget_flag_for_layout(ui, &txt->base));
     }
 
     txt->base._rendered_within_comp = true;
@@ -153,9 +152,8 @@ lf_div(lf_ui_state_t* ui) {
 
     if(overflowing) {
       ui->needs_render = true;
-      div->base.parent->_changed_size = true;
-      lf_widget_flag_for_layout(ui, div->base.parent);
-      lf_widget_invalidate_size(div->base.parent);
+      div->base._changed_size = true;
+      lf_widget_shape(ui, lf_widget_flag_for_layout(ui, &div->base));
     }
     div->base._rendered_within_comp = true;
 
@@ -179,9 +177,8 @@ lf_button(lf_ui_state_t* ui) {
 
     if(overflowing) {
       ui->needs_render = true;
-      btn->base.parent->_changed_size = true;
-      lf_widget_flag_for_layout(ui, btn->base.parent);
-      lf_widget_invalidate_size(btn->base.parent);
+      btn->base._changed_size = true;
+      lf_widget_shape(ui, lf_widget_flag_for_layout(ui, &btn->base));
     }
     btn->base._rendered_within_comp = true;
 
@@ -435,12 +432,9 @@ void lf_component_rerender(lf_ui_state_t* ui, lf_component_func_t comp_func) {
           comp_widget);
 
       lf_ez_api_set_assignment_only_mode(ui, false);
-        if(comp_widget->_changed_size) {
-          printf("  => comp changed size.\n");
-        }
 
       if (comp->_parent && comp->_parent->num_childs > comp->_child_idx) {
-        lf_widget_flag_for_layout(ui, comp_widget);
+        lf_widget_shape(ui, lf_widget_flag_for_layout(ui, comp_widget));
         ui->needs_render = true;
       }
 

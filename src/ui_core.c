@@ -485,6 +485,9 @@ void lf_ui_core_next_event(lf_ui_state_t* ui) {
 
   lf_widget_t* animated = NULL;
   if (lf_widget_animate(ui, ui->root, &animated)) {
+    if(animated->_changed_size) {
+      lf_widget_shape(ui, lf_widget_flag_for_layout(ui, animated));
+    }
     ui->needs_render = true;
   }
 

@@ -48,6 +48,7 @@ struct lf_widget_t {
   lf_widget_shape_cb shape, size_calc;
   
   bool visible;
+  bool rendered;
 
   lf_widget_type_t type;
   lf_layout_type_t layout_type;
@@ -256,4 +257,7 @@ lf_widget_t* lf_widget_flag_for_layout(lf_ui_state_t* ui, lf_widget_t* widget);
 void lf_widget_set_pos_x(lf_widget_t* widget, float pos);
 
 void lf_widget_set_pos_y(lf_widget_t* widget, float pos);
+
+bool lf_widget_or_childs_changed_size(
+    lf_widget_t* widget);
 
