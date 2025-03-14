@@ -83,7 +83,7 @@ _text_create_from_level(lf_ui_state_t* ui, const char* label, lf_text_level lvl)
 
     ui->_ez.index_stack[ui->_ez.index_depth]++;
 
-    if(overflowing) {
+    if(overflowing && ui->delta_time) {
       ui->needs_render = true;
       txt->base._changed_size = true;
       lf_widget_shape(ui, lf_widget_flag_for_layout(ui, &txt->base));
@@ -150,7 +150,7 @@ lf_div(lf_ui_state_t* ui) {
 
     _level_deeper(ui);
 
-    if(overflowing) {
+    if(overflowing && ui->delta_time) {
       ui->needs_render = true;
       div->base._changed_size = true;
       lf_widget_shape(ui, lf_widget_flag_for_layout(ui, &div->base));
@@ -175,10 +175,10 @@ lf_button(lf_ui_state_t* ui) {
 
     _level_deeper(ui);
 
-    if(overflowing) {
+    if(overflowing && ui->delta_time) {
       ui->needs_render = true;
       btn->base._changed_size = true;
-      lf_widget_shape(ui, lf_widget_flag_for_layout(ui, &btn->base));
+      lf_widget_flag_for_layout(ui, &btn->base);
     }
     btn->base._rendered_within_comp = true;
 
@@ -396,23 +396,25 @@ void reset_widgets(lf_ui_state_t* ui, lf_widget_t* widget) {
   }
 }
 
-void remove_widgets(lf_ui_state_t* ui, lf_widget_t* widget, lf_widget_t* end, lf_widget_t* comp_widget) {
-  if (!widget) return;  
+bool remove_widgets(lf_ui_state_t* ui, lf_widget_t* widget, lf_widget_t* end, lf_widget_t* comp_widget) {
+  if (!widget) return false;  
 
+  bool removed = false;
   if (!widget->_rendered_within_comp) {
     comp_widget->_changed_size = true;
     ui->needs_render = true;
-    lf_widget_flag_for_layout(ui, comp_widget);
+    removed = true;
     lf_widget_remove(widget);
   }
 
   for (int32_t i = (int32_t)widget->num_childs - 1; i >= 0; i--) {
-    remove_widgets(ui, widget->childs[i], end, comp_widget);
+    removed |= remove_widgets(ui, widget->childs[i], end, comp_widget);
   }
 
-  if (widget == end) return;
-}
+  if (widget == end) return removed;
 
+  return removed;
+}
 
 void lf_component_rerender(lf_ui_state_t* ui, lf_component_func_t comp_func) {
   for (uint32_t i = 0; i < ui->_ez.comps.size; i++) {
@@ -422,20 +424,21 @@ void lf_component_rerender(lf_ui_state_t* ui, lf_component_func_t comp_func) {
       lf_ez_api_set_assignment_only_mode(ui, true);
 
       lf_widget_t* comp_widget = comp->_parent->childs[comp->_child_idx];
+      bool needs_reshape = false;
       ui->_ez.index_stack[ui->_ez.index_depth] = comp->_child_idx;
       ui->_ez.last_parent = comp->_parent;
       reset_widgets(ui, comp_widget);
       comp->func();  // Run component
-      remove_widgets(
+      needs_reshape = remove_widgets(
           ui, comp_widget, 
           ui->_ez.current_widget,
           comp_widget);
 
       lf_ez_api_set_assignment_only_mode(ui, false);
 
-      if (comp->_parent && comp->_parent->num_childs > comp->_child_idx) {
-        lf_widget_shape(ui, lf_widget_flag_for_layout(ui, comp_widget));
-        ui->needs_render = true;
+      if (needs_reshape) {
+        lf_widget_flag_for_layout(ui, comp_widget);
+      ui->needs_render = true;
       }
 
       return;

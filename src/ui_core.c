@@ -466,6 +466,18 @@ lf_ui_state_t* lf_ui_core_init_ex(
   return state;
 }
 
+void shape_widgets_if_needed(lf_ui_state_t* ui, lf_widget_t* widget, bool parent_shaped) {
+  bool shaped = false;
+
+  if (!parent_shaped && widget->_needs_shape) {
+    lf_widget_shape(ui, widget);
+    shaped = true;  
+  }
+  for (uint32_t i = 0; i < widget->num_childs; i++) {
+    shape_widgets_if_needed(ui, widget->childs[i], shaped);
+  }
+}
+
 void lf_ui_core_next_event(lf_ui_state_t* ui) {
   if (ui->crnt_page_id == 0 && ui->pages.size != 0) {
     lf_ui_core_set_page_by_id(ui, ui->pages.items[0].id);
@@ -493,14 +505,13 @@ void lf_ui_core_next_event(lf_ui_state_t* ui) {
 
   bool rendered = lf_windowing_get_current_event() == WinEventRefresh;
 
-  if(ui->root->_needs_shape) {
-    lf_widget_shape(ui, ui->root);
-  }
+  shape_widgets_if_needed(ui, ui->root, true);
 
   if (ui->needs_render) {
     lf_ui_core_commit_entire_render(ui);
     ui->needs_render = false;
     rendered = true;
+    printf("====================\n");
   }
   if (!rendered) {
     ui->_idle_delay_func(ui);

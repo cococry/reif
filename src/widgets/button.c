@@ -148,8 +148,8 @@ lf_button_create(
     ui->crnt_widget_id++,
     WidgetTypeButton,
     LF_SCALE_CONTAINER(
-      150, 
-      50),
+      0, 
+      0),
     props,
     _button_render, 
     _button_handle_event,

@@ -5,6 +5,8 @@
 #include <runara/runara.h>
 #endif
 
+static int count = 0;
+
 void 
 _recalculate_label(
   lf_ui_state_t* ui,
@@ -38,14 +40,18 @@ _recalculate_label(
 
   text->_text_dimension = text_dimension;
 
+  count++;
+  printf("  => _recalculate_label: %i\n", count);
+
 }
 
 void
-_text_shape(
+_text_size_calc(
   lf_ui_state_t* ui, 
   lf_widget_t* widget
 ) {
   if(widget->type != WidgetTypeText || !widget) return;
+  if(!widget->_needs_size_calc) return;
   lf_text_t* text = (lf_text_t*)widget;
   _recalculate_label(ui, text);
 }
@@ -124,13 +130,14 @@ lf_text_t* _text_create(
     _text_render, 
     NULL,
     NULL,
-    _text_shape
+    _text_size_calc
   );
   text->base.props.text_color = parent->props.text_color;
   text->base.layout_type = LayoutNone;
   lf_widget_add_child(parent, (lf_widget_t*)text);
 
   _recalculate_label(ui, text);
+  text->base._needs_size_calc = false;
 
   return text;
 }
@@ -154,6 +161,7 @@ void lf_text_set_font(
 
   text->font = lf_asset_manager_request_font(ui, family_name, style, pixel_size);
   _recalculate_label(ui, text);
+  text->base._needs_size_calc = false;
 }
 
 void 
@@ -169,6 +177,7 @@ lf_text_set_label(
   text->label = strdup(label);
   lf_text_dimension_t dim_before = text->_text_dimension;
   _recalculate_label(ui, text);
+  text->base._needs_size_calc = false;
   if(dim_before.width != text->_text_dimension.width || 
       dim_before.height != text->_text_dimension.height) {
     text->base._changed_size = true;

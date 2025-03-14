@@ -36,12 +36,8 @@ _div_handle_event(lf_ui_state_t* ui, lf_widget_t* widget, lf_event_t* event) {
       if(scroll_end > 0) scroll_end = 0;
       if(scroll_end < -total_scrollable_area) scroll_end = -total_scrollable_area;
 
-      lf_widget_add_animation(
-        widget, 
-        (event->scroll_x != 0.0f) ? &widget->scroll_offset.x : &widget->scroll_offset.y, 
-        (event->scroll_x != 0.0f) ? widget->scroll_offset.x : widget->scroll_offset.y, 
-        scroll_end, 0.075f, lf_ease_out_quad);
-      div->_last_scroll_end = scroll_end;
+
+      widget->scroll_offset.y = scroll_end;
       
       lf_widget_invalidate_layout(widget);
       lf_widget_shape(ui, widget);

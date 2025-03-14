@@ -33,7 +33,24 @@ widget_animate(lf_ui_state_t* ui, lf_widget_t* widget) {
   while (anim) {
     if (anim->active) {
       lf_animation_update(anim, ui->delta_time);
+      if(
+        anim->target == &widget->props.padding_left || 
+        anim->target == &widget->props.padding_right || 
+        anim->target == &widget->props.padding_bottom || 
+        anim->target == &widget->props.padding_top || 
+        anim->target == &widget->props.margin_left || 
+        anim->target == &widget->props.margin_right || 
+        anim->target == &widget->props.margin_bottom || 
+        anim->target == &widget->props.margin_top || 
+        anim->target == &widget->container.size.x || 
+        anim->target == &widget->container.size.y ||  
+        anim->target == &widget->container.pos.x || 
+        anim->target == &widget->container.pos.y  
+      ) {
+        widget->_changed_size = true;
+        lf_widget_flag_for_layout(ui, widget);
       }
+    }
     if (!anim->active) {
       if (prev) {
         prev->next = anim->next;
@@ -371,7 +388,7 @@ void lf_widget_shape(lf_ui_state_t* ui, lf_widget_t* widget) {
   }
   vec2s size_before = widget->container.size;
 
-  if (widget->size_calc){
+  if (widget->size_calc && widget->_needs_size_calc){
     widget->size_calc(ui, widget);
   }
 
@@ -395,18 +412,6 @@ bool lf_widget_animate(
   bool animated = false;
   if (widget->anims) {
     widget_animate(ui, widget);
-    if(
-        widget->props.padding_left != widget->_rendered_props.padding_left ||
-        widget->props.padding_right != widget->_rendered_props.padding_right ||
-        widget->props.padding_top != widget->_rendered_props.padding_top ||
-        widget->props.padding_bottom != widget->_rendered_props.padding_bottom ||
-
-        widget->props.margin_left != widget->_rendered_props.margin_left ||
-        widget->props.margin_right != widget->_rendered_props.margin_right ||
-        widget->props.margin_top != widget->_rendered_props.margin_top ||
-        widget->props.margin_bottom != widget->_rendered_props.margin_bottom) {
-      widget->_changed_size = true;
-    }
     lf_widget_submit_props(widget);
     animated = true;
     if (*o_shape == NULL) {
@@ -492,6 +497,7 @@ void lf_widget_remove_from_memory(lf_widget_t* widget) {
     }
 
     if (child_idx != -1) {
+      widget->parent->num_childs++;
       lf_widget_remove_child_from_memory(widget->parent, child_idx);
     } else {
       fprintf(stderr, "leif: cannot find widget to destroy within parent.\n");
@@ -769,7 +775,8 @@ lf_widget_set_fixed_width(lf_ui_state_t* ui, lf_widget_t* widget, float width) {
   lf_widget_set_prop(ui, widget, &widget->container.size.x, width);
   widget->_fixed_width = true;
   widget->_changed_size = true;
-  lf_widget_shape(ui, lf_widget_flag_for_layout(ui, widget));
+  if(!widget->anims)
+    lf_widget_flag_for_layout(ui, widget);
 }
 
 void 
@@ -778,7 +785,8 @@ lf_widget_set_fixed_height(lf_ui_state_t* ui, lf_widget_t* widget, float height)
   lf_widget_set_prop(ui, widget, &widget->container.size.y, height);
   widget->_fixed_height = true;
   widget->_changed_size = true;
-  lf_widget_shape(ui, lf_widget_flag_for_layout(ui, widget));
+  if(!widget->anims)
+    lf_widget_flag_for_layout(ui, widget);
 }
 
 void 
@@ -788,7 +796,8 @@ lf_widget_set_fixed_width_percent(lf_ui_state_t* ui, lf_widget_t* widget, float 
   widget->_width_percent = percent / 100.0f;
   widget->_fixed_width = true;
   widget->_changed_size = true;
-  lf_widget_shape(ui, lf_widget_flag_for_layout(ui, widget));
+  if(!widget->anims)
+    lf_widget_flag_for_layout(ui, widget);
 }
 
 void 
@@ -798,7 +807,8 @@ lf_widget_set_fixed_height_percent(lf_ui_state_t* ui, lf_widget_t* widget, float
   widget->_height_percent = percent / 100.0f;
   widget->_fixed_height = true;
   widget->_changed_size = true;
-  lf_widget_shape(ui, lf_widget_flag_for_layout(ui, widget));
+  if(!widget->anims)
+    lf_widget_flag_for_layout(ui, widget);
 }
 
 void lf_widget_set_alignment(lf_widget_t* widget, uint32_t flags) {

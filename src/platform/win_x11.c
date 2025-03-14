@@ -8,6 +8,7 @@
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/keysym.h>
+#include <assert.h>
 #include <GL/glx.h>
 #include "../../include/leif/win.h"
 #include "../../include/leif/ui_core.h"
@@ -25,6 +26,7 @@ typedef struct {
   lf_win_close_func ev_close_cb;
   lf_win_mouse_move_func ev_move_cb;
   Window win;
+  int32_t win_width, win_height;
 } window_callbacks_t;
 
 static lf_windowing_event_func windowing_event_cb = NULL;
@@ -46,6 +48,16 @@ static void handle_event(XEvent *event);
 static lf_window_t create_window(uint32_t width, uint32_t height, const char* title, uint32_t flags, lf_windowing_hint_kv_t* hints, uint32_t nhints);
 
 
+void get_window_size(Display* display, Window window, int32_t* width, int32_t* height) {
+    XWindowAttributes attrs;
+    if (XGetWindowAttributes(display, window, &attrs)) {
+        *width = attrs.width;
+        *height = attrs.height;
+    } else {
+    assert(false && "reif: failed to get window attributes\n");
+    }
+}
+
 void 
 handle_event(XEvent *event) {
   lf_event_t ev = {0};
@@ -63,10 +75,15 @@ handle_event(XEvent *event) {
           }
           break;
         case ConfigureNotify:
+          if(event->xconfigure.width == window_callbacks[i].win_width &&
+            event->xconfigure.height == window_callbacks[i].win_height) break;
           ev.type = WinEventResize; 
           ev.width = event->xconfigure.width;
           ev.height = event->xconfigure.height;
           current_event = ev.type;
+          get_window_size(display, window_callbacks[i].win, 
+                          &window_callbacks[i].win_width, 
+                          &window_callbacks[i].win_height);
           lf_widget_handle_event(ui, ui->root, &ev);
           if (window_callbacks[i].ev_resize_cb)
             window_callbacks[i].ev_resize_cb(
@@ -77,8 +94,8 @@ handle_event(XEvent *event) {
         case ButtonPress:
           if(event->xbutton.button == Button2) { // Scrollwheel press
             ev.type = WinEventMouseWheel;
-            ev.x = 0;
-            ev.y = 0;
+            ev.scroll_x = 0;
+            ev.scroll_y = 0;
           }
           if(event->xbutton.button == Button4) { // Scrollwheel up
             ev.type = WinEventMouseWheel;
@@ -232,6 +249,11 @@ create_window(
 
   if (n_windows + 1 <= MAX_WINDOWS) {
     window_callbacks[n_windows].win = win;
+    int32_t w, h;
+    get_window_size(display, win, &w, &h);
+    window_callbacks[n_windows].win = win;
+    window_callbacks[n_windows].win_width = w;
+    window_callbacks[n_windows].win_height = h;
     window_callbacks[n_windows].ev_mouse_press_cb = NULL;
     window_callbacks[n_windows].ev_mouse_release_cb = NULL;
     window_callbacks[n_windows].ev_close_cb = NULL;
