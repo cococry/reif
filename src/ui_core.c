@@ -511,7 +511,6 @@ void lf_ui_core_next_event(lf_ui_state_t* ui) {
     lf_ui_core_commit_entire_render(ui);
     ui->needs_render = false;
     rendered = true;
-    printf("====================\n");
   }
   if (!rendered) {
     ui->_idle_delay_func(ui);

@@ -59,6 +59,8 @@ lf_text_t* lf_text_h5(lf_ui_state_t* ui, const char* label);
 
 lf_text_t* lf_text_h6(lf_ui_state_t* ui, const char* label);
 
+lf_text_t*  lf_text_sized(lf_ui_state_t* ui, const char* label, uint32_t pixel_size);
+
 lf_text_dimension_t lf_text_measure(lf_ui_state_t* ui, const char* text, lf_font_t font);
 
 lf_widget_t* lf_crnt(lf_ui_state_t* ui);

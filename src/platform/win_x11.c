@@ -9,6 +9,7 @@
 #include <X11/Xutil.h>
 #include <X11/keysym.h>
 #include <assert.h>
+#include <X11/extensions/Xrandr.h>
 #include <GL/glx.h>
 #include "../../include/leif/win.h"
 #include "../../include/leif/ui_core.h"
@@ -458,13 +459,10 @@ lf_win_get_size(lf_window_t win) {
   };
 }
 
-int32_t
-lf_win_get_refresh_rate(lf_window_t win) {
-  (void)win;
-  // Placeholder as X11 doesn't provide refresh rate directly.
-  return 144; // Default refresh rate.
-}
 
+int32_t lf_win_get_refresh_rate(lf_window_t win) {
+  return 120;
+}
 void 
 lf_windowing_set_event_cb(lf_windowing_event_func cb) {
   windowing_event_cb = cb;

@@ -5,8 +5,6 @@
 #include <runara/runara.h>
 #endif
 
-static int count = 0;
-
 void 
 _recalculate_label(
   lf_ui_state_t* ui,
@@ -39,9 +37,6 @@ _recalculate_label(
   text->base.container.size.y = text_dimension.height;
 
   text->_text_dimension = text_dimension;
-
-  count++;
-  printf("  => _recalculate_label: %i\n", count);
 
 }
 

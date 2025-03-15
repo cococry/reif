@@ -413,6 +413,7 @@ lf_win_get_refresh_rate(lf_window_t win) {
 
         if (window_x >= monitor_x && window_x < monitor_x + mode->width &&
             window_y >= monitor_y && window_y < monitor_y + mode->height) {
+            printf("refresh rate: %i\n", mode->refreshRate);
             return mode->refreshRate; 
         }
     }
