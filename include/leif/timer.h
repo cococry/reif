@@ -14,6 +14,8 @@ struct lf_timer_t {
   bool paused;
 
   lf_timer_finish_func_t finish_cb;
+
+  void* user_data;
 };
 
 void lf_timer_tick(lf_ui_state_t* ui, lf_timer_t* timer, float dt, bool auto_destruct);

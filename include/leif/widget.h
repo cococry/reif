@@ -39,6 +39,8 @@ struct lf_widget_t {
   uint32_t num_childs, cap_childs;
   uint32_t id;
 
+  void* user_data;
+
   lf_container_t container;
 
   lf_widget_props_t props, _rendered_props, _initial_props;

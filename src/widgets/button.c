@@ -42,20 +42,8 @@ _button_handle_event(
 
   lf_button_t* button = (lf_button_t*)widget;
   bool on_button = lf_point_intersets_container(mouse, container);
- if(on_button && event->type == WinEventMouseMove &&
-    !button->_hovered && ui->active_widget_id == 0) {
-    button->_hovered = true;
-    lf_widget_set_prop_color(
-      ui, widget, 
-      &widget->props.color, 
-      lf_color_dim(button->base._initial_props.color, 0.9f));
-    ui->needs_render = true;
-    if(button->on_enter) {
-      button->on_enter(ui, widget);
-    }
-    return;
-  }
-  if(!on_button && !button->_held && button->_hovered) {
+
+  if(!on_button && event->type == WinEventMouseMove &&  !button->_held && button->_hovered) {
     button->_held = false;
     button->_hovered = false;
     ui->needs_render = true;
@@ -66,6 +54,19 @@ _button_handle_event(
 
     if(button->on_leave) {
       button->on_leave(ui, widget);
+    }
+    return;
+  }
+ if(on_button && event->type == WinEventMouseMove &&
+    !button->_hovered && ui->active_widget_id == 0) {
+    button->_hovered = true;
+    lf_widget_set_prop_color(
+      ui, widget, 
+      &widget->props.color, 
+      lf_color_dim(button->base._initial_props.color, 0.9f));
+    ui->needs_render = true;
+    if(button->on_enter) {
+      button->on_enter(ui, widget);
     }
     return;
   }

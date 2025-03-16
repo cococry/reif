@@ -669,7 +669,8 @@ lf_ui_core_start_timer(lf_ui_state_t* ui, float duration, lf_timer_finish_func_t
       .paused = false,
       .expired = false,
       .looping = false,
-      .finish_cb = finish_cb
+      .finish_cb = finish_cb, 
+      .user_data = NULL 
     }));
   return &ui->timers.items[ui->timers.size - 1];
 }

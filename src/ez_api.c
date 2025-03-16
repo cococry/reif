@@ -396,6 +396,7 @@ void reset_widgets(lf_ui_state_t* ui, lf_widget_t* widget) {
   }
 }
 
+
 bool remove_widgets(lf_ui_state_t* ui, lf_widget_t* widget, lf_widget_t* end, lf_widget_t* comp_widget) {
   if (!widget) return false;  
 
@@ -404,7 +405,16 @@ bool remove_widgets(lf_ui_state_t* ui, lf_widget_t* widget, lf_widget_t* end, lf
     comp_widget->_changed_size = true;
     ui->needs_render = true;
     removed = true;
-    lf_widget_remove(widget);
+
+    if(widget->transition_func) {
+      lf_widget_add_animation(widget, &widget->container.size.x, 
+                              widget->container.size.x, 0, widget->transition_time, 
+                              widget->transition_func);
+      lf_widget_add_animation(widget, &widget->container.size.y, 
+                              widget->container.size.y, 0, widget->transition_time, 
+                              widget->transition_func);
+    } 
+      lf_widget_remove(widget);
   }
 
   for (int32_t i = (int32_t)widget->num_childs - 1; i >= 0; i--) {

@@ -92,6 +92,7 @@ lf_widget_create(
   widget->num_childs = 0;
   widget->childs = malloc(sizeof(lf_widget_t) * INIT_CHILD_CAP);
   widget->id = id;
+  widget->user_data = NULL;
   widget->visible = true;
   widget->rendered = true;
   widget->_marked_for_removal = false;
@@ -509,22 +510,22 @@ void lf_widget_remove_from_memory(lf_widget_t* widget) {
 }
 
 void lf_widget_remove_child_from_memory(lf_widget_t* parent, uint32_t child_idx) {
-    if (!parent || child_idx >= parent->num_childs) return;
-    lf_widget_t* child = parent->childs[child_idx];
-    free(child);
-    child = NULL;
+  if (!parent || child_idx >= parent->num_childs) return;
+  lf_widget_t* child = parent->childs[child_idx];
+  free(child);
+  child = NULL;
 
-    for (uint32_t i = child_idx; i < parent->num_childs - 1; i++) {
-        parent->childs[i] = parent->childs[i + 1];
-    }
+  for (uint32_t i = child_idx; i < parent->num_childs - 1; i++) {
+    parent->childs[i] = parent->childs[i + 1];
+  }
 
-    parent->num_childs--;
+  parent->num_childs--;
 
-    if (parent->num_childs == 0) {
-        free(parent->childs);
-        parent->childs = NULL;
-        parent->cap_childs = 0;
-    } 
+  if (parent->num_childs == 0) {
+    free(parent->childs);
+    parent->childs = NULL;
+    parent->cap_childs = 0;
+  } 
 }
 
 float 
@@ -564,17 +565,17 @@ void lf_widget_set_padding(
     widget->props.padding_top == padding && 
     widget->props.padding_bottom == padding && 
     widget->props.padding_left == padding && 
-    widget->props.padding_right == padding) return;
+    widget->props.padding_right == padding && !widget->transition_func) return;
 
   lf_widget_set_prop(ui, widget, &widget->props.padding_left, padding); 
   lf_widget_set_prop(ui, widget, &widget->props.padding_right, padding); 
   lf_widget_set_prop(ui, widget, &widget->props.padding_top, padding); 
   lf_widget_set_prop(ui, widget, &widget->props.padding_bottom, padding); 
 
-  widget->_changed_size = true;
   if(!widget->transition_func) {
     ui->needs_render = true;
-    lf_widget_shape(ui, lf_widget_flag_for_layout(ui, widget));
+  widget->_changed_size = true;
+    lf_widget_flag_for_layout(ui, widget);
   }
  
 }
@@ -588,7 +589,7 @@ void lf_widget_set_margin(
     widget->props.margin_top == margin && 
     widget->props.margin_bottom == margin && 
     widget->props.margin_left == margin && 
-    widget->props.margin_right == margin) return;
+    widget->props.margin_right == margin && !widget->transition_func) return;
 
   lf_widget_set_prop(ui, widget, &widget->props.margin_left, margin); 
   lf_widget_set_prop(ui, widget, &widget->props.margin_right, margin); 
@@ -598,7 +599,7 @@ void lf_widget_set_margin(
   widget->_changed_size = true;
   if(!widget->transition_func) {
     ui->needs_render = true;
-    lf_widget_shape(ui, lf_widget_flag_for_layout(ui, widget));
+    lf_widget_flag_for_layout(ui, widget);
   }
 }
 
@@ -775,18 +776,24 @@ lf_widget_set_fixed_width(lf_ui_state_t* ui, lf_widget_t* widget, float width) {
   lf_widget_set_prop(ui, widget, &widget->container.size.x, width);
   widget->_fixed_width = true;
   widget->_changed_size = true;
-  if(!widget->anims)
+  if(!widget->anims) {
+    ui->needs_render = true;
     lf_widget_flag_for_layout(ui, widget);
+  }
+
 }
 
 void 
 lf_widget_set_fixed_height(lf_ui_state_t* ui, lf_widget_t* widget, float height) {
   if(!widget) return;
+  if(widget->container.size.y == height) return;
   lf_widget_set_prop(ui, widget, &widget->container.size.y, height);
   widget->_fixed_height = true;
   widget->_changed_size = true;
-  if(!widget->anims)
+  if(!widget->anims) {
+    ui->needs_render = true;
     lf_widget_flag_for_layout(ui, widget);
+  }
 }
 
 void 
@@ -978,8 +985,7 @@ void lf_widget_set_prop(
   lf_ui_state_t* ui,
   lf_widget_t* widget, 
   float* prop, float val) {
-  if(*prop == val) return;
-  if(widget->transition_func && ui->delta_time && widget->rendered) {
+  if(widget->transition_func) {
     lf_widget_add_animation(
       widget,
       prop, 
