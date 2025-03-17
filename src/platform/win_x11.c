@@ -10,6 +10,7 @@
 #include <X11/keysym.h>
 #include <assert.h>
 #include <X11/extensions/Xrandr.h>
+#include <X11/Xatom.h>
 #include <GL/glx.h>
 #include "../../include/leif/win.h"
 #include "../../include/leif/ui_core.h"
@@ -27,8 +28,22 @@ typedef struct {
   lf_win_close_func ev_close_cb;
   lf_win_mouse_move_func ev_move_cb;
   Window win;
+  Window glxwin;
   int32_t win_width, win_height;
 } window_callbacks_t;
+
+typedef struct {
+    Visual *visual;
+    VisualID visualid;
+    int screen;
+    unsigned int depth;
+    int klass;
+    unsigned long red_mask;
+    unsigned long green_mask;
+    unsigned long blue_mask;
+    int colormap_size;
+    int bits_per_rgb;
+} visual_info_t;
 
 static lf_windowing_event_func windowing_event_cb = NULL;
 
@@ -37,9 +52,11 @@ static window_callbacks_t window_callbacks[MAX_WINDOWS];
 static uint32_t n_windows = 0;
 static lf_ui_state_t* ui = NULL;
 static lf_event_type_t current_event = WinEventNone;
-static Atom wm_protocols_atom, wm_delete_window_atom;
-static XVisualInfo* glvis; 
+static Atom wm_protocols_atom, wm_delete_window_atom, motif_wm_hints;
 static GLXContext glcontext;
+static visual_info_t* visual;
+static GLXFBConfig fbconfig;
+static Colormap cmap;
 
 static int last_mouse_x = 0;
 static int last_mouse_y = 0;
@@ -221,11 +238,19 @@ create_window(
   lf_windowing_hint_kv_t* hints,
   uint32_t nhints) {
   Window root = DefaultRootWindow(display);
-  int screen = DefaultScreen(display);
 
   uint32_t winpos_x = 0, winpos_y = 0;
 
+  bool transparent_framebuffer, decorated = false;
   for(uint32_t i = 0; i < nhints; i++) {
+    if(hints[i].key == LF_WINDOWING_HINT_TRANSPARENT_FRAMEBUFFER
+    && hints[i].value == true) {
+      transparent_framebuffer = true;
+    } 
+    if(hints[i].key == LF_WINDOWING_HINT_DECORATED 
+    && hints[i].value == true) {
+      decorated = true;
+    } 
     if(hints[i].key == LF_WINDOWING_HINT_POS_X) {
       winpos_x = hints[i].value;
     }
@@ -233,8 +258,60 @@ create_window(
       winpos_y = hints[i].value;
     }
   }
-  Window win = XCreateSimpleWindow(display, root, winpos_x, winpos_y, width, height, 0,
-                                   BlackPixel(display, screen), BlackPixel(display, screen));
+  XTextProperty textprop;
+  XSizeHints size_hints;
+  XWMHints* startup_state;
+  Window win;
+  if(transparent_framebuffer) {
+    XSetWindowAttributes attr;
+    if(transparent_framebuffer) {
+      attr.colormap = cmap;
+      attr.background_pixmap = None;
+    }
+    attr.border_pixel = 0;
+    attr.event_mask =  
+      StructureNotifyMask | KeyPressMask      | KeyReleaseMask    |
+      ButtonPressMask     | ButtonReleaseMask | PointerMotionMask | 
+      ExposureMask        | LeaveWindowMask;
+    int32_t attr_mask;
+    attr_mask =
+      CWBackPixmap  |
+      CWColormap    |
+      CWBorderPixel |
+      CWEventMask;   
+    win = XCreateWindow(display, root, 
+                               winpos_x, winpos_y, width, height, 1,
+                               visual->depth, InputOutput,  
+                               visual->visual, attr_mask, &attr); 
+  } else {
+    int screen = DefaultScreen(display);
+    win = XCreateSimpleWindow(display, root, winpos_x, winpos_y, width, height, 0,
+                              BlackPixel(display, screen), BlackPixel(display, screen));
+  XSelectInput(display, win, StructureNotifyMask | KeyPressMask | KeyReleaseMask |
+               ButtonPressMask | ButtonReleaseMask | PointerMotionMask | ExposureMask | LeaveWindowMask);
+  }
+  textprop.value = (unsigned char*)title;
+  textprop.encoding = XA_STRING;
+  textprop.format = 8;
+  textprop.nitems = strlen(title);
+
+  size_hints.x = winpos_x;
+  size_hints.y = winpos_y;
+  size_hints.width = width;
+  size_hints.height = height;
+  size_hints.flags = USPosition|USSize;
+
+  startup_state = XAllocWMHints();
+  startup_state->initial_state = NormalState;
+  startup_state->flags = StateHint;
+
+  XSetWMProperties(display, win, &textprop, &textprop,
+                   NULL, 0,
+                   &size_hints, 
+                   startup_state,
+                   NULL);
+
+  XFree(startup_state);
 
   if(lf_flag_exists(&flags, LF_WINDOWING_X11_OVERRIDE_REDIRECT)) {
     XSetWindowAttributes attributes;
@@ -242,17 +319,37 @@ create_window(
     XChangeWindowAttributes(display, win, CWOverrideRedirect, &attributes);  
   }
 
-  XSelectInput(display, win, StructureNotifyMask | KeyPressMask | KeyReleaseMask |
-               ButtonPressMask | ButtonReleaseMask | PointerMotionMask | ExposureMask | LeaveWindowMask);
   XMapWindow(display, win);
 
-  XStoreName(display, win, title);
+  struct
+  {
+    unsigned long flags;
+    unsigned long functions;
+    unsigned long decorations;
+    long input_mode;
+    unsigned long status;
+  } decoration_hints = {0};
+
+  static const uint32_t MWM_HINTS_DECORATIONS   =   2;
+  static const uint32_t MWM_DECOR_ALL           =   1;
+  decoration_hints.flags = MWM_HINTS_DECORATIONS;
+  decoration_hints.decorations = decorated ? MWM_DECOR_ALL : 0;
+
+  XChangeProperty(display, win,
+                  motif_wm_hints,
+                  motif_wm_hints, 32,
+                  PropModeReplace,
+                  (unsigned char*) &hints,
+                  sizeof(decoration_hints) / sizeof(long));
+    
+  Window glxwin = glXCreateWindow(display, fbconfig, win, NULL);
 
   if (n_windows + 1 <= MAX_WINDOWS) {
     window_callbacks[n_windows].win = win;
     int32_t w, h;
     get_window_size(display, win, &w, &h);
     window_callbacks[n_windows].win = win;
+    window_callbacks[n_windows].glxwin = glxwin;
     window_callbacks[n_windows].win_width = w;
     window_callbacks[n_windows].win_height = h;
     window_callbacks[n_windows].ev_mouse_press_cb = NULL;
@@ -277,16 +374,52 @@ lf_windowing_init(void) {
   }
   wm_protocols_atom = XInternAtom(display, "WM_PROTOCOLS", False);
   wm_delete_window_atom = XInternAtom(display, "WM_DELETE_WINDOW", False);
-  int attribs[] = { GLX_RGBA, GLX_DEPTH_SIZE, 24, GLX_DOUBLEBUFFER, None };
+  motif_wm_hints = XInternAtom(display, "_MOTIF_WM_HINTS", False);
 
   int screen_num = DefaultScreen(display);
-  glvis = glXChooseVisual(display, screen_num, attribs);
-  if (!glvis) {
-    fprintf(stderr, "reif: cannot choose glX visual.\n");
-    return 1;
+
+  static int visdata[] = {
+    GLX_RENDER_TYPE, GLX_RGBA_BIT,
+    GLX_DRAWABLE_TYPE, GLX_WINDOW_BIT,
+    GLX_DOUBLEBUFFER, True,
+    GLX_RED_SIZE, 1,
+    GLX_GREEN_SIZE, 1,
+    GLX_BLUE_SIZE, 1,
+    GLX_ALPHA_SIZE, 1,
+    GLX_DEPTH_SIZE, 1,
+    None
+  };
+
+  int32_t nfb;
+  XRenderPictFormat* pic_fmt;
+  GLXFBConfig* fbconfigs = glXChooseFBConfig(display, screen_num, visdata, &nfb);
+  for(int i = 0; i < nfb; i++) {
+    visual = (visual_info_t*) glXGetVisualFromFBConfig(display, fbconfigs[i]);
+    if(!visual)
+      continue;
+
+    pic_fmt = XRenderFindVisualFormat(display, visual->visual);
+    if(!pic_fmt)
+      continue;
+
+    if(pic_fmt->direct.alphaMask > 0) {
+      fbconfig = fbconfigs[i];
+      break;
+    }
   }
 
-  glcontext = glXCreateContext(display, glvis, NULL, GL_TRUE); 
+  cmap = XCreateColormap(display, DefaultRootWindow(display), visual->visual, AllocNone);
+
+  int dummy;
+  if (!glXQueryExtension(display, &dummy, &dummy)) {
+    fprintf(stderr, "reif: OpenGL not supported by X server.\n");
+    assert(false);
+  }
+  glcontext = glXCreateNewContext(display, fbconfig, GLX_RGBA_TYPE, 0, True);
+  if (!glcontext) {
+    fprintf(stderr, "reif: failed to create an OpenGL context.\n");
+    assert(false);
+  }
 
   return 0;
 }
@@ -353,8 +486,16 @@ int32_t
 lf_win_make_gl_context(lf_window_t win) {
   for (uint32_t i = 0; i < n_windows; ++i) {
     if (window_callbacks[i].win == (Window)win) {
-      glXMakeCurrent(display, window_callbacks[i].win, glcontext); 
-      return 0;
+      if (glXMakeContextCurrent(
+        display, 
+        window_callbacks[i].glxwin, 
+        window_callbacks[i].glxwin, 
+        glcontext)) {
+        return 0;
+      } else {
+        fprintf(stderr, "reif: failed to set OpenGL context for Window %i.\n", 
+                (uint32_t)win);
+      }
     }
   }
   return 1;
@@ -362,7 +503,11 @@ lf_win_make_gl_context(lf_window_t win) {
 
 void 
 lf_win_swap_buffers(lf_window_t win) {
-  glXSwapBuffers(display, (Window)win);
+  for (uint32_t i = 0; i < n_windows; ++i) {
+    if (window_callbacks[i].win == (Window)win) {
+      glXSwapBuffers(display, window_callbacks[i].glxwin);
+    }
+  }
 }
 
 void 

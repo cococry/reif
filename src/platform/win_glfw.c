@@ -67,7 +67,15 @@ create_window(
   uint32_t flags, 
   lf_windowing_hint_kv_t* hints, 
   uint32_t nhints) {
-  (void)flags;
+  (void)flags
+  for(uint32_t i = 0; i < nhints; i++) {
+    if(hints[i].key == LF_WINDOWING_HINT_TRANSPARENT_FRAMEBUFFER) 
+      glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, hints[i].value);
+    }
+    if(hints[i].key == LF_WINDOWING_HINT_DECORATE) 
+      glfwWindowHint(GLFW_DECORATED, hints[i].value);
+    }
+  }
   GLFWwindow* win = glfwCreateWindow(
     width, height, 
     title,

@@ -93,24 +93,18 @@ int main(void) {
 
 
   s.ui = lf_ui_core_init(win);
+  s.ui->root->props.color = LF_NO_COLOR;
 
   lf_widget_set_font_family(s.ui, s.ui->root, "JetBrainsMono Nerd Font");
+  lf_widget_set_font_style(s.ui, s.ui->root, LF_FONT_STYLE_BOLD);
 
-  lf_div(s.ui);
-  lf_style_widget_prop_color(s.ui, lf_crnt(s.ui), color, LF_BLUE);
-  lf_div(s.ui);
-  lf_style_widget_prop_color(s.ui, lf_crnt(s.ui), color, LF_RED);
-  lf_text_p(s.ui, "Hello");
-  lf_div_end(s.ui);
-  lf_div(s.ui);
+ 
   lf_button(s.ui);
-
-  lf_text_h3(s.ui, "Button test");
+ 
+  lf_text_h4(s.ui,   "Window");
   lf_button_end(s.ui);
-  lf_div_end(s.ui);
-
-  lf_div_end(s.ui);
-
+  lf_style_widget_prop_color(s.ui, lf_crnt(s.ui), text_color, LF_BLACK);
+  lf_widget_set_padding(s.ui, lf_crnt(s.ui), 20);
    
   while(s.ui->running) {
     lf_ui_core_next_event(s.ui);

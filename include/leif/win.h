@@ -18,7 +18,9 @@ typedef enum {
 
 typedef enum {
   LF_WINDOWING_HINT_POS_X = 0,
-  LF_WINDOWING_HINT_POS_Y
+  LF_WINDOWING_HINT_POS_Y,
+  LF_WINDOWING_HINT_TRANSPARENT_FRAMEBUFFER,
+  LF_WINDOWING_HINT_DECORATED
 } lf_window_hint_t;
 
 typedef struct {
