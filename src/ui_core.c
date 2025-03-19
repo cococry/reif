@@ -509,6 +509,7 @@ void lf_ui_core_next_event(lf_ui_state_t* ui) {
 
   if (ui->needs_render) {
     lf_ui_core_commit_entire_render(ui);
+    printf("rendered. %f\n", ui->delta_time);
     ui->needs_render = false;
     rendered = true;
   }

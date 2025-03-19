@@ -606,7 +606,7 @@ lf_win_get_size(lf_window_t win) {
 
 
 int32_t lf_win_get_refresh_rate(lf_window_t win) {
-  return 120;
+  return 144;
 }
 void 
 lf_windowing_set_event_cb(lf_windowing_event_func cb) {

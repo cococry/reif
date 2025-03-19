@@ -4,6 +4,8 @@
 #include "../include/leif/animation.h"
 #include "../include/leif/widgets/text.h"
 #include "../include/leif/widgets/div.h"
+#include <math.h>
+#include <stdbool.h>
 #include <string.h>
 #include <time.h>
 
@@ -14,7 +16,7 @@
 #define INIT_CHILD_CAP 4
 
 static void widget_resize_children(lf_widget_t* widget, uint32_t new_cap);
-static void widget_animate(lf_ui_state_t* ui, lf_widget_t* widget);
+static bool widget_animate(lf_ui_state_t* ui, lf_widget_t* widget);
 
 
 void 
@@ -24,12 +26,19 @@ widget_resize_children(lf_widget_t* widget, uint32_t new_cap) {
   widget->cap_childs = new_cap;
 }
 
-void 
+bool
 widget_animate(lf_ui_state_t* ui, lf_widget_t* widget) {
-  if(!widget) return;
+  if(!widget) return false;
   lf_animation_t* prev = NULL;
   lf_animation_t* anim = widget->anims;
-
+ 
+  bool animated = false;
+  uint32_t nanims = 0;
+  while(anim) {
+    nanims++;
+    anim = anim->next;
+  }
+  anim = widget->anims;
   while (anim) {
     if (anim->active) {
       lf_animation_update(anim, ui->delta_time);
@@ -50,8 +59,10 @@ widget_animate(lf_ui_state_t* ui, lf_widget_t* widget) {
         widget->_changed_size = true;
         lf_widget_flag_for_layout(ui, widget);
       }
+      animated = true;
     }
     if (!anim->active) {
+      printf("removed animation: %f\n", anim->elapsed_time);
       if (prev) {
         prev->next = anim->next;
       } else {
@@ -67,12 +78,13 @@ widget_animate(lf_ui_state_t* ui, lf_widget_t* widget) {
         free(to_remove);
         to_remove = NULL;
       }
-      
+     
       continue;
     }
     prev = anim;
     anim = anim->next;
   }
+  return animated;
  }
 
 lf_widget_t* 
@@ -412,11 +424,12 @@ bool lf_widget_animate(
   if(!widget) return false;
   bool animated = false;
   if (widget->anims) {
-    widget_animate(ui, widget);
-    lf_widget_submit_props(widget);
-    animated = true;
-    if (*o_shape == NULL) {
-      *o_shape = widget;
+    if(widget_animate(ui, widget)) {
+      animated = true;
+      if (*o_shape == NULL) {
+        *o_shape = widget;
+      }
+      lf_widget_submit_props(widget);
     }
   } 
 
@@ -775,11 +788,13 @@ lf_widget_set_fixed_width(lf_ui_state_t* ui, lf_widget_t* widget, float width) {
   if(widget->container.size.x == width) return;
   lf_widget_set_prop(ui, widget, &widget->container.size.x, width);
   widget->_fixed_width = true;
-  widget->_changed_size = true;
-  if(!widget->anims) {
+
+  if(!widget->transition_func) {
     ui->needs_render = true;
+    widget->_changed_size = true;
     lf_widget_flag_for_layout(ui, widget);
   }
+
 
 }
 
@@ -985,12 +1000,13 @@ void lf_widget_set_prop(
   lf_ui_state_t* ui,
   lf_widget_t* widget, 
   float* prop, float val) {
-  if(widget->transition_func) {
+  if(*prop == val) return;
+  if(widget->transition_func && ui->delta_time != 0.0f) {
     lf_widget_add_animation(
       widget,
       prop, 
       *prop, val,
-      widget->transition_time, widget->transition_func);
+      widget->transition_time, widget->transition_func); 
   } else {
     *prop = val;
     lf_widget_submit_props(widget);
