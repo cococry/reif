@@ -51,6 +51,7 @@ struct lf_widget_t {
   
   bool visible;
   bool rendered;
+  bool scrollable;
 
   lf_widget_type_t type;
   lf_layout_type_t layout_type;

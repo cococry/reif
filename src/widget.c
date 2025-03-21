@@ -62,7 +62,6 @@ widget_animate(lf_ui_state_t* ui, lf_widget_t* widget) {
       animated = true;
     }
     if (!anim->active) {
-      printf("removed animation: %f\n", anim->elapsed_time);
       if (prev) {
         prev->next = anim->next;
       } else {
@@ -152,6 +151,7 @@ lf_widget_create(
   widget->cull_start_x = 0;
   widget->cull_start_y = 0;
 
+  widget->scrollable = true;
   return widget;
 }
 
@@ -207,27 +207,25 @@ lf_widget_render(lf_ui_state_t* ui,  lf_widget_t* widget) {
       return;
     }
 #ifdef LF_RUNARA
+    vec2s last_cull_start = ((RnState*)ui->render_state)->cull_start;
+    vec2s last_cull_end = ((RnState*)ui->render_state)->cull_end;
     if(widget->parent) {
-      rn_set_cull_start_y(
-          (RnState*)ui->render_state,
-          parent_start_y
-          );
-      rn_set_cull_end_y(
-          (RnState*)ui->render_state,
-          parent_end_y
-          );
-      rn_set_cull_start_x(
-          (RnState*)ui->render_state,
-          parent_start_x
-          );
-      rn_set_cull_end_x(
-          (RnState*)ui->render_state,
-          parent_end_x
-          );
+      rn_set_cull_start_y((RnState*)ui->render_state, parent_start_y);
+      rn_set_cull_end_y((RnState*)ui->render_state, parent_end_y);
+      rn_set_cull_start_x((RnState*)ui->render_state, parent_start_x);
+      rn_set_cull_end_x((RnState*)ui->render_state, parent_end_x );
     }
 #endif
     widget->render(ui, widget);
     widget->rendered = true;
+#ifdef LF_RUNARA
+    if(widget->parent) {
+      rn_set_cull_start_y((RnState*)ui->render_state, last_cull_start.y);
+      rn_set_cull_end_y( (RnState*)ui->render_state, last_cull_end.y);
+      rn_set_cull_start_x((RnState*)ui->render_state,last_cull_start.x);
+      rn_set_cull_end_x((RnState*)ui->render_state, last_cull_end.x); 
+    }
+#endif
 #ifdef LF_RUNARA
     if(widget->type == WidgetTypeDiv) {
       rn_set_cull_start_y(
@@ -789,7 +787,7 @@ lf_widget_set_fixed_width(lf_ui_state_t* ui, lf_widget_t* widget, float width) {
   lf_widget_set_prop(ui, widget, &widget->container.size.x, width);
   widget->_fixed_width = true;
 
-  if(!widget->transition_func) {
+  if(!widget->transition_func && ui->delta_time) {
     ui->needs_render = true;
     widget->_changed_size = true;
     lf_widget_flag_for_layout(ui, widget);
@@ -804,8 +802,8 @@ lf_widget_set_fixed_height(lf_ui_state_t* ui, lf_widget_t* widget, float height)
   if(widget->container.size.y == height) return;
   lf_widget_set_prop(ui, widget, &widget->container.size.y, height);
   widget->_fixed_height = true;
-  widget->_changed_size = true;
-  if(!widget->anims) {
+  if(!widget->anims && ui->delta_time) {
+    widget->_changed_size = true;
     ui->needs_render = true;
     lf_widget_flag_for_layout(ui, widget);
   }

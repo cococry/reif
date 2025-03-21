@@ -14,6 +14,7 @@ _div_handle_event(lf_ui_state_t* ui, lf_widget_t* widget, lf_event_t* event) {
     return;
   }
 
+  if(!widget->scrollable) return;
   vec2s mouse = (vec2s){
     .x = (float)event->x, 
     .y = (float)event->y};
@@ -80,7 +81,7 @@ _div_handle_event(lf_ui_state_t* ui, lf_widget_t* widget, lf_event_t* event) {
       lf_widget_set_prop_color(
         ui, widget,
         &scrollbar->color, 
-        lf_color_dim(ui->theme->scrollbar_props.color, 0.8f));
+        lf_color_dim(ui->theme->scrollbar_props.color, 80.0f));
     }
 
     else if(on_scrollbar && (event->type == WinEventMouseMove || event->type == WinEventMouseWheel) &&
@@ -89,7 +90,7 @@ _div_handle_event(lf_ui_state_t* ui, lf_widget_t* widget, lf_event_t* event) {
       lf_widget_set_prop_color(
         ui, widget, 
         &scrollbar->color, 
-        lf_color_dim(ui->theme->scrollbar_props.color, 0.9f));
+        lf_color_dim(ui->theme->scrollbar_props.color, 90.0f));
       ui->needs_render = true;
     }
     else if (event->type == WinEventMouseMove && scrollbar->held) {

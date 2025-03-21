@@ -21,6 +21,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <dirent.h>
+#include <wctype.h>
 
 typedef struct {
   lf_ui_state_t* ui;
@@ -97,14 +98,10 @@ int main(void) {
 
   lf_widget_set_font_family(s.ui, s.ui->root, "JetBrainsMono Nerd Font");
   lf_widget_set_font_style(s.ui, s.ui->root, LF_FONT_STYLE_BOLD);
+lf_widget_set_fixed_height_percent(s.ui, lf_crnt(s.ui), 100.0f);
+lf_widget_set_alignment(lf_crnt(s.ui), AlignCenterVertical | AlignCenterHorizontal);
 
- 
-  lf_button(s.ui);
- 
-  lf_text_h4(s.ui,   "Window");
-  lf_button_end(s.ui);
-  lf_style_widget_prop_color(s.ui, lf_crnt(s.ui), text_color, LF_BLACK);
-  lf_widget_set_padding(s.ui, lf_crnt(s.ui), 20);
+  lf_text_h1(s.ui, "Hello, World!");
    
   while(s.ui->running) {
     lf_ui_core_next_event(s.ui);

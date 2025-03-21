@@ -1,5 +1,6 @@
 #include "../include/leif/color.h"
 #include <stdint.h>
+#include <stdio.h>
 
 lf_color_t 
 lf_color_from_hex(uint32_t hex) {
@@ -44,21 +45,33 @@ lf_color_equal(lf_color_t a, lf_color_t b) {
     a.g == b.g &&
     a.b == b.b &&
     a.a == b.a 
-  );
+);
 }
 
 lf_color_t 
-lf_color_dim(lf_color_t color, float dim) {
-   if (dim < 0.0f || dim > 1.0f) {
-        // Ensure dim is in the range (0, 1).
-        dim = 0.9f;  // Default to a 10% dimming.
-    }
+lf_color_dim(lf_color_t color, float brightness_percent) {
+  // Clamp brightness percentage to a reasonable range (0% to 200%)
+  if (brightness_percent < 0.0f) brightness_percent = 0.0f;
+  if (brightness_percent > 200.0f) brightness_percent = 200.0f;
 
-    lf_color_t dimmed_color;
-    dimmed_color.r = (unsigned char)(color.r * dim);
-    dimmed_color.g = (unsigned char)(color.g * dim);
-    dimmed_color.b = (unsigned char)(color.b * dim);
-    dimmed_color.a = color.a;  // Keep the alpha the same
+  lf_color_t adjusted_color;
 
-    return dimmed_color;
+  if (brightness_percent <= 100.0f) {
+    // Dimming: Scale the color values down
+    float factor = brightness_percent / 100.0f;
+    adjusted_color.r = color.r * factor;
+    adjusted_color.g = color.g * factor;
+    adjusted_color.b = color.b * factor;
+  } else {
+    // Brightening: Interpolate toward 255 (white)
+    float factor = (brightness_percent - 100.0f) / 100.0f;
+    adjusted_color.r = color.r + (255.0f - color.r) * factor;
+    adjusted_color.g = color.g + (255.0f - color.g) * factor;
+    adjusted_color.b = color.b + (255.0f - color.b) * factor;
+  }
+
+  // Preserve alpha
+  adjusted_color.a = color.a;
+
+  return adjusted_color;
 }

@@ -153,7 +153,6 @@ void lf_text_set_font(
     const char* family_name,
     lf_font_style_t style,
     uint32_t pixel_size) {
-
   text->font = lf_asset_manager_request_font(ui, family_name, style, pixel_size);
   _recalculate_label(ui, text);
   text->base._needs_size_calc = false;

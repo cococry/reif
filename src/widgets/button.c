@@ -63,7 +63,7 @@ _button_handle_event(
     lf_widget_set_prop_color(
       ui, widget, 
       &widget->props.color, 
-      lf_color_dim(button->base._initial_props.color, 0.9f));
+      lf_color_dim(button->base._initial_props.color, 90.0f));
     ui->needs_render = true;
     if(button->on_enter) {
       button->on_enter(ui, widget);
@@ -93,7 +93,7 @@ _button_handle_event(
     lf_widget_set_prop_color(
       ui, widget,
       &widget->props.color, 
-      lf_color_dim(button->base._initial_props.color, 0.8f));
+      lf_color_dim(button->base._initial_props.color, 80.0f));
     return;
   }
 }
