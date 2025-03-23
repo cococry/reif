@@ -257,7 +257,7 @@ lf_widget_render(lf_ui_state_t* ui,  lf_widget_t* widget) {
   for(uint32_t i = 0; i < widget->num_childs; i++) {
     lf_widget_render(ui, widget->childs[i]);
   }
-  if(widget->type == WidgetTypeDiv) {
+  if(widget->type == WidgetTypeDiv && widget->scrollable) {
     lf_div_t* div = (lf_div_t*)widget;
 
     vec2s total_scrollable_area = (vec2s){

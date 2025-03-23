@@ -23,6 +23,7 @@ _div_handle_event(lf_ui_state_t* ui, lf_widget_t* widget, lf_event_t* event) {
     .pos = widget->container.pos, 
     .size = LF_WIDGET_SIZE_V2(widget)
   };
+  if(!widget->scrollable) return;
   lf_div_t* div = (lf_div_t*)widget;
   if(event->type == WinEventMouseWheel && lf_point_intersets_container(mouse, div_container)) {
     if(!(event->scroll_x != 0 || event->scroll_y != 0)) return; 

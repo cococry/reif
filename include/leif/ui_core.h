@@ -13,6 +13,7 @@ typedef struct lf_widget_t lf_widget_t;
 typedef struct {
   lf_widget_props_t div_props;
   lf_widget_props_t button_props;
+  lf_widget_props_t slider_props;
   lf_widget_props_t text_props;
   lf_widget_props_t img_props;
   lf_widget_props_t scrollbar_props;

@@ -199,6 +199,44 @@ lf_button_end(lf_ui_state_t* ui) {
   _end_widget(ui);
 }
 
+lf_slider_t* 
+lf_slider(lf_ui_state_t* ui, float* val, float min, float max) {
+  bool overflowing = _assign_idx(ui) >= ui->_ez.last_parent->num_childs;
+  if (!ui->_ez._assignment_only || overflowing) {
+    lf_slider_t* slider = lf_slider_create(ui, ui->_ez.last_parent, val, min, max);
+    ui->_ez.current_widget = &slider->base;
+
+    ui->_ez.index_stack[ui->_ez.index_depth]++;
+
+    if(overflowing && ui->delta_time) {
+      ui->needs_render = true;
+      slider->base._changed_size = true;
+      lf_widget_shape(ui, lf_widget_flag_for_layout(ui, &slider->base));
+    }
+
+    slider->base._rendered_within_comp = true;
+
+    return slider;
+  } else {
+    lf_widget_t* widget = 
+      ui->_ez.last_parent->childs[
+      ui->_ez.index_stack[ui->_ez.index_depth]++];
+
+    widget->_rendered_within_comp = true;
+
+    if (widget->type != WidgetTypeSlider) {
+      fprintf(stderr, "leif: lf_slider: mismatch in widget tree. widget ID: %i.\n", widget->id);
+      return NULL;
+    }
+
+    ((lf_slider_t*)widget)->val = val;
+    ((lf_slider_t*)widget)->min = min;
+    ((lf_slider_t*)widget)->max = max;
+    ui->_ez.current_widget = widget; 
+    return (lf_slider_t*)widget;
+  }
+}
+
 lf_text_t* 
 lf_text_p(lf_ui_state_t* ui, const char* label) {
   return _text_create_from_level(ui, label, TextLevelParagraph);

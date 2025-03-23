@@ -13,7 +13,8 @@ typedef enum {
   WidgetTypeDiv,
   WidgetTypeButton,
   WidgetTypeText,
-  WidgetTypeImage
+  WidgetTypeImage,
+  WidgetTypeSlider,
 } lf_widget_type_t;
 
 typedef struct lf_widget_t lf_widget_t;

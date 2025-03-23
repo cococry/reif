@@ -409,6 +409,23 @@ lf_ui_core_default_theme(void) {
     .border_width = 0.0f, 
   };
 
+  theme->slider_props =  (lf_widget_props_t){
+    .color = lf_color_from_hex(0xffffff),
+    .text_color = lf_color_from_hex(0x1E3A8A),
+    .padding_left = 0,
+    .padding_right = 0,
+    .padding_top = 0,
+    .padding_bottom = 0,
+    .margin_left = global_margin,
+    .margin_right = global_margin,
+    .margin_top = global_margin,
+    .margin_bottom = global_margin,
+    .corner_radius = 2.5f, 
+    .border_width = 0.0f, 
+    .border_color = LF_NO_COLOR,
+  };
+
+
   return theme;
 }
 void 

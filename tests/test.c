@@ -22,6 +22,12 @@
 #include <unistd.h>
 #include <dirent.h>
 #include <wctype.h>
+#include <stdio.h>
+
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 
 typedef struct {
   lf_ui_state_t* ui;
@@ -30,60 +36,59 @@ typedef struct {
 
 static state_t s;
 
+float val = 0;
 
-  uint32_t barcolor = 0x333333;
+static void comp();
 
-uint32_t n = 1;
-static void comp(void);
 
-void on_timer(lf_ui_state_t* ui, lf_timer_t* widget) {
-  n++;
-  lf_component_rerender(ui, comp);
+void run_command_silent(const char *cmd) {
+    pid_t pid = fork();
+    
+    if (pid < 0) {
+        // Fork failed
+        perror("fork failed");
+        return;
+    }
+    
+    if (pid == 0) {
+        // In child process
+        
+        // Redirect stdin, stdout, and stderr to /dev/null
+        int devnull = open("/dev/null", O_RDWR);
+        if (devnull == -1) {
+            perror("open /dev/null failed");
+            exit(1);
+        }
+        
+        dup2(devnull, STDIN_FILENO);
+        dup2(devnull, STDOUT_FILENO);
+        dup2(devnull, STDERR_FILENO);
+        close(devnull);
+        
+        // Execute the command using /bin/sh
+        execl("/bin/sh", "sh", "-c", cmd, (char *)NULL);
+        
+        // If execl fails
+        exit(1);
+    }
+
+    // Parent process does not wait for child
+}
+void on_slide(lf_ui_state_t* ui, lf_widget_t* widget, float* val) {
+  char buf[32];
+  sprintf(buf, "amixer sset Master %f% & ", *val);
+  run_command_silent(buf);
+  lf_component_rerender(s.ui, comp);
 }
 
-void comp(void) {
-  lf_div(s.ui);
-  lf_widget_set_layout(lf_crnt(s.ui), LayoutHorizontal);
-  lf_widget_set_sizing(lf_crnt(s.ui), SizingFitToContent);
-  lf_widget_set_alignment(lf_crnt(s.ui), AlignCenterVertical);
-  lf_style_widget_prop_color(s.ui, lf_crnt(s.ui), color, lf_color_dim(lf_color_from_hex(barcolor), 0.8));
-
-  for(uint32_t i = 0; i < n; i++) {
-    lf_button_t* btn = lf_button(s.ui);
-    lf_widget_set_transition_props(&btn->base, 0.2f, lf_ease_out_quad);
-    if(!btn->_held)
-      lf_style_widget_prop_color(s.ui, lf_crnt(s.ui), color,
-                                 (i == 3 ? LF_WHITE : lf_color_from_hex(0x999999)));
-    //lf_widget_set_padding(s.ui, lf_crnt(s.ui), 0);
-    lf_widget_set_fixed_width(s.ui, lf_crnt(s.ui), 10);
-    lf_widget_set_fixed_height(s.ui, lf_crnt(s.ui), 10);
-    lf_style_widget_prop(s.ui, lf_crnt(s.ui), corner_radius, 10 / 2.0f);
-    lf_button_end(s.ui);
-  }
-  lf_div_end(s.ui);
+void comp() {
+  char buf[32];
+  sprintf(buf, "%.2f", val);
+  lf_text_h4(s.ui, buf);
+  lf_slider(s.ui, &val, 0, 100);
+  ((lf_slider_t*)lf_crnt(s.ui))->on_slide = on_slide;
+  lf_crnt(s.ui)->container.size.x = 300;
 }
-
-
-void uidesktops(void) {
-  lf_div(s.ui);
-  lf_widget_set_layout(lf_crnt(s.ui), LayoutHorizontal);
-  lf_widget_set_sizing(lf_crnt(s.ui), SizingFitToContent);
-  lf_widget_set_alignment(lf_crnt(s.ui), AlignCenterVertical);
-
-  for(uint32_t i = 0; i < 9; i++) {
-    lf_button(s.ui);
-    lf_widget_set_transition_props(lf_crnt(s.ui), 0.2f, lf_ease_out_quad);
-    lf_style_widget_prop_color(s.ui, lf_crnt(s.ui), color,
-                               (i == 3 ? LF_WHITE : lf_color_from_hex(0x999999)));
-    lf_widget_set_padding(s.ui, lf_crnt(s.ui), 0);
-    lf_widget_set_fixed_width(s.ui, lf_crnt(s.ui), 10);
-    lf_widget_set_fixed_height(s.ui, lf_crnt(s.ui), 10);
-    lf_style_widget_prop(s.ui, lf_crnt(s.ui), corner_radius, 3);
-    lf_button_end(s.ui);
-  }
-  lf_div_end(s.ui);
-}
-
 
 int main(void) {
 
@@ -94,14 +99,30 @@ int main(void) {
 
 
   s.ui = lf_ui_core_init(win);
-  s.ui->root->props.color = LF_NO_COLOR;
 
   lf_widget_set_font_family(s.ui, s.ui->root, "JetBrainsMono Nerd Font");
   lf_widget_set_font_style(s.ui, s.ui->root, LF_FONT_STYLE_BOLD);
 lf_widget_set_fixed_height_percent(s.ui, lf_crnt(s.ui), 100.0f);
 lf_widget_set_alignment(lf_crnt(s.ui), AlignCenterVertical | AlignCenterHorizontal);
 
-  lf_text_h1(s.ui, "Hello, World!");
+     FILE *fp;
+    char buffer[128];
+    
+    // Run the pactl command and read its output
+    fp = popen("pactl get-sink-volume @DEFAULT_SINK@ | awk '{print $5}' | tr -d '%'", "r");
+    if (fp == NULL) {
+        printf("Failed to get volume\n");
+        return 1;
+    }
+
+    // Read the output (volume percentage)
+    if (fgets(buffer, sizeof(buffer), fp) != NULL) {
+        val = atoi(buffer);
+    }
+
+    pclose(fp);
+  lf_component(s.ui, comp);
+
    
   while(s.ui->running) {
     lf_ui_core_next_event(s.ui);

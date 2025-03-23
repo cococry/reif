@@ -7,6 +7,7 @@
 #include "widgets/button.h"
 #include "widgets/image.h"
 #include "widgets/text.h"
+#include "widgets/slider.h"
 
 typedef enum {
   TextLevelH1         = 0,
@@ -44,6 +45,8 @@ void lf_div_end(lf_ui_state_t* ui);
 lf_button_t* lf_button(lf_ui_state_t* ui);
 
 void lf_button_end(lf_ui_state_t* ui);
+
+lf_slider_t* lf_slider(lf_ui_state_t* ui, float* val, float min, float max);
 
 lf_text_t* lf_text_p(lf_ui_state_t* ui, const char* label);
 

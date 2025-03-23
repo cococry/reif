@@ -33,8 +33,10 @@ _recalculate_label(
   if((text->_text_dimension.width != text_dimension.width || 
       text->_text_dimension.height != text_dimension.height)) {
   }
-  text->base.container.size.x = text_dimension.width; 
-  text->base.container.size.y = text_dimension.height;
+  if(!widget->_fixed_width)
+    text->base.container.size.x = text_dimension.width; 
+  if(!widget->_fixed_height)
+    text->base.container.size.y = text_dimension.height;
 
   text->_text_dimension = text_dimension;
 
