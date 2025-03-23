@@ -2,7 +2,6 @@
 
 echo "- Installing Dependencies..."
 
-# Function to check for the distribution
 get_distro() {
     if [ -f /etc/os-release ]; then
         . /etc/os-release
@@ -103,6 +102,15 @@ esac
 echo "Dependencies installation complete!"
 
 echo "- Compiling RUNARA"
-
 make -C vendor/runara 
+echo "- Installing RUNARA"
 sudo make -C vendor/runara install
+
+echo "- Compiling REIF"
+make 
+echo "- Installing REIF"
+sudo make install
+
+if [ $? -eq 0 ]; then
+echo -e "\033[32m- Installation successfull!\033[0m"
+fi
