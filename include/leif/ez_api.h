@@ -24,12 +24,14 @@ typedef enum {
   do { \
     lf_widget_set_prop((ui), (widget), &(widget)->props.prop, (val)); \
     (widget)->_initial_props.prop = (val); \
+    (widget)->_rendered_props.prop = (val); \
   } while(0)
 
 #define lf_style_widget_prop_color(ui, widget, prop, val) \
   do { \
     lf_widget_set_prop_color((ui), (widget), &(widget)->props.prop, (val)); \
     (widget)->_initial_props.prop = (val); \
+    (widget)->_rendered_props.prop = (val); \
   } while(0)
 
 lf_ez_state_t lf_ez_api_init(lf_ui_state_t* ui);

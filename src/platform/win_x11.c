@@ -30,6 +30,7 @@ typedef struct {
   Window win;
   Window glxwin;
   int32_t win_width, win_height;
+  lf_ui_state_t* ui;
 } window_callbacks_t;
 
 typedef struct {
@@ -50,7 +51,6 @@ static lf_windowing_event_func windowing_event_cb = NULL;
 static Display *display = NULL;
 static window_callbacks_t window_callbacks[MAX_WINDOWS];
 static uint32_t n_windows = 0;
-static lf_ui_state_t* ui = NULL;
 static lf_event_type_t current_event = WinEventNone;
 static Atom wm_protocols_atom, wm_delete_window_atom, motif_wm_hints;
 static GLXContext glcontext;
@@ -61,10 +61,11 @@ static Colormap cmap;
 static int last_mouse_x = 0;
 static int last_mouse_y = 0;
 
+static window_callbacks_t* win_data_from_native(lf_window_t win);
+
 static void handle_event(XEvent *event);
 
 static lf_window_t create_window(uint32_t width, uint32_t height, const char* title, uint32_t flags, lf_windowing_hint_kv_t* hints, uint32_t nhints);
-
 
 void get_window_size(Display* display, Window window, int32_t* width, int32_t* height) {
     XWindowAttributes attrs;
@@ -76,19 +77,31 @@ void get_window_size(Display* display, Window window, int32_t* width, int32_t* h
     }
 }
 
+window_callbacks_t* win_data_from_native(lf_window_t win) {
+  for(uint32_t i = 0; i < n_windows; i++) {
+    if(window_callbacks[i].win == win) {
+      return &window_callbacks[i];
+    }
+  }
+  return NULL;
+}
+
 void 
 handle_event(XEvent *event) {
   lf_event_t ev = {0};
   for (uint32_t i = 0; i < n_windows; ++i) {
     if (window_callbacks[i].win == event->xany.window) {
+      window_callbacks_t win_data = window_callbacks[i]; 
       switch (event->type) {
         case Expose:
           ev.type = WinEventRefresh;
           current_event = ev.type;
-          lf_widget_handle_event(ui, ui->root, &ev);
-          if (window_callbacks[i].ev_refresh_cb) {
+          if(win_data.ui) { 
+            lf_widget_handle_event(win_data.ui, win_data.ui->root, &ev);
+          }
+          if (window_callbacks[i].ev_refresh_cb && win_data.ui) {
             window_callbacks[i].ev_refresh_cb(
-              ui, 
+              win_data.ui, 
               (lf_window_t)event->xany.window);
           }
           break;
@@ -102,10 +115,11 @@ handle_event(XEvent *event) {
           get_window_size(display, window_callbacks[i].win, 
                           &window_callbacks[i].win_width, 
                           &window_callbacks[i].win_height);
-          lf_widget_handle_event(ui, ui->root, &ev);
-          if (window_callbacks[i].ev_resize_cb)
+          if(win_data.ui)
+            lf_widget_handle_event(win_data.ui, win_data.ui->root, &ev);
+          if (window_callbacks[i].ev_resize_cb && win_data.ui)
             window_callbacks[i].ev_resize_cb(
-              ui, 
+              win_data.ui, 
               (lf_window_t)event->xany.window, 
               event->xconfigure.width, event->xconfigure.height);
           break;
@@ -146,10 +160,11 @@ handle_event(XEvent *event) {
           last_mouse_y = event->xbutton.y;
 
           current_event = ev.type;
-          lf_widget_handle_event(ui, ui->root, &ev);
-          if (window_callbacks[i].ev_mouse_press_cb)
+          if(win_data.ui)
+            lf_widget_handle_event(win_data.ui, win_data.ui->root, &ev);
+          if (window_callbacks[i].ev_mouse_press_cb && win_data.ui)
             window_callbacks[i].ev_mouse_press_cb(
-              ui, 
+              win_data.ui, 
               (lf_window_t)event->xany.window, 
               event->xbutton.button);
           break;
@@ -166,10 +181,11 @@ handle_event(XEvent *event) {
           last_mouse_y = event->xbutton.y;
 
           current_event = ev.type;
-          lf_widget_handle_event(ui, ui->root, &ev);
-          if (window_callbacks[i].ev_mouse_release_cb)
+          if(win_data.ui)
+            lf_widget_handle_event(win_data.ui, win_data.ui->root, &ev);
+          if (window_callbacks[i].ev_mouse_release_cb && win_data.ui)
             window_callbacks[i].ev_mouse_release_cb(
-              ui, 
+              win_data.ui, 
               (lf_window_t)event->xany.window,
               event->xbutton.button);
           break;
@@ -185,10 +201,11 @@ handle_event(XEvent *event) {
 
           ev.type = WinEventMouseMove;
           current_event = ev.type; 
-          lf_widget_handle_event(ui, ui->root, &ev);
-          if (window_callbacks[i].ev_move_cb)
+          if(win_data.ui)
+            lf_widget_handle_event(win_data.ui, win_data.ui->root, &ev);
+          if (window_callbacks[i].ev_move_cb && win_data.ui)
             window_callbacks[i].ev_move_cb(
-              ui, 
+              win_data.ui, 
               (lf_window_t)event->xany.window, 
               event->xmotion.x, event->xmotion.y);
           break;
@@ -197,9 +214,10 @@ handle_event(XEvent *event) {
             (Atom)event->xclient.data.l[0] == wm_delete_window_atom) {
             ev.type = WinEventClose;
             current_event = ev.type;
-            lf_widget_handle_event(ui, ui->root, &ev);
-            if (window_callbacks[i].ev_close_cb) {
-              window_callbacks[i].ev_close_cb(ui, (lf_window_t)event->xany.window);
+            if(win_data.ui)
+              lf_widget_handle_event(win_data.ui, win_data.ui->root, &ev);
+            if (window_callbacks[i].ev_close_cb && win_data.ui) {
+              window_callbacks[i].ev_close_cb(win_data.ui, (lf_window_t)event->xany.window);
             }
           }
           break;
@@ -215,10 +233,11 @@ handle_event(XEvent *event) {
               ev.delta_y = 0; 
               ev.type = WinEventMouseMove;
               current_event = ev.type; 
-              lf_widget_handle_event(ui, ui->root, &ev);
-              if (window_callbacks[i].ev_move_cb)
+              if(win_data.ui)
+                lf_widget_handle_event(win_data.ui, win_data.ui->root, &ev);
+              if (window_callbacks[i].ev_move_cb && win_data.ui)
                 window_callbacks[i].ev_move_cb(
-                    ui, 
+                    win_data.ui, 
                     (lf_window_t)event->xany.window, 
                     -1, -1);
             }
@@ -357,6 +376,7 @@ create_window(
     window_callbacks[n_windows].ev_close_cb = NULL;
     window_callbacks[n_windows].ev_refresh_cb = NULL;
     window_callbacks[n_windows].ev_resize_cb = NULL;
+    window_callbacks[n_windows].ui = NULL;
     ++n_windows;
   } else {
     fprintf(stderr, "warning: reached maximum amount of windows to define callbacks for.\n");
@@ -437,8 +457,10 @@ lf_windowing_update(void) {
 }
 
 void
-lf_windowing_set_ui_state(lf_ui_state_t* state) {
-  ui = state;
+lf_window_set_ui_state(lf_window_t win, lf_ui_state_t* state) {
+  window_callbacks_t* data;
+  if(!(data = win_data_from_native(win))) return;
+  data->ui = state;
 }
 
 lf_event_type_t 
@@ -484,19 +506,16 @@ lf_win_set_title(lf_window_t win, const char* title) {
 
 int32_t 
 lf_win_make_gl_context(lf_window_t win) {
-  for (uint32_t i = 0; i < n_windows; ++i) {
-    if (window_callbacks[i].win == (Window)win) {
-      if (glXMakeContextCurrent(
-        display, 
-        window_callbacks[i].glxwin, 
-        window_callbacks[i].glxwin, 
-        glcontext)) {
-        return 0;
-      } else {
-        fprintf(stderr, "reif: failed to set OpenGL context for Window %i.\n", 
-                (uint32_t)win);
-      }
-    }
+  window_callbacks_t* data = win_data_from_native(win);
+  if (glXMakeContextCurrent(
+    display, 
+    data->glxwin, 
+    data->glxwin, 
+    glcontext)) {
+    return 0;
+  } else {
+    fprintf(stderr, "reif: failed to set OpenGL context for Window %i.\n", 
+            (uint32_t)win);
   }
   return 1;
 }

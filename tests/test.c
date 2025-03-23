@@ -82,9 +82,17 @@ void on_slide(lf_ui_state_t* ui, lf_widget_t* widget, float* val) {
 }
 
 void comp() {
+  lf_text_h4(s.ui, "devicons:                                                                                                                                                                                                      ");
+
+  lf_text_h4(s.ui, "weather_icons:                                                                                                                                                                                                                                     摒 敖 晴 朗 望 杖 歹 殺 流 滛 滋 漢 瀞 煮 瞧");
   char buf[32];
   sprintf(buf, "%.2f", val);
+
+  lf_button(s.ui);
+  lf_style_widget_prop(s.ui, lf_crnt(s.ui), corner_radius_percent, 50.0f);
   lf_text_h4(s.ui, buf);
+  lf_button_end(s.ui);
+
   lf_slider(s.ui, &val, 0, 100);
   ((lf_slider_t*)lf_crnt(s.ui))->on_slide = on_slide;
   lf_crnt(s.ui)->container.size.x = 300;
@@ -95,37 +103,37 @@ int main(void) {
   if(lf_windowing_init() != 0) return EXIT_FAILURE;
 
   lf_window_t win = lf_ui_core_create_window(1280, 720, "hello leif");
+  printf("Win: %i\n", (int)win);
+  
+  lf_window_t win2 = lf_ui_core_create_window(1280, 720, "hello leif");
+  printf("Win2: %i\n", (int)win2);
     s.ui = lf_ui_core_init(win);
 
-
-  s.ui = lf_ui_core_init(win);
+  lf_ui_state_t* ui2 = lf_ui_core_init(win2);
 
   lf_widget_set_font_family(s.ui, s.ui->root, "JetBrainsMono Nerd Font");
   lf_widget_set_font_style(s.ui, s.ui->root, LF_FONT_STYLE_BOLD);
 lf_widget_set_fixed_height_percent(s.ui, lf_crnt(s.ui), 100.0f);
 lf_widget_set_alignment(lf_crnt(s.ui), AlignCenterVertical | AlignCenterHorizontal);
 
-     FILE *fp;
-    char buffer[128];
-    
-    // Run the pactl command and read its output
-    fp = popen("pactl get-sink-volume @DEFAULT_SINK@ | awk '{print $5}' | tr -d '%'", "r");
-    if (fp == NULL) {
-        printf("Failed to get volume\n");
-        return 1;
-    }
 
-    // Read the output (volume percentage)
-    if (fgets(buffer, sizeof(buffer), fp) != NULL) {
-        val = atoi(buffer);
-    }
+  lf_button(s.ui);
+  lf_style_widget_prop(s.ui, lf_crnt(s.ui), corner_radius_percent, 50.0f);
+  lf_text_h4(s.ui, "Hello, World!");
+  lf_button_end(s.ui);
 
-    pclose(fp);
-  lf_component(s.ui, comp);
 
+  lf_widget_set_font_family(ui2, ui2->root, "JetBrainsMono Nerd Font");
+  lf_widget_set_font_style(ui2, ui2->root, LF_FONT_STYLE_BOLD);
+  lf_widget_set_fixed_height_percent(ui2, lf_crnt(ui2), 100.0f);
+  lf_widget_set_alignment(lf_crnt(ui2), AlignCenterVertical | AlignCenterHorizontal);
+
+
+  lf_text_h4(ui2, "Bye, World!");
    
-  while(s.ui->running) {
+  while(s.ui->running ||  ui2->running) {
     lf_ui_core_next_event(s.ui);
+    lf_ui_core_next_event(ui2);
   }
   lf_ui_core_terminate(s.ui);
 	

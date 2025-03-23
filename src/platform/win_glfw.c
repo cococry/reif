@@ -20,6 +20,7 @@ typedef struct {
   lf_win_mouse_move_func ev_move_cb;
   lf_win_mouse_wheel_func ev_mouse_wheel_cb;
   GLFWwindow* win;
+  lf_ui_state_t* ui;
 } window_callbacks_t; 
 
 static lf_windowing_event_func  windowing_event_cb = NULL;
@@ -100,6 +101,7 @@ create_window(
     window_callbacks[n_windows].ev_refresh_cb = NULL;
     window_callbacks[n_windows].ev_move_cb = NULL;
     window_callbacks[n_windows].ev_mouse_wheel_cb = NULL;
+    window_callbacks[n_windows].ui = NULL;
     ++n_windows;
     glfwSetMouseButtonCallback(win, glfw_mouse_button_callback);
     glfwSetWindowCloseCallback(win, glfw_close_callback);
@@ -273,8 +275,12 @@ lf_windowing_update(void) {
 }
 
 void 
-lf_windowing_set_ui_state(lf_ui_state_t* state) {
-  ui = state;
+lf_window_set_ui_state(lf_window_t win, lf_ui_state_t* state) {
+  for(uint32_t i = 0; i < n_windows; i++) {
+    if(window_callbacks[i].win == win) {
+      window_callbacks[i].ui = state;
+    }
+  }
 }
 
 lf_event_type_t 

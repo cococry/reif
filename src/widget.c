@@ -409,6 +409,8 @@ void lf_widget_shape(lf_ui_state_t* ui, lf_widget_t* widget) {
   widget->shape(ui, widget);
   widget->_needs_shape = false;
 
+   widget->props.corner_radius = lf_widget_height(widget) * (widget->props.corner_radius_percent / 100.0f); 
+
   for (uint32_t i = 0; i < widget->num_childs; i++) {
     lf_widget_shape(ui, widget->childs[i]);
   }
@@ -449,6 +451,7 @@ lf_widget_is_animating(lf_widget_t* widget) {
 
 void
 lf_widget_handle_event(lf_ui_state_t* ui, lf_widget_t* widget, lf_event_t* event) {
+  if(!ui) return;
   if (!widget) return;
 
   for (uint32_t i = 0; i < widget->num_childs; i++) {

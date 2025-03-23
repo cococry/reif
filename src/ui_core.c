@@ -59,12 +59,16 @@ static lf_windowing_hints_list_t windowing_hints;
 
 void 
 win_close_callback(lf_ui_state_t* ui, lf_window_t window) {
+  if(ui->win != window) return;
+  printf("closed.\n");
   (void)window;
   ui->running = false;
 }
 
 void 
 win_refresh_callback(lf_ui_state_t* ui, lf_window_t window) {
+  if(ui->win != window) return;
+  printf("Refresh: %i\n", (int)window);
   vec2s winsize = lf_win_get_size(window);
   ui->root->container = LF_SCALE_CONTAINER(winsize.x, winsize.y);
   ui->needs_render = true;
@@ -142,7 +146,7 @@ init_state(lf_ui_state_t* state, lf_window_t win) {
 
   lf_widget_set_listener(state->root, root_resize, WinEventResize);
 
-  lf_windowing_set_ui_state(state);
+  lf_window_set_ui_state(win, state);
 
   state->root->props.color = state->theme->background_color;
   state->root->props.text_color = state->theme->text_color;
@@ -275,15 +279,13 @@ lf_ui_core_create_window(
 
   lf_win_set_close_cb(win, win_close_callback);
   lf_win_set_refresh_cb(win, win_refresh_callback);
-
-  lf_win_make_gl_context(win);
-
   return win;
 }
 
 lf_ui_state_t*
 lf_ui_core_init(lf_window_t win) {
   lf_ui_state_t* state = malloc(sizeof(*state));
+  lf_win_make_gl_context(win);
 #ifdef LF_RUNARA
 #ifdef LF_X11
   state->render_state = rn_init(
@@ -345,6 +347,7 @@ lf_ui_core_default_theme(void) {
     .margin_top = 0,
     .margin_bottom = 0,
     .corner_radius = 0.0f, 
+    .corner_radius_percent = 0.0f, 
     .border_width = 0.0f, 
     .border_color = LF_NO_COLOR,
     .text_align = ParagraphAlignmentLeft, 
@@ -362,6 +365,7 @@ lf_ui_core_default_theme(void) {
     .margin_top = global_margin,
     .margin_bottom = global_margin,
     .corner_radius = 0.0f, 
+    .corner_radius_percent = 0.0f, 
     .border_width = 0.0f, 
     .border_color = LF_NO_COLOR,
     .text_align = ParagraphAlignmentLeft,
@@ -379,6 +383,7 @@ lf_ui_core_default_theme(void) {
     .margin_top = global_margin,
     .margin_bottom = global_margin,
     .corner_radius = 0.0f, 
+    .corner_radius_percent = 0.0f, 
     .border_width = 0.0f, 
     .border_color = LF_NO_COLOR,
     .text_align = ParagraphAlignmentLeft,
@@ -396,6 +401,7 @@ lf_ui_core_default_theme(void) {
     .margin_top = global_margin,
     .margin_bottom = global_margin,
     .corner_radius = 0.0f, 
+    .corner_radius_percent = 0.0f, 
     .border_width = 0.0f, 
     .border_color = LF_NO_COLOR,
     .text_align = ParagraphAlignmentLeft,
@@ -406,6 +412,7 @@ lf_ui_core_default_theme(void) {
     .color = lf_color_from_hex(0x444444),
     .border_color = LF_NO_COLOR,
     .corner_radius = theme->scrollbar_static_size / 2.0f, 
+    .corner_radius_percent = 0.0f, 
     .border_width = 0.0f, 
   };
 
@@ -420,7 +427,7 @@ lf_ui_core_default_theme(void) {
     .margin_right = global_margin,
     .margin_top = global_margin,
     .margin_bottom = global_margin,
-    .corner_radius = 2.5f, 
+    .corner_radius_percent = 50.0f, 
     .border_width = 0.0f, 
     .border_color = LF_NO_COLOR,
   };
@@ -525,6 +532,7 @@ void lf_ui_core_next_event(lf_ui_state_t* ui) {
   shape_widgets_if_needed(ui, ui->root, false);
 
   if (ui->needs_render) {
+    lf_win_make_gl_context(ui->win);
     lf_ui_core_commit_entire_render(ui);
     ui->needs_render = false;
     rendered = true;

@@ -189,14 +189,20 @@ _slider_shape(
   lf_widget_t* widget) {
   lf_slider_t* slider = (lf_slider_t*)widget;
   slider->handle.pos = (vec2s){
-    .x = slider->handle.pos.x = widget->container.pos.x + 
-      (widget->container.size.x * (*slider->val / (slider->max - slider->min))),
-    .y = widget->container.pos.y +
-    (lf_widget_height(widget) - 
-    (slider->handle.size.y + 
-    slider->handle_props.padding_top + 
-    slider->handle_props.padding_bottom)) / 2.0f
-  };
+      .x = slider->handle.pos.x = widget->container.pos.x + 
+      (widget->container.size.x * (*slider->val / (slider->max - slider->min)))
+    - slider->handle.size.x / 2.0f,
+      .y = widget->container.pos.y +
+      (lf_widget_height(widget) - 
+      (slider->handle.size.y + 
+      slider->handle_props.padding_top + 
+      slider->handle_props.padding_bottom)) / 2.0f
+    };
+    if(slider->handle.pos.x >= widget->container.pos.x + widget->container.size.x
+      - slider->handle.size.x) {
+      slider->handle.pos.x = widget->container.pos.x + widget->container.size.x - slider->handle.size.x;
+    }
+
 }
   
 lf_slider_t* 
@@ -242,14 +248,17 @@ lf_slider_create(
     .margin_right   = 0.0f,
     .margin_top     = 0.0f,
     .margin_bottom  = 0.0f,
-    .corner_radius  = 10.0f, 
+    .corner_radius_percent = 50.0f, 
     .border_width   = 2.0f, 
     .border_color   = LF_WHITE,
   };
 
+  slider->handle.size = (vec2s){.x = 20, .y = 20};
+    slider->handle_props.corner_radius =  
+    slider->handle.size.y * (slider->handle_props.corner_radius_percent / 100.0f);
+
   slider->_initial_handle_props = slider->handle_props; 
 
-  slider->handle.size = (vec2s){.x = 20, .y = 20};
 
   slider->base.layout_type = LayoutNone;
 

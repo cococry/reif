@@ -75,7 +75,7 @@ int32_t lf_windowing_terminate(void);
 
 void lf_windowing_update(void);
 
-void lf_windowing_set_ui_state(lf_ui_state_t* state);
+void lf_window_set_ui_state(lf_window_t win, lf_ui_state_t* state);
 
 lf_event_type_t lf_windowing_get_current_event(void);
 
