@@ -1,12 +1,10 @@
 include config.mk
 
 CC 				= cc
-LIBS 			= -lrunara -lfreetype -lharfbuzz -lfontconfig -lm -lGL -lleif ${PLATFORM_SPECIFIC_LIBS} 
+LIBS 			= ${RUNARA_LIBS} ${PLATFORM_SPECIFIC_LIBS} 
 CFLAGS		= ${WINDOWING} ${ADDITIONAL_FLAGS} -Wall -pedantic -O3 -ffast-math -g
-SRC_FILES = $(wildcard src/*.c src/widgets/*.c)
-SRC_FILES += $(PLATFORM_SPECIFIC)
+SRC_FILES = $(wildcard src/*.c)
 OBJ_FILES = $(SRC_FILES:.c=.o)
-
 
 all: lib/libleif.a
 
