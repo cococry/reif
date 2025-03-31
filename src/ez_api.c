@@ -193,8 +193,7 @@ void
 lf_div_end(lf_ui_state_t* ui) {
   _end_widget(ui);
 }
-
-void
+ void
 lf_button_end(lf_ui_state_t* ui) {
   _end_widget(ui);
 }

@@ -32,7 +32,6 @@ typedef struct {
 #define OVERDRAW_CORNER_RADIUS 2 
 #define MAX_CONCURRENT_TIMERS 16
 
-
 static float get_elapsed_time(void);
 
 static void render_widget_and_submit(
@@ -60,18 +59,17 @@ static lf_windowing_hints_list_t windowing_hints;
 void 
 win_close_callback(lf_ui_state_t* ui, lf_window_t window) {
   if(ui->win != window) return;
-  printf("closed.\n");
-  (void)window;
   ui->running = false;
 }
 
 void 
 win_refresh_callback(lf_ui_state_t* ui, lf_window_t window) {
   if(ui->win != window) return;
-  printf("Refresh: %i\n", (int)window);
   vec2s winsize = lf_win_get_size(window);
   ui->root->container = LF_SCALE_CONTAINER(winsize.x, winsize.y);
   ui->needs_render = true;
+  lf_win_make_gl_context(ui->win);
+  ui->render_resize_display(ui->render_state, winsize.x, winsize.y);
 }
 
 void 
@@ -95,6 +93,7 @@ remove_marked_widgets(lf_widget_t* root) {
 
 void 
 interrupt_all_animations_recursively(lf_widget_t* widget) {
+  if (widget == NULL) return;
   lf_widget_interrupt_all_animations(widget);
 
   for(uint32_t i = 0; i < widget->num_childs; i++) {
@@ -109,7 +108,24 @@ default_root_layout_func(lf_ui_state_t* ui) {
 
 void
 default_idle_delay_func(lf_ui_state_t* ui) {
-  usleep(ui->_frame_duration * 1000000);
+  if (ui == NULL) {
+    fprintf(stderr, "Error: UI state is NULL.\n");
+    return;
+  }
+  if (ui->_frame_duration <= 0) {
+    fprintf(stderr, "Error: Invalid frame duration.\n");
+    return;
+  }
+
+  long seconds = (long) ui->_frame_duration;
+  long nanoseconds = (long)((ui->_frame_duration - seconds) * 1000000000L);
+
+  struct timespec ts;
+  ts.tv_sec = seconds;
+  ts.tv_nsec = nanoseconds;
+  if (nanosleep(&ts, NULL) != 0) {
+    perror("Error in nanosleep");
+  }
 }
 
 void 
@@ -164,6 +180,7 @@ init_state(lf_ui_state_t* state, lf_window_t win) {
 
   state->_idle_delay_func = default_idle_delay_func;
   state->active_widget_id = 0; 
+  state->needs_render = true; 
 }
 
 void update_timers(lf_ui_state_t* ui) {
@@ -245,6 +262,9 @@ root_resize(lf_ui_state_t* ui, lf_widget_t* widget, lf_event_t* ev) {
   ui->root->container = LF_SCALE_CONTAINER(ev->width, ev->height);
   ui->needs_render = true;
   lf_widget_invalidate_size_and_layout(ui->root);
+  lf_win_make_gl_context(ui->win);
+  ui->render_resize_display(ui->render_state, ev->width, ev->height);
+  printf("Resized: %i (%i,%i)\n", (int)ui->win, ev->width, ev->height);
 }
   
 void 
@@ -321,6 +341,13 @@ lf_ui_core_init(lf_window_t win) {
 #endif
 
   init_state(state, win);
+   
+
+  lf_event_t ev = {0};
+  ev.type = WinEventResize; 
+  ev.width = lf_win_get_size(state->win).x; 
+  ev.height = lf_win_get_size(state->win).y; 
+  lf_widget_handle_event(state, state->root, &ev);
 
   return state;
 }
@@ -716,14 +743,11 @@ lf_ui_core_start_timer_looped(lf_ui_state_t* ui, float duration, lf_timer_finish
 
 void 
 lf_ui_core_commit_entire_render(lf_ui_state_t* ui) {
-  if(!ui) return;
-  if(!ui->needs_render) return;
   vec2s win_size = lf_win_get_size(ui->win);
   lf_container_t clear_area = LF_SCALE_CONTAINER(
     win_size.x,
     win_size.y);
   ui->root->container = clear_area;
-  ui->render_resize_display(ui->render_state, win_size.x, win_size.y);
   render_widget_and_submit(ui, ui->root, clear_area);
   lf_win_swap_buffers(ui->win);
 }

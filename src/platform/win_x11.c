@@ -1,4 +1,5 @@
 
+#include <GL/gl.h>
 #include <stdint.h>
 #ifdef LF_X11
 #include <X11/X.h>
@@ -28,9 +29,9 @@ typedef struct {
   lf_win_close_func ev_close_cb;
   lf_win_mouse_move_func ev_move_cb;
   Window win;
-  Window glxwin;
   int32_t win_width, win_height;
   lf_ui_state_t* ui;
+  GLXContext glcontext;
 } window_callbacks_t;
 
 typedef struct {
@@ -38,12 +39,12 @@ typedef struct {
     VisualID visualid;
     int screen;
     unsigned int depth;
-    int klass;
+    int class;
     unsigned long red_mask;
     unsigned long green_mask;
     unsigned long blue_mask;
     int colormap_size;
-    int bits_per_rgb;
+  int bits_per_rgb;
 } visual_info_t;
 
 static lf_windowing_event_func windowing_event_cb = NULL;
@@ -53,10 +54,7 @@ static window_callbacks_t window_callbacks[MAX_WINDOWS];
 static uint32_t n_windows = 0;
 static lf_event_type_t current_event = WinEventNone;
 static Atom wm_protocols_atom, wm_delete_window_atom, motif_wm_hints;
-static GLXContext glcontext;
-static visual_info_t* visual;
-static GLXFBConfig fbconfig;
-static Colormap cmap;
+static GLXContext share_gl_context = 0;
 
 static int last_mouse_x = 0;
 static int last_mouse_y = 0;
@@ -86,12 +84,33 @@ window_callbacks_t* win_data_from_native(lf_window_t win) {
   return NULL;
 }
 
+#include <time.h>
+
+static struct timespec last_resize_time = {0, 0};  // Time of the last resize event
+static const uint32_t resize_debounce_delay_ms = 50;  // Debounce delay in milliseconds
+// Function to check time difference
+bool is_resize_event_debounce_time_passed(void) {
+    struct timespec now;
+    clock_gettime(CLOCK_MONOTONIC, &now);  // Get the current time
+
+    // Calculate the time difference in milliseconds
+    uint32_t time_diff_ms = (now.tv_sec - last_resize_time.tv_sec) * 1000 + (now.tv_nsec - last_resize_time.tv_nsec) / 1000000;
+
+    // If the time difference is less than the debounce delay, return false
+    if (time_diff_ms < resize_debounce_delay_ms) {
+        return false;
+    }
+
+    // Update the last resize event time to the current time
+    last_resize_time = now;
+    return true;
+}
 void 
 handle_event(XEvent *event) {
   lf_event_t ev = {0};
   for (uint32_t i = 0; i < n_windows; ++i) {
-    if (window_callbacks[i].win == event->xany.window) {
       window_callbacks_t win_data = window_callbacks[i]; 
+    if(event->xany.window != win_data.win) continue; 
       switch (event->type) {
         case Expose:
           ev.type = WinEventRefresh;
@@ -106,22 +125,42 @@ handle_event(XEvent *event) {
           }
           break;
         case ConfigureNotify:
-          if(event->xconfigure.width == window_callbacks[i].win_width &&
-            event->xconfigure.height == window_callbacks[i].win_height) break;
-          ev.type = WinEventResize; 
-          ev.width = event->xconfigure.width;
-          ev.height = event->xconfigure.height;
-          current_event = ev.type;
-          get_window_size(display, window_callbacks[i].win, 
-                          &window_callbacks[i].win_width, 
-                          &window_callbacks[i].win_height);
-          if(win_data.ui)
-            lf_widget_handle_event(win_data.ui, win_data.ui->root, &ev);
-          if (window_callbacks[i].ev_resize_cb && win_data.ui)
-            window_callbacks[i].ev_resize_cb(
-              win_data.ui, 
-              (lf_window_t)event->xany.window, 
-              event->xconfigure.width, event->xconfigure.height);
+          if (event->xconfigure.width == window_callbacks[i].win_width &&
+            event->xconfigure.height == window_callbacks[i].win_height) {
+            break;  // No need to process the event if the size is the same
+          }
+
+          // Get the actual size of the window from the X server to confirm the resize
+          XWindowAttributes wa;
+          XGetWindowAttributes(display, window_callbacks[i].win, &wa);
+
+          // If the window's size has changed, handle the resize event
+            printf("resize event on window %i: new size = %dx%d\n", i, wa.width, wa.height);
+
+            // Create the resize event and update the current event type
+            ev.type = WinEventResize;
+            ev.width = wa.width;
+            ev.height = wa.height;
+            current_event = ev.type;
+
+            // Update the window size
+            window_callbacks[i].win_width = wa.width;
+            window_callbacks[i].win_height = wa.height;
+
+            // Call the widget event handler if applicable
+            if (win_data.ui) {
+          lf_win_make_gl_context(win_data.win);
+              lf_widget_handle_event(win_data.ui, win_data.ui->root, &ev);
+            }
+
+            // Call the resize callback if defined
+            if (window_callbacks[i].ev_resize_cb && win_data.ui) {
+              window_callbacks[i].ev_resize_cb(
+                win_data.ui, 
+                (lf_window_t)event->xany.window, 
+                wa.width, wa.height
+              );
+            }
           break;
         case ButtonPress:
           if(event->xbutton.button == Button2) { // Scrollwheel press
@@ -219,6 +258,7 @@ handle_event(XEvent *event) {
             if (window_callbacks[i].ev_close_cb && win_data.ui) {
               window_callbacks[i].ev_close_cb(win_data.ui, (lf_window_t)event->xany.window);
             }
+          glXDestroyContext(display, window_callbacks[i].glcontext);
           }
           break;
         case LeaveNotify: 
@@ -242,7 +282,6 @@ handle_event(XEvent *event) {
                     -1, -1);
             }
             break;
-          }
       }
     }
   }
@@ -277,6 +316,59 @@ create_window(
       winpos_y = hints[i].value;
     }
   }
+
+  int screen_num = DefaultScreen(display);
+
+  static int visdata[] = {
+    GLX_RENDER_TYPE, GLX_RGBA_BIT,
+    GLX_DRAWABLE_TYPE, GLX_WINDOW_BIT,
+    GLX_DOUBLEBUFFER, True,
+    GLX_RED_SIZE, 1,
+    GLX_GREEN_SIZE, 1,
+    GLX_BLUE_SIZE, 1,
+    GLX_ALPHA_SIZE, 1,
+    GLX_DEPTH_SIZE, 1,
+    None
+  };
+
+  int32_t nfb;
+  visual_info_t* visual = NULL;
+  XRenderPictFormat* pic_fmt;
+  GLXFBConfig fbconfig = NULL;  
+  GLXFBConfig* fbconfigs = glXChooseFBConfig(display, screen_num, visdata, &nfb);
+  for(int i = 0; i < nfb; i++) {
+    visual = (visual_info_t*) glXGetVisualFromFBConfig(display, fbconfigs[i]);
+    if(!visual)
+      continue;
+
+    pic_fmt = XRenderFindVisualFormat(display, visual->visual);
+    if(!pic_fmt)
+      continue;
+
+    if(pic_fmt->direct.alphaMask > 0) {
+      fbconfig = fbconfigs[i];
+      break;
+    }
+  }
+  if(!visual) return 0;
+  if(!fbconfig) return 0;
+
+  Colormap cmap = XCreateColormap(display, DefaultRootWindow(display), visual->visual, AllocNone);
+
+  int dummy;
+  if (!glXQueryExtension(display, &dummy, &dummy)) {
+    fprintf(stderr, "reif: OpenGL not supported by X server.\n");
+    assert(false);
+  }
+  GLXContext glcontext = glXCreateNewContext(display, fbconfig, GLX_RGBA_TYPE, share_gl_context, True);
+  if(!share_gl_context)
+    share_gl_context = glcontext;
+  if (!glcontext) {
+    fprintf(stderr, "reif: failed to create an OpenGL context.\n");
+    assert(false);
+  }
+
+
   XTextProperty textprop;
   XSizeHints size_hints;
   XWMHints* startup_state;
@@ -361,14 +453,12 @@ create_window(
                   (unsigned char*) &hints,
                   sizeof(decoration_hints) / sizeof(long));
     
-  Window glxwin = glXCreateWindow(display, fbconfig, win, NULL);
 
   if (n_windows + 1 <= MAX_WINDOWS) {
     window_callbacks[n_windows].win = win;
     int32_t w, h;
     get_window_size(display, win, &w, &h);
     window_callbacks[n_windows].win = win;
-    window_callbacks[n_windows].glxwin = glxwin;
     window_callbacks[n_windows].win_width = w;
     window_callbacks[n_windows].win_height = h;
     window_callbacks[n_windows].ev_mouse_press_cb = NULL;
@@ -377,6 +467,7 @@ create_window(
     window_callbacks[n_windows].ev_refresh_cb = NULL;
     window_callbacks[n_windows].ev_resize_cb = NULL;
     window_callbacks[n_windows].ui = NULL;
+    window_callbacks[n_windows].glcontext = glcontext;
     ++n_windows;
   } else {
     fprintf(stderr, "warning: reached maximum amount of windows to define callbacks for.\n");
@@ -395,59 +486,12 @@ lf_windowing_init(void) {
   wm_protocols_atom = XInternAtom(display, "WM_PROTOCOLS", False);
   wm_delete_window_atom = XInternAtom(display, "WM_DELETE_WINDOW", False);
   motif_wm_hints = XInternAtom(display, "_MOTIF_WM_HINTS", False);
-
-  int screen_num = DefaultScreen(display);
-
-  static int visdata[] = {
-    GLX_RENDER_TYPE, GLX_RGBA_BIT,
-    GLX_DRAWABLE_TYPE, GLX_WINDOW_BIT,
-    GLX_DOUBLEBUFFER, True,
-    GLX_RED_SIZE, 1,
-    GLX_GREEN_SIZE, 1,
-    GLX_BLUE_SIZE, 1,
-    GLX_ALPHA_SIZE, 1,
-    GLX_DEPTH_SIZE, 1,
-    None
-  };
-
-  int32_t nfb;
-  XRenderPictFormat* pic_fmt;
-  GLXFBConfig* fbconfigs = glXChooseFBConfig(display, screen_num, visdata, &nfb);
-  for(int i = 0; i < nfb; i++) {
-    visual = (visual_info_t*) glXGetVisualFromFBConfig(display, fbconfigs[i]);
-    if(!visual)
-      continue;
-
-    pic_fmt = XRenderFindVisualFormat(display, visual->visual);
-    if(!pic_fmt)
-      continue;
-
-    if(pic_fmt->direct.alphaMask > 0) {
-      fbconfig = fbconfigs[i];
-      break;
-    }
-  }
-
-  cmap = XCreateColormap(display, DefaultRootWindow(display), visual->visual, AllocNone);
-
-  int dummy;
-  if (!glXQueryExtension(display, &dummy, &dummy)) {
-    fprintf(stderr, "reif: OpenGL not supported by X server.\n");
-    assert(false);
-  }
-  glcontext = glXCreateNewContext(display, fbconfig, GLX_RGBA_TYPE, 0, True);
-  if (!glcontext) {
-    fprintf(stderr, "reif: failed to create an OpenGL context.\n");
-    assert(false);
-  }
-
   return 0;
 }
 
 int32_t 
 lf_windowing_terminate(void) {
   XCloseDisplay(display);
-  glXDestroyContext(display, glcontext);
   return 0;
 }
 
@@ -507,26 +551,14 @@ lf_win_set_title(lf_window_t win, const char* title) {
 int32_t 
 lf_win_make_gl_context(lf_window_t win) {
   window_callbacks_t* data = win_data_from_native(win);
-  if (glXMakeContextCurrent(
-    display, 
-    data->glxwin, 
-    data->glxwin, 
-    glcontext)) {
-    return 0;
-  } else {
-    fprintf(stderr, "reif: failed to set OpenGL context for Window %i.\n", 
-            (uint32_t)win);
-  }
-  return 1;
+  if(!data) return 1;
+  glXMakeCurrent(display, win, data->glcontext);
+  return 0;
 }
 
 void 
 lf_win_swap_buffers(lf_window_t win) {
-  for (uint32_t i = 0; i < n_windows; ++i) {
-    if (window_callbacks[i].win == (Window)win) {
-      glXSwapBuffers(display, window_callbacks[i].glxwin);
-    }
-  }
+  glXSwapBuffers(display, win);
 }
 
 void 

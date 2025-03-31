@@ -3,7 +3,7 @@ include config.mk
 CC 				= cc
 LIBS 			= ${RUNARA_LIBS} ${PLATFORM_SPECIFIC_LIBS} 
 CFLAGS		= ${WINDOWING} ${ADDITIONAL_FLAGS} -Wall -pedantic -O3 -ffast-math -g
-SRC_FILES = $(wildcard src/*.c)
+SRC_FILES = $(wildcard src/*.c src/platform/*.c src/widgets/*.c)
 OBJ_FILES = $(SRC_FILES:.c=.o)
 
 all: lib/libleif.a
