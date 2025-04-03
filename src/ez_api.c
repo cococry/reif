@@ -99,7 +99,7 @@ _text_create_from_level(lf_ui_state_t* ui, const char* label, lf_text_level lvl)
 
     widget->_rendered_within_comp = true;
 
-    if (widget->type != WidgetTypeText) {
+    if (widget->type != LF_WIDGET_TYPE_TEXT) {
       fprintf(stderr, "leif: _text_create_from_level: mismatch in widget tree. widget ID: %i.\n", widget->id);
       return NULL;
     }
@@ -159,7 +159,7 @@ lf_div(lf_ui_state_t* ui) {
 
     return div;
   } else {
-    return (lf_div_t*)_get_assignment_widget(ui, WidgetTypeDiv);
+    return (lf_div_t*)_get_assignment_widget(ui, LF_WIDGET_TYPE_DIV);
   }
 }
 
@@ -184,7 +184,7 @@ lf_button(lf_ui_state_t* ui) {
 
     return btn;
   } else {
-    return (lf_button_t*)_get_assignment_widget(ui, WidgetTypeButton);
+    return (lf_button_t*)_get_assignment_widget(ui, LF_WIDGET_TYPE_BUTTON);
   }
 }
 
@@ -223,7 +223,7 @@ lf_slider(lf_ui_state_t* ui, float* val, float min, float max) {
 
     widget->_rendered_within_comp = true;
 
-    if (widget->type != WidgetTypeSlider) {
+    if (widget->type != LF_WIDGET_TYPE_SLIDER) {
       fprintf(stderr, "leif: lf_slider: mismatch in widget tree. widget ID: %i.\n", widget->id);
       return NULL;
     }
@@ -238,37 +238,37 @@ lf_slider(lf_ui_state_t* ui, float* val, float min, float max) {
 
 lf_text_t* 
 lf_text_p(lf_ui_state_t* ui, const char* label) {
-  return _text_create_from_level(ui, label, TextLevelParagraph);
+  return _text_create_from_level(ui, label, LF_TEXT_LEVEL_PARGRAPH);
 }
 
 lf_text_t* 
 lf_text_h1(lf_ui_state_t* ui, const char* label) {
-  return _text_create_from_level(ui, label, TextLevelH1);
+  return _text_create_from_level(ui, label, LF_TEXT_LEVEL_H1);
 }
 
 lf_text_t* 
 lf_text_h2(lf_ui_state_t* ui, const char* label) {
-  return _text_create_from_level(ui, label, TextLevelH2);
+  return _text_create_from_level(ui, label, LF_TEXT_LEVEL_H2);
 }
 
 lf_text_t*
 lf_text_h3(lf_ui_state_t* ui, const char* label) {
-  return _text_create_from_level(ui, label, TextLevelH3);
+  return _text_create_from_level(ui, label, LF_TEXT_LEVEL_H3);
 }
 
 lf_text_t*
 lf_text_h4(lf_ui_state_t* ui, const char* label) {
-  return _text_create_from_level(ui, label, TextLevelH4);
+  return _text_create_from_level(ui, label, LF_TEXT_LEVEL_H4);
 }
 
 lf_text_t*
 lf_text_h5(lf_ui_state_t* ui, const char* label) {
-  return _text_create_from_level(ui, label, TextLevelH5);
+  return _text_create_from_level(ui, label, LF_TEXT_LEVEL_H5);
 }
 
 lf_text_t* 
 lf_text_h6(lf_ui_state_t* ui, const char* label) {
-  return _text_create_from_level(ui, label, TextLevelH6);
+  return _text_create_from_level(ui, label, LF_TEXT_LEVEL_H6);
 }
 
 lf_text_t* 
@@ -292,7 +292,7 @@ lf_text_sized(lf_ui_state_t* ui, const char* label, uint32_t pixel_size) {
     } 
     lf_widget_t* widget = ui->_ez.last_parent->childs[ui->_ez.index_stack[ui->_ez.index_depth]++];
     widget->_rendered_within_comp = true;
-    if(widget->type != WidgetTypeText) {
+    if(widget->type != LF_WIDGET_TYPE_TEXT) {
       fprintf(stderr,"leif: lf_text_sized: mismatch in widget tree. widget ID: %i.\n", widget->id);
       return NULL;
     }
@@ -319,7 +319,6 @@ lf_image(lf_ui_state_t* ui, const char* filepath) {
     img->base._rendered_within_comp = true;
     ui->_ez.current_widget = &img->base;
     ui->_ez.index_stack[ui->_ez.index_depth]++;
-    printf("created image.\n");
     return img; 
   } else {
     if(_assign_idx(ui) >= ui->_ez.last_parent->num_childs) {
@@ -329,7 +328,7 @@ lf_image(lf_ui_state_t* ui, const char* filepath) {
     lf_widget_t* widget = ui->_ez.last_parent->childs[
       ui->_ez.index_stack[ui->_ez.index_depth]++];
     widget->_rendered_within_comp = true;
-    if(widget->type != WidgetTypeImage) {
+    if(widget->type != LF_WIDGET_TYPE_IMAGE) {
       fprintf(stderr,"leif: mismatch in widget tree. widget ID\n");
       return NULL;
     }
@@ -354,7 +353,7 @@ lf_image_sized(lf_ui_state_t* ui, const char* filepath, uint32_t w, uint32_t h) 
     }
     lf_widget_t* widget = ui->_ez.last_parent->childs[ui->_ez.index_stack[ui->_ez.index_depth]++];
     widget->_rendered_within_comp = true;
-    if(widget->type != WidgetTypeImage) {
+    if(widget->type != LF_WIDGET_TYPE_IMAGE) {
       fprintf(stderr,"leif: lf_image_sized: mismatch in widget tree. widget ID\n");
       return NULL;
     }
@@ -379,7 +378,7 @@ lf_image_sized_w(lf_ui_state_t* ui, const char* filepath, uint32_t w) {
   } else {
     lf_widget_t* widget = ui->_ez.last_parent->childs[ui->_ez.index_stack[ui->_ez.index_depth]++];
     widget->_rendered_within_comp = true;
-    if(widget->type != WidgetTypeImage) {
+    if(widget->type != LF_WIDGET_TYPE_IMAGE) {
       fprintf(stderr,"leif: lf_image_sized_w: mismatch in widget tree. widget ID\n");
       return NULL;
     }
@@ -389,7 +388,6 @@ lf_image_sized_w(lf_ui_state_t* ui, const char* filepath, uint32_t w) {
     return (lf_image_t*)widget;
   }
 }
-
 
 lf_image_t* 
 lf_image_sized_h(lf_ui_state_t* ui, const char* filepath, uint32_t h) {
@@ -406,7 +404,7 @@ lf_image_sized_h(lf_ui_state_t* ui, const char* filepath, uint32_t h) {
     lf_widget_t* widget = ui->_ez.last_parent->childs[
       ui->_ez.index_stack[ui->_ez.index_depth]++
     ];
-    if(widget->type != WidgetTypeImage) {
+    if(widget->type != LF_WIDGET_TYPE_IMAGE) {
       fprintf(stderr,"leif: lf_image_sized_h: mismatch in widget tree. widget ID\n");
       return NULL;
     }

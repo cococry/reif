@@ -25,7 +25,7 @@ _div_handle_event(lf_ui_state_t* ui, lf_widget_t* widget, lf_event_t* event) {
   };
   if(!widget->scrollable) return;
   lf_div_t* div = (lf_div_t*)widget;
-  if(event->type == WinEventMouseWheel && lf_point_intersets_container(mouse, div_container)) {
+  if(event->type == LF_EVENT_MOUSE_WHEEL && lf_point_intersets_container(mouse, div_container)) {
     if(!(event->scroll_x != 0 || event->scroll_y != 0)) return; 
     float total_scrollable_area = 
       ((event->scroll_x != 0) ? widget->total_child_size.x : widget->total_child_size.y) -
@@ -63,7 +63,7 @@ _div_handle_event(lf_ui_state_t* ui, lf_widget_t* widget, lf_event_t* event) {
         ui->theme->scrollbar_props.color);
     }
 
-    if(event->type == WinEventMouseRelease && scrollbar->held) {
+    if(event->type == LF_EVENT_MOUSE_RELEASE && scrollbar->held) {
       scrollbar->held = false;
       ui->active_widget_id = 0;
       scrollbar->hovered = false;
@@ -73,7 +73,7 @@ _div_handle_event(lf_ui_state_t* ui, lf_widget_t* widget, lf_event_t* event) {
         ui->theme->scrollbar_props.color);
       ui->needs_render = true;
     }
-    if(event->type == WinEventMousePress && lf_point_intersets_container(mouse, container)) {
+    if(event->type == LF_EVENT_MOUSE_PRESS && lf_point_intersets_container(mouse, container)) {
       scrollbar->held = true;
       ui->active_widget_id = widget->id;
       ui->needs_render = true;
@@ -85,7 +85,7 @@ _div_handle_event(lf_ui_state_t* ui, lf_widget_t* widget, lf_event_t* event) {
         lf_color_dim(ui->theme->scrollbar_props.color, 80.0f));
     }
 
-    else if(on_scrollbar && (event->type == WinEventMouseMove || event->type == WinEventMouseWheel) &&
+    else if(on_scrollbar && (event->type == LF_EVENT_MOUSE_MOVE || event->type == LF_EVENT_MOUSE_WHEEL) &&
       !scrollbar->hovered && ui->active_widget_id == 0) {
       scrollbar->hovered = true;
       lf_widget_set_prop_color(
@@ -94,7 +94,7 @@ _div_handle_event(lf_ui_state_t* ui, lf_widget_t* widget, lf_event_t* event) {
         lf_color_dim(ui->theme->scrollbar_props.color, 90.0f));
       ui->needs_render = true;
     }
-    else if (event->type == WinEventMouseMove && scrollbar->held) {
+    else if (event->type == LF_EVENT_MOUSE_MOVE&& scrollbar->held) {
       if(i == LF_SCROLLBAR_VERTICAL) {
         float total_scrollable_area = widget->total_child_size.y - widget->container.size.y;
         float total_scrollbar_movable_area = widget->container.size.y - 
@@ -157,14 +157,14 @@ _div_render(lf_ui_state_t* ui, lf_widget_t* widget) {
 void 
 _div_shape(lf_ui_state_t* ui, lf_widget_t* widget) {
   if(!widget) return;
-  if(widget->type != WidgetTypeDiv) return;
+  if(widget->type != LF_WIDGET_TYPE_DIV) return;
   lf_widget_apply_layout(ui, widget);
 }
 
 void 
 _div_calc_size(lf_ui_state_t* ui, lf_widget_t* widget) {
   if(!widget) return;
-  if(widget->type != WidgetTypeDiv) return;
+  if(widget->type != LF_WIDGET_TYPE_DIV) return;
   lf_widget_calc_layout_size(ui, widget);
 }
 
@@ -186,7 +186,7 @@ lf_div_create(
 
   div->base = *lf_widget_create(
     ui->crnt_widget_id++,
-    WidgetTypeDiv,
+    LF_WIDGET_TYPE_DIV,
     LF_SCALE_CONTAINER(parent->container.size.x,0),
     ui->theme->div_props,
     _div_render,
@@ -196,13 +196,13 @@ lf_div_create(
     );
 
   lf_widget_listen_for(&div->base, 
-                       WinEventMouseRelease | WinEventMousePress | WinEventMouseMove | WinEventMouseWheel);
+                       LF_EVENT_MOUSE_RELEASE | LF_EVENT_MOUSE_PRESS | LF_EVENT_MOUSE_MOVE| LF_EVENT_MOUSE_WHEEL);
 
   ui->crnt_widget_id++;
 
   lf_widget_add_child(parent, (lf_widget_t*)div);
 
-  div->base.layout_type = LayoutVertical;
+  div->base.layout_type = LF_LAYOUT_VERTICAL;
   div->_column_count = 0;
 
   return div;

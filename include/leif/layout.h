@@ -6,27 +6,27 @@ typedef struct lf_widget_t lf_widget_t;
 typedef struct lf_ui_state_t lf_ui_state_t;
 
 typedef enum {
-  LayoutNone = 0,
-  LayoutVertical = 0,
-  LayoutHorizontal,
-  LayoutResponsiveGrid,
+  LF_LAYOUT_NONE = 0,
+  LF_LAYOUT_VERTICAL,
+  LF_LAYOUT_HORIZONTAL,
+  LF_LAYOUT_GRID,
 } lf_layout_type_t;
 
 typedef enum {
-  AlignCenterHorizontal  = 1 << 0,
-  AlignCenterVertical = 1 << 1
+  LF_ALIGN_CENTER_HORIZONTAL = 1 << 0,
+  LF_ALIGN_CENTER_VERTICAL = 1 << 1
 } lf_alignment_flag_t;
 
 typedef enum {
-  JustifyStart = 0,
-  JustifySpaceBetween,
-  JustifyEnd
+  LF_JUSTIFY_START = 0,
+  LF_JUSTIFY_SPACE_BETWEEN,
+  LF_JUSTIFY_END, 
 } lf_justify_type_t;
 
 typedef enum {
-  SizingFitToParent = 0,
-  SizingFitToContent,
-  SizingGrow
+  LF_SIZING_FIT_PARENT = 0,
+  LF_SIZING_FIT_CONTENT,
+  LF_SIZING_GROW 
 } lf_sizing_type_t;
 
 void lf_layout_vertical(lf_ui_state_t* ui, lf_widget_t* widget);

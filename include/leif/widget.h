@@ -8,13 +8,13 @@
 #include "animation.h"
 
 typedef enum {
-  WidgetTypeUndefined = 0,
-  WidgetTypeRoot,
-  WidgetTypeDiv,
-  WidgetTypeButton,
-  WidgetTypeText,
-  WidgetTypeImage,
-  WidgetTypeSlider,
+  LF_WIDGET_TYPE_UNDEFINED = 0,
+  LF_WIDGET_TYPE_ROOT,
+  LF_WIDGET_TYPE_DIV,
+  LF_WIDGET_TYPE_BUTTON,
+  LF_WIDGET_TYPE_TEXT,
+  LF_WIDGET_TYPE_IMAGE,
+  LF_WIDGET_TYPE_SLIDER,
 } lf_widget_type_t;
 
 typedef struct lf_widget_t lf_widget_t;
@@ -264,4 +264,3 @@ void lf_widget_set_pos_y(lf_widget_t* widget, float pos);
 
 bool lf_widget_or_childs_changed_size(
     lf_widget_t* widget);
-

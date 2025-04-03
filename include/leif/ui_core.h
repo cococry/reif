@@ -149,7 +149,6 @@ void lf_ui_core_end_render(lf_ui_state_t* ui);
 
 void lf_ui_core_terminate(lf_ui_state_t* ui);
 
-
 void lf_ui_core_remove_all_widgets(lf_ui_state_t* ui);
 
 void lf_ui_core_add_page(lf_ui_state_t* ui, lf_page_func_t page_func, const char* identifier);

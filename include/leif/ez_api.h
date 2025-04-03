@@ -10,14 +10,13 @@
 #include "widgets/slider.h"
 
 typedef enum {
-  TextLevelH1         = 0,
-  TextLevelH2         = 1,
-  TextLevelH3         = 2,
-  TextLevelH4         = 3,
-  TextLevelH5         = 4,
-  TextLevelH6         = 5,
-  TextLevelParagraph  = 6,
-  TextLevelMax        = 7
+  LF_TEXT_LEVEL_H1 = 0,
+  LF_TEXT_LEVEL_H2 = 1,
+  LF_TEXT_LEVEL_H3 = 2,
+  LF_TEXT_LEVEL_H4 = 3,
+  LF_TEXT_LEVEL_H5 = 4,
+  LF_TEXT_LEVEL_H6 = 5,
+  LF_TEXT_LEVEL_PARGRAPH = 6
 } lf_text_level;
 
 #define lf_style_widget_prop(ui, widget, prop, val) \

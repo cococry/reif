@@ -71,7 +71,7 @@ _slider_handle_event(
   
   bool on_slider = lf_point_intersets_container(mouse, slider_container);
 
-  if(event->type == WinEventMousePress && on_slider) {
+  if(event->type == LF_EVENT_MOUSE_PRESS && on_slider) {
     _slider_handle_mouse(mouse, widget, slider);
     slider->_held = true;
     ui->active_widget_id = widget->id;
@@ -81,7 +81,7 @@ _slider_handle_event(
       &slider->handle_props.color, 
       lf_color_dim(slider->_initial_handle_props.color, 80.0f));
   }
-  if(!on_handle && event->type == WinEventMouseMove &&  !slider->_held && slider->_hovered) {
+  if(!on_handle && event->type == LF_EVENT_MOUSE_MOVE &&  !slider->_held && slider->_hovered) {
     slider->_held = false;
     slider->_hovered = false;
     ui->needs_render = true;
@@ -95,7 +95,7 @@ _slider_handle_event(
     }
     return;
   }
- if(on_handle && event->type == WinEventMouseMove &&
+ if(on_handle && event->type == LF_EVENT_MOUSE_MOVE &&
     !slider->_hovered && ui->active_widget_id == 0) {
     slider->_hovered = true;
     lf_widget_set_prop_color(
@@ -109,7 +109,7 @@ _slider_handle_event(
     return;
   }
 
-  if(event->type == WinEventMouseRelease && slider->_held) {
+  if(event->type == LF_EVENT_MOUSE_RELEASE && slider->_held) {
     slider->_held = false;
       lf_widget_set_prop_color(
         ui, widget, 
@@ -124,7 +124,7 @@ _slider_handle_event(
     ui->active_widget_id = 0;
     return;
   }
-  if(event->type == WinEventMousePress && on_handle) {
+  if(event->type == LF_EVENT_MOUSE_PRESS && on_handle) {
     slider->_held = true;
     ui->active_widget_id = widget->id;
     ui->needs_render = true;
@@ -134,7 +134,7 @@ _slider_handle_event(
       lf_color_dim(slider->_initial_handle_props.color, 80.0f));
     return;
   }
-  if(event->type == WinEventMouseMove && slider->_held) {
+  if(event->type == LF_EVENT_MOUSE_MOVE && slider->_held) {
     ui->needs_render = true;
     _slider_handle_mouse(mouse, widget, slider);
     if(slider->on_slide)
@@ -227,7 +227,7 @@ lf_slider_create(
   lf_widget_props_t props = ui->theme->slider_props;
   slider->base = *lf_widget_create(
     ui->crnt_widget_id++,
-    WidgetTypeSlider,
+    LF_WIDGET_TYPE_SLIDER,
     LF_SCALE_CONTAINER(
       150, 
       5),
@@ -260,10 +260,10 @@ lf_slider_create(
   slider->_initial_handle_props = slider->handle_props; 
 
 
-  slider->base.layout_type = LayoutNone;
+  slider->base.layout_type = LF_LAYOUT_NONE;
 
   lf_widget_listen_for(&slider->base, 
-                       WinEventMouseRelease | WinEventMousePress | WinEventMouseMove);
+                       LF_EVENT_MOUSE_RELEASE | LF_EVENT_MOUSE_PRESS | LF_EVENT_MOUSE_MOVE);
   
   lf_widget_add_child(parent, (lf_widget_t*)slider);
 

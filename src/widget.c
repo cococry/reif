@@ -118,8 +118,8 @@ lf_widget_create(
   widget->props = props;
   widget->_rendered_props = props;
   widget->_initial_props = props;
-  widget->justify_type = JustifyStart;
-  widget->sizing_type = SizingFitToParent;
+  widget->justify_type = LF_JUSTIFY_START;
+  widget->sizing_type = LF_SIZING_FIT_PARENT;
 
   widget->render = render;
   widget->handle_event = handle_event;
@@ -227,7 +227,7 @@ lf_widget_render(lf_ui_state_t* ui,  lf_widget_t* widget) {
     }
 #endif
 #ifdef LF_RUNARA
-    if(widget->type == WidgetTypeDiv) {
+    if(widget->type == LF_WIDGET_TYPE_DIV) {
       rn_set_cull_start_y(
           (RnState*)ui->render_state, 
           widget_start_y > parent_start_y ? widget_start_y : parent_start_y 
@@ -257,7 +257,7 @@ lf_widget_render(lf_ui_state_t* ui,  lf_widget_t* widget) {
   for(uint32_t i = 0; i < widget->num_childs; i++) {
     lf_widget_render(ui, widget->childs[i]);
   }
-  if(widget->type == WidgetTypeDiv && widget->scrollable) {
+  if(widget->type == LF_WIDGET_TYPE_DIV && widget->scrollable) {
     lf_div_t* div = (lf_div_t*)widget;
 
     vec2s total_scrollable_area = (vec2s){
@@ -627,13 +627,13 @@ void
 lf_widget_apply_layout(lf_ui_state_t* ui, lf_widget_t* widget) {
   if(!widget) return;
   switch (widget->layout_type) {
-    case LayoutVertical:
+    case LF_LAYOUT_VERTICAL:
       lf_layout_vertical(ui, widget);
       break;
-    case LayoutHorizontal:
+    case LF_LAYOUT_HORIZONTAL:
       lf_layout_horizontal(ui, widget);
       break;
-    case LayoutResponsiveGrid:
+    case LF_LAYOUT_GRID:
       lf_layout_responsive_grid(ui, widget);
       break;
     default:
@@ -645,13 +645,13 @@ void
 lf_widget_calc_layout_size(lf_ui_state_t* ui, lf_widget_t* widget) {
   if(!widget) return;
   switch (widget->layout_type) {
-    case LayoutVertical: 
+    case LF_LAYOUT_VERTICAL: 
       lf_size_calc_vertical(ui, widget);
       break;
-    case LayoutHorizontal:
+    case LF_LAYOUT_HORIZONTAL:
       lf_size_calc_horizontal(ui, widget);
       break;
-    case LayoutResponsiveGrid:
+    case LF_LAYOUT_GRID:
       break;
     default:
         break;
@@ -905,7 +905,7 @@ lf_widget_set_max_height(lf_widget_t* widget, float height) {
 void 
 lf_widget_set_font_style(lf_ui_state_t* ui, lf_widget_t* widget, lf_font_style_t style) {
   widget->font_style = style;
-  if(widget->type == WidgetTypeText) {
+  if(widget->type == LF_WIDGET_TYPE_TEXT) {
     lf_text_set_font(ui, (lf_text_t*)widget, widget->font_family, style, ((lf_text_t*)widget)->font.pixel_size);
   }
   for(uint32_t i = 0; i < widget->num_childs; i++) {
@@ -916,7 +916,7 @@ lf_widget_set_font_style(lf_ui_state_t* ui, lf_widget_t* widget, lf_font_style_t
 void 
 lf_widget_set_font_family(lf_ui_state_t* ui, lf_widget_t* widget, const char* font_family) {
   widget->font_family = font_family;
-  if(widget->type == WidgetTypeText) {
+  if(widget->type == LF_WIDGET_TYPE_TEXT) {
     lf_text_set_font(ui, (lf_text_t*)widget, font_family, widget->font_style, ((lf_text_t*)widget)->font.pixel_size);
   }
   for(uint32_t i = 0; i < widget->num_childs; i++) {
@@ -927,7 +927,7 @@ lf_widget_set_font_family(lf_ui_state_t* ui, lf_widget_t* widget, const char* fo
 void 
 lf_widget_set_font_size(lf_ui_state_t* ui, lf_widget_t* widget, uint32_t pixel_size) {
   widget->font_size = pixel_size;
-  if(widget->type == WidgetTypeText) {
+  if(widget->type == LF_WIDGET_TYPE_TEXT) {
     lf_text_set_font(ui, (lf_text_t*)widget, widget->font_family, widget->font_style, pixel_size); 
   }
   for(uint32_t i = 0; i < widget->num_childs; i++) {

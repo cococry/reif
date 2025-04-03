@@ -68,14 +68,12 @@ create_window(
   uint32_t flags, 
   lf_windowing_hint_kv_t* hints, 
   uint32_t nhints) {
-  (void)flags
+  (void)flags;
   for(uint32_t i = 0; i < nhints; i++) {
     if(hints[i].key == LF_WINDOWING_HINT_TRANSPARENT_FRAMEBUFFER) 
       glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, hints[i].value);
-    }
-    if(hints[i].key == LF_WINDOWING_HINT_DECORATE) 
+    if(hints[i].key == LF_WINDOWING_HINT_DECORATED) 
       glfwWindowHint(GLFW_DECORATED, hints[i].value);
-    }
   }
   GLFWwindow* win = glfwCreateWindow(
     width, height, 
@@ -131,7 +129,7 @@ glfw_mouse_button_callback(
   lf_event_t* ev = malloc(sizeof(*ev));
   memset(ev, 0, sizeof(*ev));
   ev->button = button;
-  ev->type = (action != GLFW_RELEASE) ? WinEventMousePress : WinEventMouseRelease;
+  ev->type = (action != GLFW_RELEASE) ? LF_EVENT_MOUSE_PRESS : LF_EVENT_MOUSE_RELEASE;
 
   glfwGetCursorPos(window, &xpos, &ypos);
   if(last_mouse_x == 0) last_mouse_x = xpos;
@@ -150,13 +148,13 @@ glfw_mouse_button_callback(
       if(window_callbacks[i].win == window && window_callbacks[i].ev_mouse_press_cb)
         window_callbacks[i].ev_mouse_press_cb(ui, window, button);
     }
-    current_event = WinEventMouseRelease;
+    current_event = LF_EVENT_MOUSE_RELEASE;
   } else {
     for(uint32_t i = 0; i < n_windows; i++) {
       if(window_callbacks[i].win == window && window_callbacks[i].ev_mouse_release_cb)
         window_callbacks[i].ev_mouse_release_cb(ui, window, button);
     }
-    current_event = WinEventMousePress;
+    current_event = LF_EVENT_MOUSE_PRESS;
   }
 
 }
@@ -167,9 +165,9 @@ glfw_resize_callback(
   int32_t w, int32_t h) {
   lf_event_t* ev = malloc(sizeof(*ev));
   memset(ev, 0, sizeof(*ev));
-  ev->type = WinEventResize; 
+  ev->type = LF_EVENT_WINDOW_RESIZE; 
   ev->width = w; ev->height = h;
-  current_event = WinEventResize;
+  current_event = LF_EVENT_WINDOW_RESIZE;
   lf_widget_handle_event(ui, ui->root, ev);
   free(ev);
   for(uint32_t i = 0; i < n_windows; i++) {
@@ -183,8 +181,8 @@ glfw_refresh_callback(
   GLFWwindow* window) {
   lf_event_t* ev = malloc(sizeof(*ev));
   memset(ev, 0, sizeof(*ev));
-  ev->type = WinEventRefresh; 
-  current_event = WinEventRefresh;
+  ev->type = LF_EVENT_WINDOW_REFRESH; 
+  current_event = LF_EVENT_WINDOW_REFRESH;
   lf_widget_handle_event(ui, ui->root, ev);
   free(ev);
   for(uint32_t i = 0; i < n_windows; i++) {
@@ -197,7 +195,7 @@ void
 glfw_scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
   lf_event_t* ev = malloc(sizeof(*ev));
   memset(ev, 0, sizeof(*ev));
-  ev->type = WinEventMouseWheel;
+  ev->type = LF_EVENT_MOUSE_WHEEL;
   ev->scroll_x = (int16_t)xoffset;
   ev->scroll_y = (int16_t)yoffset;
 
@@ -206,7 +204,7 @@ glfw_scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
   ev->x = (int16_t)xpos;
   ev->y = (int16_t)ypos;
 
-  current_event = WinEventMouseWheel;
+  current_event = LF_EVENT_MOUSE_WHEEL;
   lf_widget_handle_event(ui, ui->root, ev);
   free(ev);
   for(uint32_t i = 0; i < n_windows; i++) {
@@ -223,8 +221,8 @@ glfw_close_callback(GLFWwindow* window) {
     }
   lf_event_t* ev = malloc(sizeof(*ev));
   memset(ev, 0, sizeof(*ev));
-  ev->type = WinEventClose; 
-  current_event = WinEventClose;
+  ev->type = LF_EVENT_WINDOW_CLOSE; 
+  current_event = LF_EVENT_WINDOW_CLOSE;
   lf_widget_handle_event(ui, ui->root, ev);
   free(ev);
 }
@@ -248,8 +246,8 @@ glfw_mouse_move_callback(
   last_mouse_x = xpos;
   last_mouse_y = ypos;
 
-  ev->type = WinEventMouseMove;
-  current_event = WinEventMouseMove; 
+  ev->type = LF_EVENT_MOUSE_MOVE;
+  current_event = LF_EVENT_MOUSE_MOVE; 
   lf_widget_handle_event(ui, ui->root, ev);
   free(ev);
 }
@@ -271,7 +269,7 @@ lf_windowing_terminate(void) {
 
 void
 lf_windowing_update(void) {
-  current_event = WinEventNone;
+  current_event = LF_EVENT_NONE;
 }
 
 void 
@@ -295,10 +293,6 @@ lf_windowing_next_event(void) {
     windowing_event_cb(&current_event);
 }
 
-void*
-lf_win_get_display(void) {
-  return NULL;
-}
 lf_window_t 
 lf_win_create(uint32_t width, uint32_t height, const char* title) {
   return create_window(width, height, title, 0, NULL, 0);
@@ -427,16 +421,24 @@ lf_win_get_refresh_rate(lf_window_t win) {
 
         if (window_x >= monitor_x && window_x < monitor_x + mode->width &&
             window_y >= monitor_y && window_y < monitor_y + mode->height) {
-            printf("refresh rate: %i\n", mode->refreshRate);
             return mode->refreshRate; 
         }
     }
-
     return -1;
 }
 
 void 
 lf_windowing_set_event_cb(lf_windowing_event_func cb) {
   windowing_event_cb = cb;
+}
+
+void 
+lf_win_hide(lf_window_t win) {
+  glfwHideWindow(win);
+} 
+
+void 
+lf_win_show(lf_window_t win) {
+  glfwShowWindow(win);
 }
 #endif

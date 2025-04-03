@@ -17,7 +17,7 @@ _recalculate_label(
   };
 
   float wrap = widget->parent->container.pos.x + widget->parent->container.size.x - widget->parent->props.padding_right;
-  if(widget->parent->sizing_type == SizingFitToContent) {
+  if(widget->parent->sizing_type == LF_SIZING_FIT_CONTENT) {
     wrap = -1.0f;
   }
   lf_text_dimension_t text_dimension = ui->render_get_paragraph_dimension(
@@ -47,7 +47,7 @@ _text_size_calc(
   lf_ui_state_t* ui, 
   lf_widget_t* widget
 ) {
-  if(widget->type != WidgetTypeText || !widget) return;
+  if(widget->type != LF_WIDGET_TYPE_TEXT || !widget) return;
   if(!widget->_needs_size_calc) return;
   lf_text_t* text = (lf_text_t*)widget;
   _recalculate_label(ui, text);
@@ -68,7 +68,7 @@ _text_render(
   float wrap = widget->parent->container.pos.x + 
    widget->parent->container.size.x - widget->parent->props.padding_right;
    
-  if(widget->parent->sizing_type == SizingFitToContent) {
+  if(widget->parent->sizing_type == LF_SIZING_FIT_CONTENT) {
     wrap = -1.0f;
   }
 
@@ -121,7 +121,7 @@ lf_text_t* _text_create(
 
   text->base = *lf_widget_create(
     ui->crnt_widget_id++,
-    WidgetTypeText,
+    LF_WIDGET_TYPE_TEXT,
     LF_SCALE_CONTAINER(text_dimension.width, text_dimension.height),
     props,
     _text_render, 
@@ -130,7 +130,7 @@ lf_text_t* _text_create(
     _text_size_calc
   );
   text->base.props.text_color = parent->props.text_color;
-  text->base.layout_type = LayoutNone;
+  text->base.layout_type = LF_LAYOUT_NONE;
   lf_widget_add_child(parent, (lf_widget_t*)text);
 
   _recalculate_label(ui, text);

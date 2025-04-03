@@ -43,7 +43,7 @@ _button_handle_event(
   lf_button_t* button = (lf_button_t*)widget;
   bool on_button = lf_point_intersets_container(mouse, container);
 
-  if(!on_button && event->type == WinEventMouseMove &&  !button->_held && button->_hovered) {
+  if(!on_button && event->type == LF_EVENT_MOUSE_MOVE &&  !button->_held && button->_hovered) {
     button->_held = false;
     button->_hovered = false;
     ui->needs_render = true;
@@ -57,7 +57,7 @@ _button_handle_event(
     }
     return;
   }
- if(on_button && event->type == WinEventMouseMove &&
+ if(on_button && event->type == LF_EVENT_MOUSE_MOVE &&
     !button->_hovered && ui->active_widget_id == 0) {
     button->_hovered = true;
     lf_widget_set_prop_color(
@@ -71,7 +71,7 @@ _button_handle_event(
     return;
   }
 
-  if(event->type == WinEventMouseRelease && button->_held) {
+  if(event->type == LF_EVENT_MOUSE_RELEASE && button->_held) {
     button->_held = false;
       lf_widget_set_prop_color(
         ui, widget, 
@@ -86,7 +86,7 @@ _button_handle_event(
     ui->active_widget_id = 0;
     return;
   }
-  if(event->type == WinEventMousePress && on_button) {
+  if(event->type == LF_EVENT_MOUSE_PRESS && on_button) {
     button->_held = true;
     ui->active_widget_id = widget->id;
     ui->needs_render = true;
@@ -120,7 +120,7 @@ void
 _button_shape(lf_ui_state_t* ui, lf_widget_t* widget) {
   (void)ui;
   if(!widget) return;
-  if(widget->type != WidgetTypeButton) return;
+  if(widget->type != LF_WIDGET_TYPE_BUTTON) return;
   lf_widget_apply_layout(ui, widget);
 }
 
@@ -128,7 +128,7 @@ void
 _button_size_calc(lf_ui_state_t* ui, lf_widget_t* widget) {
   (void)ui;
   if(!widget) return;
-  if(widget->type != WidgetTypeButton) return;
+  if(widget->type != LF_WIDGET_TYPE_BUTTON) return;
   lf_widget_calc_layout_size(ui, widget);
 }
   
@@ -147,7 +147,7 @@ lf_button_create(
   lf_widget_props_t props = ui->theme->button_props;
   button->base = *lf_widget_create(
     ui->crnt_widget_id++,
-    WidgetTypeButton,
+    LF_WIDGET_TYPE_BUTTON,
     LF_SCALE_CONTAINER(
       0, 
       0),
@@ -158,12 +158,12 @@ lf_button_create(
     _button_size_calc
   );
 
-  button->base.layout_type = LayoutHorizontal;
-  lf_widget_set_alignment(&button->base, AlignCenterHorizontal | AlignCenterVertical);
-  button->base.sizing_type = SizingFitToContent;
+  button->base.layout_type = LF_LAYOUT_HORIZONTAL;
+  lf_widget_set_alignment(&button->base, LF_ALIGN_CENTER_VERTICAL | LF_ALIGN_CENTER_HORIZONTAL);
+  button->base.sizing_type = LF_SIZING_FIT_CONTENT;
 
   lf_widget_listen_for(&button->base, 
-                       WinEventMouseRelease | WinEventMousePress | WinEventMouseMove);
+                       LF_EVENT_MOUSE_PRESS | LF_EVENT_MOUSE_RELEASE | LF_EVENT_MOUSE_MOVE);
   
   lf_widget_add_child(parent, (lf_widget_t*)button);
 

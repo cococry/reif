@@ -36,7 +36,7 @@ lf_image_t* _img_create(
 
   img->base = *lf_widget_create(
     ui->crnt_widget_id++,
-    WidgetTypeImage,
+    LF_WIDGET_TYPE_IMAGE,
     LF_SCALE_CONTAINER(img->width, img->height),
     ui->theme->img_props,
     _img_render, 
@@ -45,7 +45,7 @@ lf_image_t* _img_create(
     NULL
   );
 
-  img->base.layout_type = LayoutNone;
+  img->base.layout_type = LF_LAYOUT_NONE;
   lf_widget_add_child(parent, (lf_widget_t*)img);
 
   return img;
@@ -82,7 +82,7 @@ lf_image_t* lf_image_create_ex_w(
 
   img->base = *lf_widget_create(
     ui->crnt_widget_id++,
-    WidgetTypeImage,
+    LF_WIDGET_TYPE_IMAGE,
     LF_SCALE_CONTAINER(img->width, img->height),
     ui->theme->img_props,
     _img_render, 
@@ -91,7 +91,7 @@ lf_image_t* lf_image_create_ex_w(
     NULL
   );
 
-  img->base.layout_type = LayoutNone;
+  img->base.layout_type = LF_LAYOUT_NONE;
   lf_widget_add_child(parent, (lf_widget_t*)img);
 
   return img;
@@ -115,7 +115,7 @@ lf_image_t* lf_image_create_ex_h(
 
   img->base = *lf_widget_create(
     ui->crnt_widget_id++,
-    WidgetTypeImage,
+    LF_WIDGET_TYPE_IMAGE,
     LF_SCALE_CONTAINER(img->width, img->height),
     ui->theme->img_props,
     _img_render, 
@@ -124,7 +124,7 @@ lf_image_t* lf_image_create_ex_h(
     NULL
   );
 
-  img->base.layout_type = LayoutNone;
+  img->base.layout_type = LF_LAYOUT_NONE;
   lf_widget_add_child(parent, (lf_widget_t*)img);
 
   return img;

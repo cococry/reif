@@ -4,17 +4,19 @@
 #include <stdbool.h>
 
 typedef enum {
-  WinEventNone          = 1 << 0,
-  WinEventClose         = 1 << 1,
-  WinEventRefresh       = 1 << 2,
-  WinEventResize        = 1 << 3,
-  WinEventKeyPress      = 1 << 4,
-  WinEventKeyRelease    = 1 << 5,
-  WinEventMouseMove     = 1 << 6,
-  WinEventMousePress    = 1 << 7,
-  WinEventMouseRelease  = 1 << 8,
-  WinEventPropertyX11   = 1 << 9,
-  WinEventMouseWheel    = 1 << 10,
+  LF_EVENT_NONE = 1 << 0,
+  LF_EVENT_WINDOW_CLOSE = 1 << 1,
+  LF_EVENT_WINDOW_REFRESH = 1 << 2,
+  LF_EVENT_WINDOW_RESIZE = 1 << 3,
+  LF_EVENT_KEY_PRESS = 1 << 4,
+  LF_EVENT_KEY_RELEASE = 1 << 5,
+  LF_EVENT_MOUSE_MOVE = 1 << 6,
+  LF_EVENT_MOUSE_PRESS = 1 << 7,
+  LF_EVENT_MOUSE_RELEASE = 1 << 8,
+  LF_EVENT_MOUSE_WHEEL = 1 << 9,
+#ifdef LF_X11
+  LF_EVENT_X11_PROPERTY = 1 << 10,
+#endif 
 } lf_event_type_t;
 
 typedef struct {

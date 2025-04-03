@@ -151,7 +151,7 @@ init_state(lf_ui_state_t* state, lf_window_t win) {
 
   state->root = lf_widget_create(
     state->crnt_widget_id++,
-    WidgetTypeRoot,
+    LF_WIDGET_TYPE_ROOT,
     LF_SCALE_CONTAINER(lf_win_get_size(win).x, lf_win_get_size(win).y),
     (lf_widget_props_t){0},
     NULL, NULL, root_shape, root_size_calc);
@@ -160,13 +160,13 @@ init_state(lf_ui_state_t* state, lf_window_t win) {
   state->root->font_style = LF_FONT_STYLE_REGULAR;
   state->root->font_size = -1;
 
-  lf_widget_set_listener(state->root, root_resize, WinEventResize);
+  lf_widget_set_listener(state->root, root_resize, LF_EVENT_WINDOW_RESIZE);
 
   lf_window_set_ui_state(win, state);
 
   state->root->props.color = state->theme->background_color;
   state->root->props.text_color = state->theme->text_color;
-  state->root->layout_type = LayoutVertical;
+  state->root->layout_type = LF_LAYOUT_VERTICAL;
   state->root->_fixed_width = true;
   state->root->_fixed_height = true;
 
@@ -250,7 +250,7 @@ render_widget_and_submit(
 void 
 root_shape(lf_ui_state_t* ui, lf_widget_t* widget) {
   if(!widget) return;
-  if(widget->type != WidgetTypeRoot) return;
+  if(widget->type != LF_WIDGET_TYPE_ROOT) return;
   lf_widget_apply_layout(ui, ui->root);
 }
 
@@ -258,19 +258,18 @@ void
 root_resize(lf_ui_state_t* ui, lf_widget_t* widget, lf_event_t* ev) {
   (void)ev;
   if(!widget) return;
-  if(widget->type != WidgetTypeRoot) return;
+  if(widget->type != LF_WIDGET_TYPE_ROOT) return;
   ui->root->container = LF_SCALE_CONTAINER(ev->width, ev->height);
   ui->needs_render = true;
   lf_widget_invalidate_size_and_layout(ui->root);
   lf_win_make_gl_context(ui->win);
   ui->render_resize_display(ui->render_state, ev->width, ev->height);
-  printf("Resized: %i (%i,%i)\n", (int)ui->win, ev->width, ev->height);
 }
   
 void 
 root_size_calc(lf_ui_state_t* ui, lf_widget_t* widget) {
   if(!widget) return;
-  if(widget->type != WidgetTypeRoot) return;
+  if(widget->type != LF_WIDGET_TYPE_ROOT) return;
   lf_widget_calc_layout_size(ui, widget);
 }
 
@@ -344,7 +343,7 @@ lf_ui_core_init(lf_window_t win) {
    
 
   lf_event_t ev = {0};
-  ev.type = WinEventResize; 
+  ev.type = LF_EVENT_WINDOW_RESIZE; 
   ev.width = lf_win_get_size(state->win).x; 
   ev.height = lf_win_get_size(state->win).y; 
   lf_widget_handle_event(state, state->root, &ev);
@@ -554,7 +553,7 @@ void lf_ui_core_next_event(lf_ui_state_t* ui) {
     ui->needs_render = true;
   }
 
-  bool rendered = lf_windowing_get_current_event() == WinEventRefresh;
+  bool rendered = lf_windowing_get_current_event() == LF_EVENT_WINDOW_REFRESH;
 
   shape_widgets_if_needed(ui, ui->root, false);
 

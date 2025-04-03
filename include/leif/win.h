@@ -13,7 +13,10 @@
 typedef struct lf_ui_state_t lf_ui_state_t;
 
 typedef enum {
-  LF_WINDOWING_X11_OVERRIDE_REDIRECT = 1 << 0,
+  LF_WINDOWING_FLAG_NONE = 0,
+#ifdef LF_X11
+  LF_WINDOWING_FLAG_X11_OVERRIDE_REDIRECT = 1 << 0,
+#endif 
 } lf_windowing_flags_t;
 
 typedef enum {
@@ -81,7 +84,9 @@ lf_event_type_t lf_windowing_get_current_event(void);
 
 void lf_windowing_next_event(void);
 
-void* lf_win_get_display(void);
+#ifdef LF_X11
+void* lf_win_get_x11_display(void);
+#endif 
 
 lf_window_t lf_win_create(uint32_t width, uint32_t height, const char* title);
 
@@ -115,9 +120,12 @@ void lf_win_set_mouse_release_cb(lf_window_t win, lf_win_mouse_release_func mous
 
 void lf_win_set_mouse_move_cb(lf_window_t win, lf_win_mouse_move_func mouse_move_cb);
 
-
 vec2s lf_win_get_size(lf_window_t win);
 
 int32_t lf_win_get_refresh_rate(lf_window_t win);
 
 void lf_windowing_set_event_cb(lf_windowing_event_func cb);
+
+void lf_win_hide(lf_window_t win);
+
+void lf_win_show(lf_window_t win);

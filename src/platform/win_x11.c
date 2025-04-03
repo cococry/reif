@@ -52,7 +52,7 @@ static lf_windowing_event_func windowing_event_cb = NULL;
 static Display *display = NULL;
 static window_callbacks_t window_callbacks[MAX_WINDOWS];
 static uint32_t n_windows = 0;
-static lf_event_type_t current_event = WinEventNone;
+static lf_event_type_t current_event = LF_EVENT_NONE;
 static Atom wm_protocols_atom, wm_delete_window_atom, motif_wm_hints;
 static GLXContext share_gl_context = 0;
 
@@ -113,7 +113,7 @@ handle_event(XEvent *event) {
     if(event->xany.window != win_data.win) continue; 
       switch (event->type) {
         case Expose:
-          ev.type = WinEventRefresh;
+          ev.type = LF_EVENT_WINDOW_REFRESH;
           current_event = ev.type;
           if(win_data.ui) { 
             lf_widget_handle_event(win_data.ui, win_data.ui->root, &ev);
@@ -124,68 +124,62 @@ handle_event(XEvent *event) {
               (lf_window_t)event->xany.window);
           }
           break;
-        case ConfigureNotify:
-          if (event->xconfigure.width == window_callbacks[i].win_width &&
-            event->xconfigure.height == window_callbacks[i].win_height) {
-            break;  // No need to process the event if the size is the same
-          }
+      case ConfigureNotify:
+        if (event->xconfigure.width == window_callbacks[i].win_width &&
+          event->xconfigure.height == window_callbacks[i].win_height) {
+          break;  // No need to process the event if the size is the same
+        }
 
-          // Get the actual size of the window from the X server to confirm the resize
-          XWindowAttributes wa;
-          XGetWindowAttributes(display, window_callbacks[i].win, &wa);
+        int32_t actual_win_w, actual_win_h;
+        get_window_size(display, window_callbacks[i].win, 
+                        &actual_win_w, 
+                        &actual_win_h);
+        ev.type = LF_EVENT_WINDOW_RESIZE;
+        ev.width = actual_win_w;
+        ev.height = actual_win_h;
+        current_event = ev.type;
 
-          // If the window's size has changed, handle the resize event
-            printf("resize event on window %i: new size = %dx%d\n", i, wa.width, wa.height);
+        window_callbacks[i].win_width = actual_win_w;
+        window_callbacks[i].win_height = actual_win_h; 
 
-            // Create the resize event and update the current event type
-            ev.type = WinEventResize;
-            ev.width = wa.width;
-            ev.height = wa.height;
-            current_event = ev.type;
-
-            // Update the window size
-            window_callbacks[i].win_width = wa.width;
-            window_callbacks[i].win_height = wa.height;
-
-            // Call the widget event handler if applicable
-            if (win_data.ui) {
+        if (win_data.ui) {
           lf_win_make_gl_context(win_data.win);
-              lf_widget_handle_event(win_data.ui, win_data.ui->root, &ev);
-            }
+          lf_widget_handle_event(win_data.ui, win_data.ui->root, &ev);
+        }
 
-            // Call the resize callback if defined
-            if (window_callbacks[i].ev_resize_cb && win_data.ui) {
-              window_callbacks[i].ev_resize_cb(
-                win_data.ui, 
-                (lf_window_t)event->xany.window, 
-                wa.width, wa.height
-              );
-            }
-          break;
+        // Call the resize callback if defined
+        if (window_callbacks[i].ev_resize_cb && win_data.ui) {
+          window_callbacks[i].ev_resize_cb(
+            win_data.ui, 
+            (lf_window_t)event->xany.window, 
+            actual_win_h, actual_win_w 
+          );
+        }
+        break;
         case ButtonPress:
+        ev.type = LF_EVENT_MOUSE_WHEEL; // Default to Scrollwheel 
           if(event->xbutton.button == Button2) { // Scrollwheel press
-            ev.type = WinEventMouseWheel;
             ev.scroll_x = 0;
             ev.scroll_y = 0;
           }
           if(event->xbutton.button == Button4) { // Scrollwheel up
-            ev.type = WinEventMouseWheel;
+            ev.type = LF_EVENT_MOUSE_WHEEL;
             ev.scroll_x = 0;
             ev.scroll_y = 1;
           } else if(event->xbutton.button == Button5){ // Scrollwheel down
-            ev.type = WinEventMouseWheel;
+            ev.type = LF_EVENT_MOUSE_WHEEL;
             ev.scroll_x = 0;
             ev.scroll_y = -1;
           } else if(event->xbutton.button == 6){ // Scrollwheel left
-            ev.type = WinEventMouseWheel;
+            ev.type = LF_EVENT_MOUSE_WHEEL;
             ev.scroll_x = -1;
             ev.scroll_y = 0;
           } else if(event->xbutton.button == 7){ // SCrollwheel right
-            ev.type = WinEventMouseWheel;
+            ev.type = LF_EVENT_MOUSE_WHEEL;
             ev.scroll_x = 1;
             ev.scroll_y = 0;
           } else {
-            ev.type = WinEventMousePress;
+            ev.type = LF_EVENT_MOUSE_PRESS;
           }
           ev.button = event->xbutton.button;
 
@@ -209,7 +203,7 @@ handle_event(XEvent *event) {
           break;
         case ButtonRelease:
           ev.button = event->xbutton.button;
-          ev.type = WinEventMouseRelease; 
+          ev.type = LF_EVENT_MOUSE_RELEASE; 
           if(last_mouse_x == 0) last_mouse_x = event->xbutton.x;
           if(last_mouse_y == 0) last_mouse_y = event->xbutton.y;
           ev.x = event->xbutton.x;
@@ -238,7 +232,7 @@ handle_event(XEvent *event) {
           last_mouse_x = event->xmotion.x;
           last_mouse_y = event->xmotion.y;
 
-          ev.type = WinEventMouseMove;
+          ev.type = LF_EVENT_MOUSE_MOVE;
           current_event = ev.type; 
           if(win_data.ui)
             lf_widget_handle_event(win_data.ui, win_data.ui->root, &ev);
@@ -251,7 +245,7 @@ handle_event(XEvent *event) {
         case ClientMessage:
           if (event->xclient.message_type == wm_protocols_atom && 
             (Atom)event->xclient.data.l[0] == wm_delete_window_atom) {
-            ev.type = WinEventClose;
+            ev.type = LF_EVENT_WINDOW_CLOSE;
             current_event = ev.type;
             if(win_data.ui)
               lf_widget_handle_event(win_data.ui, win_data.ui->root, &ev);
@@ -271,7 +265,7 @@ handle_event(XEvent *event) {
               ev.y = -1; 
               ev.delta_x = 0; 
               ev.delta_y = 0; 
-              ev.type = WinEventMouseMove;
+              ev.type = LF_EVENT_MOUSE_MOVE;
               current_event = ev.type; 
               if(win_data.ui)
                 lf_widget_handle_event(win_data.ui, win_data.ui->root, &ev);
@@ -424,7 +418,7 @@ create_window(
 
   XFree(startup_state);
 
-  if(lf_flag_exists(&flags, LF_WINDOWING_X11_OVERRIDE_REDIRECT)) {
+  if(lf_flag_exists(&flags, LF_WINDOWING_FLAG_X11_OVERRIDE_REDIRECT)) {
     XSetWindowAttributes attributes;
     attributes.override_redirect = True;
     XChangeWindowAttributes(display, win, CWOverrideRedirect, &attributes);  
@@ -497,7 +491,7 @@ lf_windowing_terminate(void) {
 
 void
 lf_windowing_update(void) {
-  current_event = WinEventNone;
+  current_event = LF_EVENT_NONE;
 }
 
 void
@@ -524,7 +518,7 @@ lf_windowing_next_event(void) {
 }
 
 void* 
-lf_win_get_display(void) {
+lf_win_get_x11_display(void) {
   return display;
 }
 
@@ -662,6 +656,18 @@ int32_t lf_win_get_refresh_rate(lf_window_t win) {
 void 
 lf_windowing_set_event_cb(lf_windowing_event_func cb) {
   windowing_event_cb = cb;
+}
+
+void 
+lf_win_hide(lf_window_t win) {
+  XUnmapWindow(display, win);
+  XFlush(display);
+} 
+
+void 
+lf_win_show(lf_window_t win) {
+  XMapWindow(display, win);
+  XFlush(display);
 }
 
 #endif
