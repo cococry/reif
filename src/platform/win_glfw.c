@@ -26,7 +26,6 @@ typedef struct {
 static lf_windowing_event_func  windowing_event_cb = NULL;
 static window_callbacks_t window_callbacks[MAX_WINDOWS];
 static uint32_t n_windows = 0;
-static lf_ui_state_t* ui;
 static lf_event_type_t current_event;
 
 static int last_mouse_x = 0;
@@ -60,6 +59,8 @@ static void glfw_refresh_callback(GLFWwindow* window);
 
 static void glfw_scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 
+static window_callbacks_t* win_data_from_native(lf_window_t win);
+
 lf_window_t
 create_window(
   uint32_t width, 
@@ -74,6 +75,8 @@ create_window(
       glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, hints[i].value);
     if(hints[i].key == LF_WINDOWING_HINT_DECORATED) 
       glfwWindowHint(GLFW_DECORATED, hints[i].value);
+    if(hints[i].key == LF_WINDOWING_HINT_RESIZABLE) 
+      glfwWindowHint(GLFW_RESIZABLE, hints[i].value);
   }
   GLFWwindow* win = glfwCreateWindow(
     width, height, 
@@ -123,36 +126,38 @@ glfw_mouse_button_callback(
   int32_t button, 
   int32_t action, 
   int32_t mods) {
+  window_callbacks_t* data = win_data_from_native(window);
+  if(!data) return;
   double xpos, ypos;
   (void)window;
   (void)mods;
-  lf_event_t* ev = malloc(sizeof(*ev));
-  memset(ev, 0, sizeof(*ev));
-  ev->button = button;
-  ev->type = (action != GLFW_RELEASE) ? LF_EVENT_MOUSE_PRESS : LF_EVENT_MOUSE_RELEASE;
+  lf_event_t ev = {0};
+  
+  ev.button = button;
+  ev.type = (action != GLFW_RELEASE) ? LF_EVENT_MOUSE_PRESS : LF_EVENT_MOUSE_RELEASE;
 
   glfwGetCursorPos(window, &xpos, &ypos);
   if(last_mouse_x == 0) last_mouse_x = xpos;
   if(last_mouse_y == 0) last_mouse_y = ypos;
-  ev->x = (uint16_t)xpos;
-  ev->y = (uint16_t)ypos;
-  ev->delta_x = xpos - last_mouse_x;
-  ev->delta_y = ypos - last_mouse_y;
+  ev.x = (uint16_t)xpos;
+  ev.y = (uint16_t)ypos;
+  ev.delta_x = xpos - last_mouse_x;
+  ev.delta_y = ypos - last_mouse_y;
   last_mouse_x = xpos;
   last_mouse_y = ypos;
-  lf_widget_handle_event(ui, ui->root, ev);
-  free(ev);
+  lf_widget_handle_event(data->ui, data->ui->root, &ev);
+  
   
   if(action != GLFW_RELEASE) {
     for(uint32_t i = 0; i < n_windows; i++) {
       if(window_callbacks[i].win == window && window_callbacks[i].ev_mouse_press_cb)
-        window_callbacks[i].ev_mouse_press_cb(ui, window, button);
+        window_callbacks[i].ev_mouse_press_cb(data->ui, window, button);
     }
     current_event = LF_EVENT_MOUSE_RELEASE;
   } else {
     for(uint32_t i = 0; i < n_windows; i++) {
       if(window_callbacks[i].win == window && window_callbacks[i].ev_mouse_release_cb)
-        window_callbacks[i].ev_mouse_release_cb(ui, window, button);
+        window_callbacks[i].ev_mouse_release_cb(data->ui, window, button);
     }
     current_event = LF_EVENT_MOUSE_PRESS;
   }
@@ -163,93 +168,110 @@ void
 glfw_resize_callback(
   GLFWwindow* window,
   int32_t w, int32_t h) {
-  lf_event_t* ev = malloc(sizeof(*ev));
-  memset(ev, 0, sizeof(*ev));
-  ev->type = LF_EVENT_WINDOW_RESIZE; 
-  ev->width = w; ev->height = h;
+  window_callbacks_t* data = win_data_from_native(window);
+  if(!data) return;
+  lf_event_t ev = {0};
+ 
+  ev.type = LF_EVENT_WINDOW_RESIZE; 
+  ev.width = w; ev.height = h;
   current_event = LF_EVENT_WINDOW_RESIZE;
-  lf_widget_handle_event(ui, ui->root, ev);
-  free(ev);
+  lf_win_make_gl_context(data->win);
+  lf_widget_handle_event(data->ui, data->ui->root, &ev);
+  
   for(uint32_t i = 0; i < n_windows; i++) {
       if(window_callbacks[i].win == window && window_callbacks[i].ev_resize_cb)
-        window_callbacks[i].ev_resize_cb(ui, window, w, h);
+        window_callbacks[i].ev_resize_cb(data->ui, window, w, h);
   }
 }
 
 void 
 glfw_refresh_callback(
   GLFWwindow* window) {
-  lf_event_t* ev = malloc(sizeof(*ev));
-  memset(ev, 0, sizeof(*ev));
-  ev->type = LF_EVENT_WINDOW_REFRESH; 
+  window_callbacks_t* data = win_data_from_native(window);
+  if(!data) return;
+  lf_event_t ev = {0};
+  ev.type = LF_EVENT_WINDOW_REFRESH; 
   current_event = LF_EVENT_WINDOW_REFRESH;
-  lf_widget_handle_event(ui, ui->root, ev);
-  free(ev);
+  lf_widget_handle_event(data->ui, data->ui->root, &ev);
   for(uint32_t i = 0; i < n_windows; i++) {
       if(window_callbacks[i].win == window && window_callbacks[i].ev_refresh_cb)
-        window_callbacks[i].ev_refresh_cb(ui, window);
+        window_callbacks[i].ev_refresh_cb(data->ui, window);
   }
 }
 
 void 
 glfw_scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
-  lf_event_t* ev = malloc(sizeof(*ev));
-  memset(ev, 0, sizeof(*ev));
-  ev->type = LF_EVENT_MOUSE_WHEEL;
-  ev->scroll_x = (int16_t)xoffset;
-  ev->scroll_y = (int16_t)yoffset;
+  window_callbacks_t* data = win_data_from_native(window);
+  if(!data) return;
+  lf_event_t ev = {0};
+  
+  ev.type = LF_EVENT_MOUSE_WHEEL;
+  ev.scroll_x = (int16_t)xoffset;
+  ev.scroll_y = (int16_t)yoffset;
 
   double xpos, ypos;
   glfwGetCursorPos(window, &xpos, &ypos);
-  ev->x = (int16_t)xpos;
-  ev->y = (int16_t)ypos;
+  ev.x = (int16_t)xpos;
+  ev.y = (int16_t)ypos;
 
   current_event = LF_EVENT_MOUSE_WHEEL;
-  lf_widget_handle_event(ui, ui->root, ev);
-  free(ev);
+  lf_widget_handle_event(data->ui, data->ui->root, &ev);
+  
   for(uint32_t i = 0; i < n_windows; i++) {
       if(window_callbacks[i].win == window && window_callbacks[i].ev_mouse_wheel_cb)
-        window_callbacks[i].ev_mouse_wheel_cb(ui, window, (int16_t)xoffset, (int16_t)yoffset);
+        window_callbacks[i].ev_mouse_wheel_cb(data->ui, window, (int16_t)xoffset, (int16_t)yoffset);
   }
+}
+
+window_callbacks_t*
+win_data_from_native(lf_window_t win) {
+  for(uint32_t i = 0; i < n_windows; i++) {
+    if(window_callbacks[i].win == win) {
+      return &window_callbacks[i];
+    }
+  }
+  return NULL;
 }
 
 void 
 glfw_close_callback(GLFWwindow* window) {
+  window_callbacks_t* data = win_data_from_native(window);
+  if(!data) return;
   for(uint32_t i = 0; i < n_windows; i++) {
-      if(window_callbacks[i].win == window && window_callbacks[i].ev_close_cb)
-        window_callbacks[i].ev_close_cb(ui, window);
+      if(window_callbacks[i].win == window && window_callbacks[i].ev_close_cb) {
+        window_callbacks[i].ev_close_cb(data->ui, window);
     }
-  lf_event_t* ev = malloc(sizeof(*ev));
-  memset(ev, 0, sizeof(*ev));
-  ev->type = LF_EVENT_WINDOW_CLOSE; 
+    }
+  lf_event_t ev = {0};
+  ev.type = LF_EVENT_WINDOW_CLOSE; 
   current_event = LF_EVENT_WINDOW_CLOSE;
-  lf_widget_handle_event(ui, ui->root, ev);
-  free(ev);
+  lf_widget_handle_event(data->ui, data->ui->root, &ev);
 }
 
 void 
 glfw_mouse_move_callback(
   GLFWwindow* window, double xpos, double ypos) {
+  window_callbacks_t* data = win_data_from_native(window);
+  if(!data) return;
   for(uint32_t i = 0; i < n_windows; i++) {
       if(window_callbacks[i].win == window && window_callbacks[i].ev_move_cb)
-        window_callbacks[i].ev_move_cb(ui, window, (uint16_t)xpos, (uint16_t)ypos);
+        window_callbacks[i].ev_move_cb(data->ui, window, (uint16_t)xpos, (uint16_t)ypos);
   }
 
-  lf_event_t* ev = malloc(sizeof(*ev));
-  memset(ev, 0, sizeof(*ev));
+  lf_event_t ev = {0}; 
+  
   if(last_mouse_x == 0) last_mouse_x = xpos;
   if(last_mouse_y == 0) last_mouse_y = ypos;
-  ev->x = (uint16_t)xpos;
-  ev->y = (uint16_t)ypos;
-  ev->delta_x = xpos - last_mouse_x;
-  ev->delta_y = ypos - last_mouse_y;
+  ev.x = (uint16_t)xpos;
+  ev.y = (uint16_t)ypos;
+  ev.delta_x = xpos - last_mouse_x;
+  ev.delta_y = ypos - last_mouse_y;
   last_mouse_x = xpos;
   last_mouse_y = ypos;
 
-  ev->type = LF_EVENT_MOUSE_MOVE;
+  ev.type = LF_EVENT_MOUSE_MOVE;
   current_event = LF_EVENT_MOUSE_MOVE; 
-  lf_widget_handle_event(ui, ui->root, ev);
-  free(ev);
+  lf_widget_handle_event(data->ui, data->ui->root, &ev);
 }
 
 int32_t 
@@ -277,6 +299,7 @@ lf_window_set_ui_state(lf_window_t win, lf_ui_state_t* state) {
   for(uint32_t i = 0; i < n_windows; i++) {
     if(window_callbacks[i].win == win) {
       window_callbacks[i].ui = state;
+      printf("set ui state.\n");
     }
   }
 }

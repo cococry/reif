@@ -76,6 +76,10 @@ typedef lf_font_t (*lf_render_font_create)(
 typedef lf_font_t (*lf_render_font_create_from_face)(
     void* render_state, const char* filepath, uint32_t pixel_size, uint32_t face_idx);
 
+typedef lf_font_t (*lf_render_font_create_from_data)(
+    void* render_state, const char* filepath, 
+    uint32_t pixel_size, uint32_t face_idx, void* ft_face, void* hb_font, float space_w);
+
 typedef void (*lf_render_font_destroy)(
     void* render_state, lf_font_t font);
 
@@ -170,6 +174,15 @@ lf_font_t lf_rn_render_font_create_from_face(
     const char* filepath, 
     uint32_t size,
     uint32_t face_idx);
+
+lf_font_t lf_rn_render_font_create_from_data(
+    void* render_state, 
+    const char* filepath, 
+    uint32_t size,
+    uint32_t face_idx,
+    void* ft_face,
+    void* hb_font,
+    float space_w);
 
 void lf_rn_render_font_destroy(
     void* render_state, 

@@ -56,8 +56,11 @@ struct timespec init_time;
 
 static lf_windowing_hints_list_t windowing_hints;
 
+static lf_asset_manager_t* asset_manager;
+
 void 
 win_close_callback(lf_ui_state_t* ui, lf_window_t window) {
+  if(!ui) return;
   if(ui->win != window) return;
   ui->running = false;
 }
@@ -142,7 +145,7 @@ init_state(lf_ui_state_t* state, lf_window_t win) {
   lf_vector_init(&state->timers);
   lf_vector_init(&windowing_hints);
 
-  state->asset_manager = lf_asset_manager_init();
+  asset_manager = lf_asset_manager_init();
 
   state->crnt_page_id = 0;
   state->crnt_widget_id = 0;
@@ -305,7 +308,6 @@ lf_ui_state_t*
 lf_ui_core_init(lf_window_t win) {
   lf_ui_state_t* state = malloc(sizeof(*state));
   lf_win_make_gl_context(win);
-#ifdef LF_RUNARA
 #ifdef LF_X11
   state->render_state = rn_init(
     lf_win_get_size(win).x, lf_win_get_size(win).y,
@@ -319,6 +321,7 @@ lf_ui_core_init(lf_window_t win) {
 #error "Invalid windowing system specified (valid windowing systems: LF_GLFW, LF_X11)"
 #endif
 
+#ifdef LF_RUNARA
   state->render_rect                = lf_rn_render_rect;
   state->render_text                = lf_rn_render_text;
   state->render_paragraph           = lf_rn_render_text_paragraph;
@@ -331,6 +334,7 @@ lf_ui_core_init(lf_window_t win) {
   state->render_resize_display      = lf_rn_render_resize_display;
   state->render_font_create         = lf_rn_render_font_create;
   state->render_font_create_from_face = lf_rn_render_font_create_from_face;
+  state->render_font_create_from_data = lf_rn_render_font_create_from_data;
   state->render_font_destroy        = lf_rn_render_font_destroy;
   state->render_font_get_size       = lf_rn_render_font_get_size;
   state->render_load_texture        = lf_rn_render_load_texture;
@@ -486,6 +490,7 @@ lf_ui_state_t* lf_ui_core_init_ex(
   lf_render_resize_display_func_t render_resize_display,
   lf_render_font_create render_font_create,
   lf_render_font_create_from_face render_font_create_from_face,
+  lf_render_font_create_from_data render_font_create_from_data,
   lf_render_font_destroy render_font_destroy,
   lf_render_font_get_size render_font_get_size,
   lf_render_load_texture render_load_texture,
@@ -506,6 +511,7 @@ lf_ui_state_t* lf_ui_core_init_ex(
   state->render_resize_display      = render_resize_display;
   state->render_font_create         = render_font_create;
   state->render_font_create_from_face = render_font_create_from_face;
+  state->render_font_create_from_data = render_font_create_from_data;
   state->render_font_destroy        = render_font_destroy;
   state->render_font_get_size       = render_font_get_size;
   state->render_load_texture        = render_load_texture;
@@ -613,7 +619,7 @@ lf_ui_core_terminate(lf_ui_state_t* ui) {
 
   lf_windowing_terminate();
 
-  lf_asset_manager_terminate(ui->asset_manager);
+  lf_asset_manager_terminate(asset_manager);
 
   lf_ez_api_terminate(ui);
 
@@ -751,3 +757,8 @@ lf_ui_core_commit_entire_render(lf_ui_state_t* ui) {
   lf_win_swap_buffers(ui->win);
 }
 
+
+lf_asset_manager_t* 
+lf_ui_core_get_asset_manager(void) {
+  return asset_manager;
+}

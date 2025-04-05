@@ -38,66 +38,6 @@ static state_t s;
 
 float val = 0;
 
-static void comp();
-
-
-void run_command_silent(const char *cmd) {
-    pid_t pid = fork();
-    
-    if (pid < 0) {
-        // Fork failed
-        perror("fork failed");
-        return;
-    }
-    
-    if (pid == 0) {
-        // In child process
-        
-        // Redirect stdin, stdout, and stderr to /dev/null
-        int devnull = open("/dev/null", O_RDWR);
-        if (devnull == -1) {
-            perror("open /dev/null failed");
-            exit(1);
-        }
-        
-        dup2(devnull, STDIN_FILENO);
-        dup2(devnull, STDOUT_FILENO);
-        dup2(devnull, STDERR_FILENO);
-        close(devnull);
-        
-        // Execute the command using /bin/sh
-        execl("/bin/sh", "sh", "-c", cmd, (char *)NULL);
-        
-        // If execl fails
-        exit(1);
-    }
-
-    // Parent process does not wait for child
-}
-void on_slide(lf_ui_state_t* ui, lf_widget_t* widget, float* val) {
-  char buf[32];
-  sprintf(buf, "amixer sset Master %f% & ", *val);
-  run_command_silent(buf);
-  lf_component_rerender(s.ui, comp);
-}
-
-void comp() {
-  lf_text_h4(s.ui, "devicons:                                                                                                                                                                                                      ");
-
-  lf_text_h4(s.ui, "weather_icons:                                                                                                                                                                                                                                     摒 敖 晴 朗 望 杖 歹 殺 流 滛 滋 漢 瀞 煮 瞧");
-  char buf[32];
-  sprintf(buf, "%.2f", val);
-
-  lf_button(s.ui);
-  lf_style_widget_prop(s.ui, lf_crnt(s.ui), corner_radius_percent, 50.0f);
-  lf_text_h4(s.ui, buf);
-  lf_button_end(s.ui);
-
-  lf_slider(s.ui, &val, 0, 100);
-  ((lf_slider_t*)lf_crnt(s.ui))->on_slide = on_slide;
-  lf_crnt(s.ui)->container.size.x = 300;
-}
-
 int main(void) {
 
   if(lf_windowing_init() != 0) return EXIT_FAILURE;
@@ -108,9 +48,19 @@ int main(void) {
   lf_ui_state_t* ui2 = lf_ui_core_init(win2);
 
   s.ui->root->props.color = LF_NO_COLOR;
+  ui2->root->props.color = LF_NO_COLOR;
 
-  lf_text_h1(s.ui, "Hello");
-  lf_text_h1(ui2, "Bye");
+  lf_text_h1(ui2, "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6");
+  lf_text_h1(s.ui, "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6");
+lf_text_h2(s.ui, "1234567890abcde123fghijkLMNOPQRSTuvwxzy6789");
+lf_text_h3(s.ui, "asQwErTyU12345zZ7gFdX");
+lf_text_h4(s.ui, "hGf456jklP@#$%&7LM");
+lf_text_h5(s.ui, "abcd12345fGh6jkl987XY");
+lf_text_p(s.ui, "abcdeFGHIJ9876543klmnOpqrSTUVx@#");
+lf_text_p(s.ui, "abcdeFGHIJ9876543klmnOpqrSTUVx@#");
+lf_text_p(s.ui, "abcdeFGHIJ9876543klmnOpqrSTUVx@#");
+lf_text_p(s.ui, "abcdeFGHIJ9876543klmnOpqrSTUVx@#");
+lf_text_p(s.ui, "abcdeFGHIJ9876543klmnOpqrSTUVx@#");
 
   while(s.ui->running) {
     lf_ui_core_next_event(s.ui);

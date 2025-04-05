@@ -178,6 +178,19 @@ lf_font_t lf_rn_render_font_create_from_face(
   return (lf_font_t)rn_load_font_from_face((RnState*)render_state, filepath, size, face_idx);
 }
 
+lf_font_t lf_rn_render_font_create_from_data(
+    void* render_state, 
+    const char* filepath, 
+    uint32_t size,
+    uint32_t face_idx,
+    void* ft_face,
+    void* hb_font,
+    float space_w) {
+
+  return (lf_font_t)rn_create_font_from_loaded_data((RnState*)render_state, ft_face, hb_font, 
+                                                     space_w, size, face_idx, filepath);
+}
+
 void
 lf_rn_render_font_destroy(
     void* render_state, 

@@ -55,39 +55,39 @@ lf_asset_manager_terminate(lf_asset_manager_t* mgr) {
 
 lf_mapped_texture_t 
 lf_asset_manager_request_texture(lf_ui_state_t* ui, const char* filepath) {
-  if(!ui || !ui->asset_manager) return (lf_mapped_texture_t){0};
-  for(uint32_t i = 0; i < ui->asset_manager->textures.size; i++) {
-    if(strcmp(ui->asset_manager->textures.items[i].filepath, filepath) == 0) {
-      return ui->asset_manager->textures.items[i];
+  if(!ui || !lf_ui_core_get_asset_manager()) return (lf_mapped_texture_t){0};
+  for(uint32_t i = 0; i < lf_ui_core_get_asset_manager()->textures.size; i++) {
+    if(strcmp(lf_ui_core_get_asset_manager()->textures.items[i].filepath, filepath) == 0) {
+      return lf_ui_core_get_asset_manager()->textures.items[i];
     }
   }
 
   lf_mapped_texture_t tex;
   tex.filepath = strdup(filepath);
   ui->render_load_texture(filepath, &tex.id, &tex.width, &tex.height, 0);
-  lf_vector_append(&ui->asset_manager->textures, tex);
+  lf_vector_append(&lf_ui_core_get_asset_manager()->textures, tex);
 
   return tex;
 }
 
 lf_font_style_list_t 
 lf_asset_manager_get_font_styles_from_family(lf_ui_state_t* ui, const char* family_name) {
-  if(!ui || !ui->asset_manager->fonts.items) return (lf_font_style_list_t){0}; 
-  if(!ui->asset_manager->fc_config) {
-    ui->asset_manager->fc_config = FcInitLoadConfigAndFonts();
+  if(!ui || !lf_ui_core_get_asset_manager()->fonts.items) return (lf_font_style_list_t){0}; 
+  if(!lf_ui_core_get_asset_manager()->fc_config) {
+    lf_ui_core_get_asset_manager()->fc_config = FcInitLoadConfigAndFonts();
   }
 
   FcPattern* pat = FcPatternCreate();
   FcPatternAddString(pat, FC_FAMILY, (const FcChar8*)family_name);
 
-  if(!ui->asset_manager->fc_os)
-    ui->asset_manager->fc_os =  FcObjectSetBuild(
+  if(!lf_ui_core_get_asset_manager()->fc_os)
+    lf_ui_core_get_asset_manager()->fc_os =  FcObjectSetBuild(
     FC_FAMILY, FC_STYLE, FC_LANG, FC_FILE, FC_INDEX, 
     (char *)0);
 
   FcFontSet* fs = FcFontList(
-    ui->asset_manager->fc_config,
-    pat, ui->asset_manager->fc_os);
+    lf_ui_core_get_asset_manager()->fc_config,
+    pat, lf_ui_core_get_asset_manager()->fc_os);
 
   lf_font_style_list_t fl;
   fl.family_name = strdup(family_name);
@@ -135,21 +135,21 @@ lf_loaded_font_style_t lf_asset_manager_get_loaded_font_style(
     const char* family_name, 
     lf_font_style_t style) {
   if(!ui) return (lf_loaded_font_style_t){0}; 
-  if(!ui->asset_manager->fc_config) {
-    ui->asset_manager->fc_config = FcInitLoadConfigAndFonts();
+  if(!lf_ui_core_get_asset_manager()->fc_config) {
+    lf_ui_core_get_asset_manager()->fc_config = FcInitLoadConfigAndFonts();
   }
 
   FcPattern* pat = FcPatternCreate();
   FcPatternAddString(pat, FC_FAMILY, (const FcChar8*)family_name);
 
-  if(!ui->asset_manager->fc_os)
-    ui->asset_manager->fc_os =  FcObjectSetBuild(
+  if(!lf_ui_core_get_asset_manager()->fc_os)
+    lf_ui_core_get_asset_manager()->fc_os =  FcObjectSetBuild(
     FC_FAMILY, FC_STYLE, FC_LANG, FC_FILE, FC_INDEX, 
     (char *)0);
 
   FcFontSet* fs = FcFontList(
-    ui->asset_manager->fc_config,
-    pat, ui->asset_manager->fc_os);
+    lf_ui_core_get_asset_manager()->fc_config,
+    pat, lf_ui_core_get_asset_manager()->fc_os);
 
   if(fs) {
     for (int i = 0; i < fs->nfont; ++i) {
@@ -195,22 +195,29 @@ lf_asset_manager_request_font(
   const char* family_name,
   lf_font_style_t style,
   uint32_t pixel_size) {
-  if(!ui || !ui->asset_manager) return (lf_mapped_font_t){0}; 
+  if(!ui || !lf_ui_core_get_asset_manager()) return (lf_mapped_font_t){0}; 
 
   lf_mapped_font_t font;
   memset(&font, 0, sizeof(font));
 
-  if(!ui->asset_manager->fonts.items) return font;
+  if(!lf_ui_core_get_asset_manager()->fonts.items) return font;
 
-  for(uint32_t i = 0; i < ui->asset_manager->fonts.size; i++) {
-  lf_mapped_font_t font = ui->asset_manager->fonts.items[i];
+  bool font_data_loaded = false;
+  lf_mapped_font_t loaded_data = {0};
+  for(uint32_t i = 0; i < lf_ui_core_get_asset_manager()->fonts.size; i++) {
+  lf_mapped_font_t font = lf_ui_core_get_asset_manager()->fonts.items[i];
     lf_loaded_font_style_t font_style = font.style;
   if(!font_style.filepath) continue;
     if(
       font.pixel_size == pixel_size               && 
       strcmp(font.family_name, family_name) == 0  &&
       font_style.style == style) {
-      return font; 
+      if(ui->win == font._render_win)
+        return font; 
+      else {
+        font_data_loaded = true;
+        loaded_data = font;
+      }
     }
   }
 
@@ -220,15 +227,39 @@ lf_asset_manager_request_font(
     family_name, 
     style);
 
-  font.font = ui->render_font_create_from_face(
-    ui->render_state,
-    font.style.filepath,
-    pixel_size,
-    font.style.face_idx
-  );
+  if(!font_data_loaded) {
+    font.font = ui->render_font_create_from_face(
+      ui->render_state,
+      font.style.filepath,
+      pixel_size,
+      font.style.face_idx
+    );
+  } else {
+    printf(
+      "creating from data.\n"
+    );
+    font.font = ui->render_font_create_from_data(
+      ui->render_state, 
+      font.style.filepath, 
+      pixel_size,
+      font.style.face_idx,
+      loaded_data._ft_face,
+      loaded_data._hb_font,
+      loaded_data._space_w
+    );
+  }
   font.family_name = strdup(family_name);
 
-  lf_vector_append(&ui->asset_manager->fonts, font);
+#ifdef LF_RUNARA
+  font._hb_font = font.font->hb_font;
+  font._ft_face = font.font->face;
+  font._space_w = font.font->space_w;
+#endif
+
+  font._render_win = ui->win;
+
+  printf("loaded font.\n");
+  lf_vector_append(&lf_ui_core_get_asset_manager()->fonts, font);
 
   return font;
 }

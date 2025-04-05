@@ -51,7 +51,6 @@ struct lf_ui_state_t {
 
   uint32_t crnt_widget_id;
 
-  lf_asset_manager_t* asset_manager;
 
   lf_render_rect_func_t render_rect;
   lf_render_text_func_t render_text;
@@ -65,6 +64,7 @@ struct lf_ui_state_t {
   lf_render_resize_display_func_t render_resize_display;
   lf_render_font_create render_font_create;
   lf_render_font_create_from_face render_font_create_from_face;
+  lf_render_font_create_from_data render_font_create_from_data;
   lf_render_font_destroy render_font_destroy;
   lf_render_font_get_size render_font_get_size;
   lf_render_load_texture render_load_texture;
@@ -128,6 +128,7 @@ lf_ui_state_t* lf_ui_core_init_ex(
     lf_render_resize_display_func_t render_resize_display,
     lf_render_font_create render_font_create,
     lf_render_font_create_from_face render_font_create_from_face,
+    lf_render_font_create_from_data render_font_create_from_data,
     lf_render_font_destroy render_font_destory,
     lf_render_font_get_size render_font_get_size,
     lf_render_load_texture render_load_texture,
@@ -168,3 +169,5 @@ lf_timer_t* lf_ui_core_start_timer(lf_ui_state_t* ui, float duration, lf_timer_f
 lf_timer_t* lf_ui_core_start_timer_looped(lf_ui_state_t* ui, float duration, lf_timer_finish_func_t finish_cb);
 
 void lf_ui_core_commit_entire_render(lf_ui_state_t* ui);
+
+lf_asset_manager_t* lf_ui_core_get_asset_manager(void);

@@ -1,8 +1,11 @@
 #pragma once
 #include "render.h"
 #include "util.h"
+#include "win.h"
 
 #include <fontconfig/fontconfig.h>
+#include <freetype2/ft2build.h>
+#include <harfbuzz/hb.h>
 
 typedef struct {
   lf_texture_id id;
@@ -27,6 +30,11 @@ typedef struct {
   lf_loaded_font_style_t style;
   char* family_name;
   lf_font_t font;
+
+  lf_window_t _render_win;
+  FT_Face _ft_face;
+  hb_font_t* _hb_font;
+  float _space_w;
 } lf_mapped_font_t;
 
 typedef struct {
