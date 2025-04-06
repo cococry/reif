@@ -4,7 +4,7 @@
 #include "win.h"
 
 #include <fontconfig/fontconfig.h>
-#include <freetype2/ft2build.h>
+#include <ft2build.h>
 #include <harfbuzz/hb.h>
 
 typedef struct {

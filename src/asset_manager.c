@@ -235,9 +235,6 @@ lf_asset_manager_request_font(
       font.style.face_idx
     );
   } else {
-    printf(
-      "creating from data.\n"
-    );
     font.font = ui->render_font_create_from_data(
       ui->render_state, 
       font.style.filepath, 
@@ -258,7 +255,6 @@ lf_asset_manager_request_font(
 
   font._render_win = ui->win;
 
-  printf("loaded font.\n");
   lf_vector_append(&lf_ui_core_get_asset_manager()->fonts, font);
 
   return font;

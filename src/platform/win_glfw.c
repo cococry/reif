@@ -77,6 +77,8 @@ create_window(
       glfwWindowHint(GLFW_DECORATED, hints[i].value);
     if(hints[i].key == LF_WINDOWING_HINT_RESIZABLE) 
       glfwWindowHint(GLFW_RESIZABLE, hints[i].value);
+    if(hints[i].key == LF_WINDOWING_HINT_ABOVE) 
+      glfwWindowHint(GLFW_FLOATING, hints[i].value);
   }
   GLFWwindow* win = glfwCreateWindow(
     width, height, 
@@ -295,11 +297,10 @@ lf_windowing_update(void) {
 }
 
 void 
-lf_window_set_ui_state(lf_window_t win, lf_ui_state_t* state) {
+lf_windw_set_ui_state(lf_window_t win, lf_ui_state_t* state) {
   for(uint32_t i = 0; i < n_windows; i++) {
     if(window_callbacks[i].win == win) {
       window_callbacks[i].ui = state;
-      printf("set ui state.\n");
     }
   }
 }

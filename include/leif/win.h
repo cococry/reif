@@ -25,7 +25,9 @@ typedef enum {
   LF_WINDOWING_HINT_TRANSPARENT_FRAMEBUFFER,
   LF_WINDOWING_HINT_DECORATED,
   LF_WINDOWING_HINT_RESIZABLE,
-  LF_WINDOWING_HINT_VISIBLE
+  LF_WINDOWING_HINT_VISIBLE,
+  LF_WINDOWING_HINT_ABOVE,
+  LF_WINDOWING_HINT_BELOW
 } lf_window_hint_t;
 
 typedef struct {
@@ -80,7 +82,7 @@ int32_t lf_windowing_terminate(void);
 
 void lf_windowing_update(void);
 
-void lf_window_set_ui_state(lf_window_t win, lf_ui_state_t* state);
+void lf_win_set_ui_state(lf_window_t win, lf_ui_state_t* state);
 
 lf_event_type_t lf_windowing_get_current_event(void);
 

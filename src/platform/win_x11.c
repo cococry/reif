@@ -56,6 +56,9 @@ static uint32_t n_windows = 0;
 static lf_event_type_t current_event = LF_EVENT_NONE;
 static float last_motion_time = 0;
 static Atom 
+net_wm_state,
+net_wm_state_above,
+net_wm_state_below,
 net_wm_window_type, 
 net_wm_window_type_normal, 
 net_wm_ping,
@@ -210,8 +213,6 @@ handle_event(XEvent *event) {
             event->xbutton.button);
         break;
       case MotionNotify: {
-        // Throttle motiton notify events for performance and to avoid jiterring on certain 
-        // high polling-rate mouses   
         uint32_t curtime = event->xmotion.time;
         if((curtime - last_motion_time) <= (1000.0 / 60)) {
           break;
@@ -298,7 +299,7 @@ create_window(
   uint32_t winpos_x = 0, winpos_y = 0;
   bool adjusting_pos = false;
   bool transparent_framebuffer = false, decorated = false, 
-  visible = true, resizable = true;
+  visible = true, resizable = true, above = false, below = false;
   for(uint32_t i = 0; i < nhints; i++) {
     if(hints[i].key == LF_WINDOWING_HINT_TRANSPARENT_FRAMEBUFFER) {
       transparent_framebuffer = hints[i].value;
@@ -319,6 +320,12 @@ create_window(
     }
     else if(hints[i].key == LF_WINDOWING_HINT_VISIBLE) {
       visible = hints[i].value;
+    }  
+    else if(hints[i].key == LF_WINDOWING_HINT_ABOVE) {
+      above = true;
+    }
+    else if(hints[i].key == LF_WINDOWING_HINT_BELOW) {
+      below = true;
     }
   }
 
@@ -428,6 +435,19 @@ create_window(
                    NULL);
 
   XFree(startup_state);
+
+  {
+    Atom states[1];
+    uint32_t count = 0;
+    if(above) {
+      states[count++] = net_wm_state_above; 
+    } else if(below) {
+      states[count++] = net_wm_state_below; 
+    }
+    XChangeProperty(display, win,
+                    net_wm_state, XA_ATOM, 32,
+                    PropModeReplace, (unsigned char*) states, count);
+  }
 
   {
     Atom supported[] = {
@@ -543,6 +563,9 @@ lf_windowing_init(void) {
   wm_protocols = XInternAtom(display, "WM_PROTOCOLS", False);
   wm_delete_window = XInternAtom(display, "WM_DELETE_WINDOW", False);
   motif_wm_hints = XInternAtom(display, "_MOTIF_WM_HINTS", False);
+  net_wm_state = XInternAtom(display, "_NET_WM_STATE", False);
+  net_wm_state_above = XInternAtom(display, "_NET_WM_STATE_ABOVE", False);
+  net_wm_state_below = XInternAtom(display, "_NET_WM_STATE_BELOW", False);
   net_wm_window_type = XInternAtom(display, "_NET_WM_WINDOW_TYPE", False);
   net_wm_ping = XInternAtom(display, "_NET_WM_PING", False);
   net_wm_pid = XInternAtom(display, "_NET_WM_PID", False);
@@ -563,7 +586,7 @@ lf_windowing_update(void) {
 }
 
 void
-lf_window_set_ui_state(lf_window_t win, lf_ui_state_t* state) {
+lf_win_set_ui_state(lf_window_t win, lf_ui_state_t* state) {
   window_callbacks_t* data;
   if(!(data = win_data_from_native(win))) return;
   data->ui = state;

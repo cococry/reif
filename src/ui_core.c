@@ -165,7 +165,7 @@ init_state(lf_ui_state_t* state, lf_window_t win) {
 
   lf_widget_set_listener(state->root, root_resize, LF_EVENT_WINDOW_RESIZE);
 
-  lf_window_set_ui_state(win, state);
+  lf_win_set_ui_state(win, state);
 
   state->root->props.color = state->theme->background_color;
   state->root->props.text_color = state->theme->text_color;
@@ -301,6 +301,9 @@ lf_ui_core_create_window(
 
   lf_win_set_close_cb(win, win_close_callback);
   lf_win_set_refresh_cb(win, win_refresh_callback);
+
+  window_flags = 0;
+  windowing_hints.size = 0;
   return win;
 }
 

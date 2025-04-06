@@ -42,6 +42,7 @@ int main(void) {
 
   if(lf_windowing_init() != 0) return EXIT_FAILURE;
 
+  lf_ui_core_set_window_hint(LF_WINDOWING_HINT_ABOVE, true);
   lf_window_t win = lf_ui_core_create_window(1280, 720, "hello leif");
   lf_window_t win2 = lf_ui_core_create_window(1280, 720, "hello leif");
   s.ui = lf_ui_core_init(win);
