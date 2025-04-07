@@ -82,3 +82,9 @@ void lf_component(lf_ui_state_t* ui, lf_component_func_t comp_func);
 void lf_component_rerender(lf_ui_state_t* ui, lf_component_func_t comp_func);
 
 void lf_skip_widget(lf_ui_state_t* ui);
+
+void lf_content_box(lf_ui_state_t* ui);
+
+void lf_content_box_end(lf_ui_state_t* ui);
+
+void lf_grower(lf_ui_state_t* ui);

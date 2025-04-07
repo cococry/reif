@@ -554,6 +554,7 @@ create_window(
 
 int32_t 
 lf_windowing_init(void) {
+  if(display) return 0;
   display = XOpenDisplay(NULL);
   if (!display) {
     fprintf(stderr, "reif: cannot open X display.\n");

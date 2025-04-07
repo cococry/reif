@@ -44,21 +44,54 @@ void adjust_widget_size(lf_ui_state_t* ui, lf_widget_t* widget, bool* o_fixed_w,
 }
 
 
+
 static void widget_grow_horz(lf_ui_state_t* ui, lf_widget_t* widget) {
   if (!widget->visible) return;
-  if(!widget->_fixed_height) {
-    widget->container.size.y = widget->parent->container.size.y - 
-      widget->props.padding_top  - widget->props.padding_bottom - 
-      widget->props.margin_top   - widget->props.margin_bottom;
+
+  lf_widget_t* parent = widget->parent;
+
+  if (!widget->_fixed_height) {
+    widget->container.size.y = parent->container.size.y
+      - widget->props.padding_top - widget->props.padding_bottom
+      - widget->props.margin_top - widget->props.margin_bottom;
   }
-  float avail = widget->parent->container.size.x;
-  for(uint32_t i = 0; i < widget->parent->num_childs; i++) {
-    if(widget->parent->childs[i] == widget) continue;
-    avail -= lf_widget_effective_size(widget->parent->childs[i]).x;
-  } 
-  if(!widget->_fixed_width) {
-    widget->container.size.x = avail - widget->props.margin_left - widget->props.margin_right
-      - widget->props.padding_left - widget->props.padding_right; 
+
+  static float shared_width = 0.0f;
+  static uint32_t num_grow_widgets = 0;
+  static uint32_t grow_widget_counter = 0;
+
+  if (grow_widget_counter == 0) {
+    float total_width = 0.0f;
+    num_grow_widgets = 0;
+
+    for (uint32_t i = 0; i < parent->num_childs; i++) {
+      lf_widget_t* child = parent->childs[i];
+      if (!child->visible) continue;
+
+      if (child->sizing_type == LF_SIZING_GROW) {
+        num_grow_widgets++;
+      } else {
+        total_width += lf_widget_effective_size(child).x;
+      }
+    }
+
+    float available = parent->container.size.x - total_width;
+    shared_width = available / (float)num_grow_widgets;
+  }
+
+  if (widget->sizing_type == LF_SIZING_GROW && !widget->_fixed_width) {
+    widget->container.size.x = MAX(0, shared_width
+      - widget->props.margin_left - widget->props.margin_right
+      - widget->props.padding_left - widget->props.padding_right);
+  }
+
+  grow_widget_counter++;
+
+  // Reset static counters once all grow widgets processed
+  if (grow_widget_counter == num_grow_widgets) {
+    grow_widget_counter = 0;
+    shared_width = 0.0f;
+    num_grow_widgets = 0;
   }
 }
 
@@ -142,13 +175,12 @@ void lf_layout_horizontal(lf_ui_state_t* ui, lf_widget_t* widget) {
   if (!widget->visible) return;
   lf_widget_props_t widget_props = widget->props; 
 
-  vec2s child_size = lf_widget_measure_children(widget, NULL);
   vec2s offset = (vec2s){
     .x = widget_props.padding_left,
     .y = widget_props.padding_top
   };
   if(lf_flag_exists(&widget->alignment_flags, LF_ALIGN_CENTER_HORIZONTAL)) {
-    offset.x = (lf_widget_width_ex(widget, widget_props) - child_size.x) / 2.0f;
+    offset.x = (lf_widget_width_ex(widget, widget_props) - widget->total_child_size.x) / 2.0f;
   }
   if(lf_flag_exists(&widget->alignment_flags, LF_ALIGN_CENTER_VERTICAL)) {
     offset.y = 0;
@@ -162,8 +194,9 @@ void lf_layout_horizontal(lf_ui_state_t* ui, lf_widget_t* widget) {
     ptr.x = widget->container.pos.x + widget->container.size.x;
   }
 
-  float s = (MAX(widget->total_child_size.x, widget->container.size.x) - child_size.x) / (widget->num_childs - 1);
+  float s = (MAX(widget->total_child_size.x, widget->container.size.x) - widget->total_child_size.x) / (widget->num_childs - 1);
 
+  vec2s child_size = lf_widget_measure_children(widget, NULL);
   for(uint32_t i = 0; i < widget->num_childs; i++) {
     lf_widget_t* child = widget->childs[i];
     if (!child->visible) continue;
@@ -189,9 +222,14 @@ void lf_layout_horizontal(lf_ui_state_t* ui, lf_widget_t* widget) {
       ptr.x += size.x + child->props.margin_right + (widget->justify_type == LF_JUSTIFY_SPACE_BETWEEN ?  s : 0.0f); 
     else
       ptr.x -= child->props.margin_left;
+
+    if(child_size.x > widget->container.size.x && child->_max_size.x != -1.0f) {
+      child->container.size.x =  widget->container.size.x -  (child_size.x - size.x); 
+    }
   }
 
   lf_widget_apply_size_hints(widget);
+
 }
 
 

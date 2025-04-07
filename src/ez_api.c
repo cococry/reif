@@ -495,3 +495,25 @@ void
 lf_skip_widget(lf_ui_state_t* ui) {
   ui->_ez.index_stack[ui->_ez.index_depth]++;
 }
+
+void 
+lf_content_box(lf_ui_state_t* ui) {
+  lf_div(ui);
+  lf_widget_set_layout(lf_crnt(ui), ui->_ez.last_parent->layout_type);
+  lf_widget_set_sizing(lf_crnt(ui), LF_SIZING_FIT_CONTENT);
+  lf_widget_set_margin(ui, lf_crnt(ui), 0);
+  lf_widget_set_padding(ui, lf_crnt(ui), 0);
+}
+
+void 
+lf_content_box_end(lf_ui_state_t* ui) {
+  lf_div_end(ui);
+}
+
+void 
+lf_grower(lf_ui_state_t* ui) {
+  lf_div(ui);
+  lf_widget_set_layout(lf_crnt(ui),  ui->_ez.last_parent->layout_type);
+  lf_widget_set_sizing(lf_crnt(ui), LF_SIZING_GROW);
+  lf_div_end(ui);
+} 

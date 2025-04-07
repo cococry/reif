@@ -44,28 +44,36 @@ int main(void) {
 
   lf_ui_core_set_window_hint(LF_WINDOWING_HINT_ABOVE, true);
   lf_window_t win = lf_ui_core_create_window(1280, 720, "hello leif");
-  lf_window_t win2 = lf_ui_core_create_window(1280, 720, "hello leif");
   s.ui = lf_ui_core_init(win);
-  lf_ui_state_t* ui2 = lf_ui_core_init(win2);
 
-  s.ui->root->props.color = LF_NO_COLOR;
-  ui2->root->props.color = LF_NO_COLOR;
 
-  lf_text_h1(ui2, "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6");
-  lf_text_h1(s.ui, "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6");
-lf_text_h2(s.ui, "1234567890abcde123fghijkLMNOPQRSTuvwxzy6789");
-lf_text_h3(s.ui, "asQwErTyU12345zZ7gFdX");
-lf_text_h4(s.ui, "hGf456jklP@#$%&7LM");
-lf_text_h5(s.ui, "abcd12345fGh6jkl987XY");
-lf_text_p(s.ui, "abcdeFGHIJ9876543klmnOpqrSTUVx@#");
-lf_text_p(s.ui, "abcdeFGHIJ9876543klmnOpqrSTUVx@#");
-lf_text_p(s.ui, "abcdeFGHIJ9876543klmnOpqrSTUVx@#");
-lf_text_p(s.ui, "abcdeFGHIJ9876543klmnOpqrSTUVx@#");
-lf_text_p(s.ui, "abcdeFGHIJ9876543klmnOpqrSTUVx@#");
+  lf_div(s.ui);
+  lf_widget_set_layout(lf_crnt(s.ui), LF_LAYOUT_HORIZONTAL);
 
+  lf_text_h1(s.ui, "hello");
+  lf_grower(s.ui);
+  
+  lf_div(s.ui);
+  lf_style_widget_prop_color(s.ui, lf_crnt(s.ui), color, LF_RED);
+  lf_widget_set_max_width(lf_crnt(s.ui), 300.0f);
+  lf_text_h1(s.ui, "hello world, my name is author");
+  lf_div_end(s.ui);
+
+  lf_grower(s.ui);
+
+  lf_content_box(s.ui);
+  lf_text_h1(s.ui, "hello world");
+  lf_content_box_end(s.ui);
+  lf_div_end(s.ui);
+
+  lf_div_end(s.ui);
+
+  lf_widget_invalidate_size_and_layout(s.ui->root);
+  lf_widget_shape(s.ui, s.ui->root);
+  lf_widget_invalidate_size_and_layout(s.ui->root);
+  lf_widget_shape(s.ui, s.ui->root);
   while(s.ui->running) {
     lf_ui_core_next_event(s.ui);
-    lf_ui_core_next_event(ui2);
   }
   lf_ui_core_terminate(s.ui);
 	

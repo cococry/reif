@@ -876,6 +876,7 @@ lf_widget_apply_size_hints(lf_widget_t* widget) {
       widget->props.margin_top - widget->props.margin_bottom
     ; 
   }
+
 }
 
 void 

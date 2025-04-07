@@ -16,7 +16,7 @@ _recalculate_label(
     .y =  widget->container.pos.y + widget->props.padding_top 
   };
 
-  float wrap = widget->parent->container.pos.x + widget->parent->container.size.x - widget->parent->props.padding_right;
+  float wrap = widget->parent->container.pos.x + lf_widget_width(widget->parent) - widget->parent->props.padding_left; 
   if(widget->parent->sizing_type == LF_SIZING_FIT_CONTENT) {
     wrap = -1.0f;
   }
@@ -65,8 +65,7 @@ _text_render(
     .y =  widget->container.pos.y + widget->props.padding_top 
   };
 
-  float wrap = widget->parent->container.pos.x + 
-   widget->parent->container.size.x - widget->parent->props.padding_right;
+  float wrap = widget->parent->container.pos.x + lf_widget_width(widget->parent) - widget->parent->props.padding_left; 
    
   if(widget->parent->sizing_type == LF_SIZING_FIT_CONTENT) {
     wrap = -1.0f;
