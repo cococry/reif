@@ -47,26 +47,21 @@ int main(void) {
   s.ui = lf_ui_core_init(win);
 
 
+
+  {
+
   lf_div(s.ui);
-  lf_widget_set_layout(lf_crnt(s.ui), LF_LAYOUT_HORIZONTAL);
-
-  lf_text_h1(s.ui, "hello");
-  lf_grower(s.ui);
-  
-  lf_div(s.ui);
-  lf_style_widget_prop_color(s.ui, lf_crnt(s.ui), color, LF_RED);
-  lf_widget_set_max_width(lf_crnt(s.ui), 300.0f);
-  lf_text_h1(s.ui, "hello world, my name is author");
+    lf_widget_set_layout(lf_crnt(s.ui), LF_LAYOUT_HORIZONTAL);
+    lf_widget_set_fixed_height_percent(s.ui, lf_crnt(s.ui), 100.0f); 
+    lf_text_h1(s.ui, "Text 1");
+    lf_widget_set_pos_x_absolute_percent(lf_crnt(s.ui), 50);
+    lf_text_h1(s.ui, "Text 2");
+    lf_widget_set_pos_x_absolute_percent(lf_crnt(s.ui), 0);
+    lf_text_h1(s.ui, "Text 3");
+    lf_widget_set_pos_x_absolute_percent(lf_crnt(s.ui), 100);
   lf_div_end(s.ui);
+  }
 
-  lf_grower(s.ui);
-
-  lf_content_box(s.ui);
-  lf_text_h1(s.ui, "hello world");
-  lf_content_box_end(s.ui);
-  lf_div_end(s.ui);
-
-  lf_div_end(s.ui);
 
   lf_widget_invalidate_size_and_layout(s.ui->root);
   lf_widget_shape(s.ui, s.ui->root);

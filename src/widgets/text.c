@@ -10,14 +10,17 @@ _recalculate_label(
   lf_ui_state_t* ui,
   lf_text_t* text
 ) {
+  if(!text->base._needs_size_calc) return;
   lf_widget_t* widget = &text->base;
   vec2s text_pos = (vec2s){
     .x = widget->container.pos.x + widget->props.padding_left, 
     .y =  widget->container.pos.y + widget->props.padding_top 
   };
 
-  float wrap = widget->parent->container.pos.x + lf_widget_width(widget->parent) - widget->parent->props.padding_left; 
-  if(widget->parent->sizing_type == LF_SIZING_FIT_CONTENT) {
+  float wrap = widget->parent->container.pos.x +
+    widget->parent->scroll_offset.x + widget->parent->container.size.x +
+    widget->parent->props.padding_left / 2.0f; 
+  if(widget->parent->sizing_type == LF_SIZING_FIT_CONTENT || widget->_positioned_absolute_x) {
     wrap = -1.0f;
   }
   lf_text_dimension_t text_dimension = ui->render_get_paragraph_dimension(
@@ -39,7 +42,6 @@ _recalculate_label(
     text->base.container.size.y = text_dimension.height;
 
   text->_text_dimension = text_dimension;
-
 }
 
 void
@@ -65,9 +67,9 @@ _text_render(
     .y =  widget->container.pos.y + widget->props.padding_top 
   };
 
-  float wrap = widget->parent->container.pos.x + lf_widget_width(widget->parent) - widget->parent->props.padding_left; 
+  float wrap = widget->parent->container.pos.x + widget->parent->scroll_offset.x + widget->parent->container.size.x + widget->parent->props.padding_left / 2.0f; 
    
-  if(widget->parent->sizing_type == LF_SIZING_FIT_CONTENT) {
+  if(widget->parent->sizing_type == LF_SIZING_FIT_CONTENT || widget->_positioned_absolute_x) {
     wrap = -1.0f;
   }
 

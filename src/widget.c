@@ -112,6 +112,8 @@ lf_widget_create(
   widget->_changed_size = true;
   widget->_needs_size_calc = true;
   widget->_needs_shape = true;
+  widget->_positioned_absolute_x = false;
+  widget->_positioned_absolute_y = false;
 
   widget->type = type;
   widget->container = fallback_container;
@@ -137,6 +139,8 @@ lf_widget_create(
 
   widget->_width_percent = 0.0f;
   widget->_height_percent = 0.0f;
+  widget->_abs_x_percent = -1.0f;
+  widget->_abs_y_percent = -1.0f;
   
   widget->_min_size = (vec2s){.x = -1.0f, .y = -1.0f};
   widget->_max_size = (vec2s){.x = -1.0f, .y = -1.0f};
@@ -335,7 +339,7 @@ lf_widget_render(lf_ui_state_t* ui,  lf_widget_t* widget) {
       lf_container_t scrollbar = (lf_container_t){
         .pos = (vec2s){
           .x = scrollbar_x,
-            .y = widget->container.pos.y + widget->container.size.y + widget->props.padding_top, 
+          .y = widget->container.pos.y + widget->container.size.y + widget->props.padding_top, 
         },
           .size = (vec2s){
           .x = scrollbar_width,
@@ -845,20 +849,100 @@ lf_widget_set_sizing(lf_widget_t* widget, lf_sizing_type_t sizing) {
   widget->sizing_type = sizing;
 }
 
+void widget_handle_max_size(lf_widget_t *widget) {
+  if (!widget || !widget->parent) return;
+  lf_widget_t* parent = widget->parent;
+
+  // Horizontal (x) handling
+  float available_width = parent->container.size.x;
+  int max_sized_count_x = 0;
+  float used_width = 0.0f;
+
+  // Vertical (y) handling
+  float available_height = parent->container.size.y;
+  int max_sized_count_y = 0;
+  float used_height = 0.0f;
+
+  for (int i = 0; i < parent->num_childs; ++i) {
+    lf_widget_t *child = parent->childs[i];
+
+    // Horizontal
+    if (child->_max_size.x != -1.0f) {
+      max_sized_count_x++;
+      used_width += child->_max_size.x +
+        child->props.padding_left + child->props.padding_right +
+        child->props.margin_left + child->props.margin_right;
+    } else {
+      used_width += lf_widget_width(child) +
+        child->props.margin_left + child->props.margin_right;
+    }
+
+    // Vertical
+    if (child->_max_size.y != -1.0f) {
+      max_sized_count_y++;
+      used_height += child->_max_size.y +
+        child->props.padding_top + child->props.padding_bottom +
+        child->props.margin_top + child->props.margin_bottom;
+    } else {
+      used_height += lf_widget_height(child) +
+        child->props.margin_top + child->props.margin_bottom;
+    }
+  }
+
+  if(widget->parent->layout_type == LF_LAYOUT_VERTICAL) {
+    if(widget->_max_size.x != -1.0f) {
+      widget->container.size.x = widget->container.size.x > 
+        widget->_max_size.x ? widget->_max_size.x : widget->container.size.x; 
+    }
+    if(widget->_max_size.y != -1.0f) {
+      widget->container.size.y = widget->container.size.y > 
+        widget->_max_size.y ? widget->_max_size.y : widget->container.size.y; 
+    }
+  } else {
+    // Horizontal overflow
+    float overflow_x = used_width - available_width;
+    if (overflow_x > 0.0f && max_sized_count_x > 0) {
+      float reduction_per_widget_x = overflow_x / max_sized_count_x;
+      if (widget->_max_size.x != -1.0f) {
+        float new_width = widget->_max_size.x - reduction_per_widget_x;
+        if (new_width < 0.0f) new_width = 0.0f;
+        widget->container.size.x = new_width;
+      }
+    } else {
+      if (widget->_max_size.x != -1.0f) {
+        widget->container.size.x = widget->_max_size.x;
+      }
+    }
+
+  // Vertical overflow
+  float overflow_y = used_height - available_height;
+  if (overflow_y > 0.0f && max_sized_count_y > 0) {
+    float reduction_per_widget_y = overflow_y / max_sized_count_y;
+    if (widget->_max_size.y != -1.0f) {
+      float new_height = widget->_max_size.y - reduction_per_widget_y;
+      if (new_height < 0.0f) new_height = 0.0f;
+      widget->container.size.y = new_height;
+    }
+  } else {
+    if (widget->_max_size.y != -1.0f) {
+      widget->container.size.y = widget->_max_size.y;
+    }
+  }
+  }
+}
+
 void 
 lf_widget_apply_size_hints(lf_widget_t* widget) {
   if(widget->_min_size.x != -1.0f) {
-    widget->container.size.x = widget->container.size.x < widget->_min_size.x ? widget->_min_size.x : widget->container.size.x; 
+    widget->container.size.x = widget->container.size.x <
+      widget->_min_size.x ? widget->_min_size.x : widget->container.size.x; 
   }
-  if(widget->_max_size.x != -1.0f) {
-    widget->container.size.x = widget->container.size.x > widget->_max_size.x ? widget->_max_size.x : widget->container.size.x; 
-  }
+ 
   if(widget->_min_size.y != -1.0f) {
-    widget->container.size.y = widget->container.size.y < widget->_min_size.y ? widget->_min_size.y : widget->container.size.y; 
+    widget->container.size.y = widget->container.size.y < 
+      widget->_min_size.y ? widget->_min_size.y :  widget->container.size.y; 
   }
-  if(widget->_max_size.y != -1.0f) {
-    widget->container.size.y = widget->container.size.y > widget->_max_size.y ? widget->_max_size.y : widget->container.size.y; 
-  }
+  widget_handle_max_size(widget);
 
   if (widget->_fixed_width && widget->_width_percent != 0.0f && widget->parent) {
     widget->container.size.x = lf_widget_width(widget->parent) * 
@@ -876,7 +960,6 @@ lf_widget_apply_size_hints(lf_widget_t* widget) {
       widget->props.margin_top - widget->props.margin_bottom
     ; 
   }
-
 }
 
 void 
@@ -1094,12 +1177,12 @@ lf_widget_flag_for_layout(lf_ui_state_t* ui, lf_widget_t* widget) {
 
 void 
 lf_widget_set_pos_x(lf_widget_t* widget, float pos) {
-  if(!widget) return;
+  if(!widget || widget->_positioned_absolute_x) return;
   widget->container.pos.x = pos + widget->parent->scroll_offset.x;
 }
 
 void lf_widget_set_pos_y(lf_widget_t* widget, float pos) {
-  if(!widget) return;
+  if(!widget || widget->_positioned_absolute_y) return;
   widget->container.pos.y = pos + widget->parent->scroll_offset.y;
 }
 
@@ -1110,4 +1193,41 @@ bool lf_widget_or_childs_changed_size(
     if(lf_widget_or_childs_changed_size(widget->childs[i])) return true;
   }
   return false;
+}
+
+
+void 
+lf_widget_set_pos_x_absolute(lf_widget_t* widget, float x) {
+  if(!widget) return;
+  if(widget->parent)
+    widget->parent->scrollable = false;
+  widget->_positioned_absolute_x = true;
+  widget->container.pos.x = x;
+}
+
+void 
+lf_widget_set_pos_y_absolute(lf_widget_t* widget, float y) {
+  if(!widget) return;
+  if(widget->parent)
+    widget->parent->scrollable = false;
+  widget->_positioned_absolute_y = true;
+  widget->container.pos.y = y;
+}
+
+void 
+lf_widget_set_pos_x_absolute_percent(lf_widget_t* widget, float x) {
+  if(!widget) return;
+  if(widget->parent)
+    widget->parent->scrollable = false;
+  widget->_positioned_absolute_x = true;
+  widget->_abs_x_percent = x;
+}
+
+void 
+lf_widget_set_pos_y_absolute_percent(lf_widget_t* widget, float y) {
+  if(!widget) return;
+  if(widget->parent)
+    widget->parent->scrollable = false;
+  widget->_positioned_absolute_y = true;
+  widget->_abs_y_percent = y;
 }

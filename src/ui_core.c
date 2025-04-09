@@ -440,7 +440,7 @@ lf_ui_core_default_theme(void) {
     .text_align = ParagraphAlignmentLeft,
   };
 
-  theme->scrollbar_static_size = 10;
+  theme->scrollbar_static_size = 5;
   theme->scrollbar_props = (lf_widget_props_t){
     .color = lf_color_from_hex(0x444444),
     .border_color = LF_NO_COLOR,

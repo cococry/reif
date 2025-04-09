@@ -297,7 +297,7 @@ lf_windowing_update(void) {
 }
 
 void 
-lf_windw_set_ui_state(lf_window_t win, lf_ui_state_t* state) {
+lf_win_set_ui_state(lf_window_t win, lf_ui_state_t* state) {
   for(uint32_t i = 0; i < n_windows; i++) {
     if(window_callbacks[i].win == win) {
       window_callbacks[i].ui = state;

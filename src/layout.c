@@ -8,33 +8,12 @@ static void adjust_widget_size(lf_ui_state_t* ui, lf_widget_t* widget, bool* o_f
 
 void adjust_widget_size(lf_ui_state_t* ui, lf_widget_t* widget, bool* o_fixed_w, bool* o_fixed_h, bool horizontal) {
   if (!widget->visible) return;
-  bool resizable = (!widget->_fixed_width && horizontal) || (!widget->_fixed_height && !horizontal); 
   if (!widget || !widget->parent) {
     if (o_fixed_w) *o_fixed_w = widget ? widget->_fixed_width : false;
     if (o_fixed_h) *o_fixed_h = widget ? widget->_fixed_height : false;
     return;
   }
 
-  lf_widget_t* parent = widget->parent;
-
-  float parent_inner_width = parent->container.size.x - (parent->props.padding_left - parent->props.padding_right);
-  float parent_inner_height = parent->container.size.y - (parent->props.padding_bottom);
-
-
-  // Width sizing
-  bool adjustable = (widget->sizing_type == LF_SIZING_FIT_CONTENT || (widget->sizing_type == LF_SIZING_GROW));
-  if (resizable && adjustable) {
-    widget->container.size.x = parent_inner_width - 
-      widget->props.margin_left - widget->props.margin_right -
-      widget->props.padding_left - widget->props.padding_right;
-  } 
-
-  // Height sizing
-  if (resizable && adjustable) {
-    widget->container.size.y = parent_inner_height - (widget->props.margin_top + widget->props.margin_bottom);
-  }
-
-  // Set output fixed flag values
   if (o_fixed_w) {
     *o_fixed_w = (horizontal) ? widget->_fixed_width || widget->sizing_type != LF_SIZING_FIT_CONTENT : widget->_fixed_width;
   }
@@ -167,6 +146,7 @@ lf_layout_vertical(lf_ui_state_t* ui, lf_widget_t* widget) {
       ptr.y -= child->props.margin_top;
   }
   lf_widget_apply_size_hints(widget);
+
 }
 
 
@@ -196,9 +176,12 @@ void lf_layout_horizontal(lf_ui_state_t* ui, lf_widget_t* widget) {
 
   float s = (MAX(widget->total_child_size.x, widget->container.size.x) - widget->total_child_size.x) / (widget->num_childs - 1);
 
-  vec2s child_size = lf_widget_measure_children(widget, NULL);
   for(uint32_t i = 0; i < widget->num_childs; i++) {
     lf_widget_t* child = widget->childs[i];
+    if(child->_abs_x_percent != -1.0f && child->_positioned_absolute_x) {
+      child->container.pos.x = widget->container.pos.x + widget->props.padding_left + 
+      (widget->container.size.x - lf_widget_width(child)) * (child->_abs_x_percent / 100.0f); 
+    }
     if (!child->visible) continue;
 
     vec2s size = LF_WIDGET_SIZE_V2(child);
@@ -222,9 +205,10 @@ void lf_layout_horizontal(lf_ui_state_t* ui, lf_widget_t* widget) {
       ptr.x += size.x + child->props.margin_right + (widget->justify_type == LF_JUSTIFY_SPACE_BETWEEN ?  s : 0.0f); 
     else
       ptr.x -= child->props.margin_left;
-
-    if(child_size.x > widget->container.size.x && child->_max_size.x != -1.0f) {
-      child->container.size.x =  widget->container.size.x -  (child_size.x - size.x); 
+    if(child->_abs_y_percent != -1.0f && child->_positioned_absolute_y) {
+      child->container.pos.x = widget->container.pos.x + widget->props.padding_left; 
+      child->container.pos.y = widget->container.pos.y + widget->props.padding_top + 
+      (widget->container.size.y - lf_widget_height(child)) * (child->_abs_y_percent / 100.0f); 
     }
   }
 

@@ -68,11 +68,14 @@ struct lf_widget_t {
   bool _changed_by_layout, _marked_for_removal, _changed_size,
        _rendered_within_comp;
   bool _needs_size_calc, _needs_shape;
+  bool _positioned_absolute_x, _positioned_absolute_y;
 
   lf_animation_t* anims;
 
   float _width_percent;
   float _height_percent;
+  float _abs_x_percent;
+  float _abs_y_percent;
   
   vec2s _min_size, _max_size;
 
@@ -264,3 +267,12 @@ void lf_widget_set_pos_y(lf_widget_t* widget, float pos);
 
 bool lf_widget_or_childs_changed_size(
     lf_widget_t* widget);
+
+void lf_widget_set_pos_x_absolute(lf_widget_t* widget, float x);
+
+void lf_widget_set_pos_y_absolute(lf_widget_t* widget, float y);
+
+void lf_widget_set_pos_x_absolute_percent(lf_widget_t* widget, float x);
+
+void lf_widget_set_pos_y_absolute_percent(lf_widget_t* widget, float y);
+
