@@ -54,7 +54,9 @@ widget_animate(lf_ui_state_t* ui, lf_widget_t* widget) {
         anim->target == &widget->container.size.x || 
         anim->target == &widget->container.size.y ||  
         anim->target == &widget->container.pos.x || 
-        anim->target == &widget->container.pos.y  
+        anim->target == &widget->container.pos.y ||  
+        anim->target == &widget->_height_percent ||  
+        anim->target == &widget->_width_percent 
       ) {
         widget->_changed_size = true;
         lf_widget_flag_for_layout(ui, widget);
@@ -830,12 +832,11 @@ lf_widget_set_fixed_width_percent(lf_ui_state_t* ui, lf_widget_t* widget, float 
 void 
 lf_widget_set_fixed_height_percent(lf_ui_state_t* ui, lf_widget_t* widget, float percent) {
   if(!widget) return;
-  if(widget->_height_percent == percent / 100.0f) return;
-  widget->_height_percent = percent / 100.0f;
+  lf_widget_set_prop(ui, widget, &widget->_height_percent, percent / 100.0f);
+  lf_widget_submit_props(widget);
   widget->_fixed_height = true;
   widget->_changed_size = true;
-  if(!widget->anims)
-    lf_widget_flag_for_layout(ui, widget);
+  lf_widget_flag_for_layout(ui, widget);
 }
 
 void lf_widget_set_alignment(lf_widget_t* widget, uint32_t flags) {
@@ -988,12 +989,9 @@ lf_widget_set_max_height(lf_widget_t* widget, float height) {
 
 void 
 lf_widget_set_font_style(lf_ui_state_t* ui, lf_widget_t* widget, lf_font_style_t style) {
-  widget->font_style = style;
   if(widget->type == LF_WIDGET_TYPE_TEXT) {
+    widget->font_style = style;
     lf_text_set_font(ui, (lf_text_t*)widget, widget->font_family, style, ((lf_text_t*)widget)->font.pixel_size);
-  }
-  for(uint32_t i = 0; i < widget->num_childs; i++) {
-    lf_widget_set_font_style(ui, widget->childs[i], style);
   }
 }
 

@@ -403,7 +403,7 @@ create_window(
       CWBorderPixel |
       CWEventMask;   
     win = XCreateWindow(display, root, 
-                        winpos_x, winpos_y, width, height, 1,
+                        winpos_x, winpos_y, width, height, 0,
                         visual->depth, InputOutput,  
                         visual->visual, attr_mask, &attr); 
   } else {

@@ -46,8 +46,6 @@ int main(void) {
   lf_window_t win = lf_ui_core_create_window(1280, 720, "hello leif");
   s.ui = lf_ui_core_init(win);
 
-
-
   {
 
   lf_div(s.ui);

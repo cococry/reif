@@ -74,8 +74,8 @@ _text_create_from_level(lf_ui_state_t* ui, const char* label, lf_text_level lvl)
   if (!ui->_ez._assignment_only || overflowing) {
     lf_mapped_font_t font = lf_asset_manager_request_font(
         ui, 
-        ui->_ez.current_widget->font_family, 
-        ui->_ez.current_widget->font_style, 
+      ui->root->font_family,
+      ui->root->font_style,
         _get_font_size(ui, lvl)
         ); 
     lf_text_t* txt = lf_text_create_ex(ui, ui->_ez.last_parent, label, font);
