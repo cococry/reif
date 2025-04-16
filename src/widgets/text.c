@@ -130,6 +130,7 @@ lf_text_t* _text_create(
     NULL,
     _text_size_calc
   );
+  text->_changed_label = true;
   text->base.props.text_color = parent->props.text_color;
   text->base.layout_type = LF_LAYOUT_NONE;
   lf_widget_add_child(parent, (lf_widget_t*)text);
@@ -161,24 +162,31 @@ void lf_text_set_font(
   text->base._needs_size_calc = false;
 }
 
+
 void 
 lf_text_set_label(
     lf_ui_state_t* ui, 
     lf_text_t* text,
-    const char* label) {
-  if(strcmp(text->label, label) == 0) return;
-  if(text->_changed_label) {
-    free(text->label);
+    const char* label) 
+{
+  if (text->label) {
+    free(text->label);  // Free the old label
   }
-  text->_changed_label = false;
-  text->label = strdup(label);
+
+  if (label) {
+    text->label = strdup(label);  // Duplicate the string
+  } else {
+    text->label = NULL;
+  }
+
   lf_text_dimension_t dim_before = text->_text_dimension;
+
   _recalculate_label(ui, text);
   text->base._needs_size_calc = false;
-  if(dim_before.width != text->_text_dimension.width || 
+
+  if (dim_before.width != text->_text_dimension.width || 
       dim_before.height != text->_text_dimension.height) {
     text->base._changed_size = true;
     ui->needs_render = true;
   }
-  
 }
