@@ -163,6 +163,8 @@ void lf_widget_unlisten(lf_widget_t* widget, uint32_t events);
 
 bool lf_widget_is_listening(lf_widget_t* widget, uint32_t events);
 
+lf_widget_t* lf_widget_from_id(lf_ui_state_t* ui, lf_widget_t* root, uint32_t id);
+
 void lf_widget_set_listener(
     lf_widget_t* widget, 
     lf_widget_handle_event_cb cb, 

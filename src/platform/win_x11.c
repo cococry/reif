@@ -28,11 +28,16 @@ typedef struct {
   lf_win_refresh_func ev_refresh_cb;
   lf_win_resize_func ev_resize_cb;
   lf_win_close_func ev_close_cb;
+  lf_windowing_event_func windowing_event_cb;
+
   lf_win_mouse_move_func ev_move_cb;
   Window win;
   int32_t win_width, win_height;
   lf_ui_state_t* ui;
   GLXContext glcontext;
+  uint32_t flags;
+  lf_windowing_hint_kv_t* hints;
+  uint32_t nhints;
 } window_callbacks_t;
 
 typedef struct {
@@ -48,7 +53,6 @@ typedef struct {
   int bits_per_rgb;
 } visual_info_t;
 
-static lf_windowing_event_func windowing_event_cb = NULL;
 
 static Display *display = NULL;
 static window_callbacks_t window_callbacks[MAX_WINDOWS];
@@ -94,6 +98,13 @@ window_callbacks_t* win_data_from_native(lf_window_t win) {
     }
   }
   return NULL;
+}
+
+bool boolean_hint_set(lf_windowing_hint_kv_t* hints, uint32_t nhints, lf_window_hint_t key) {
+  for(uint32_t i = 0; i < nhints; i++) {
+    if(hints[i].key == key && hints[i].value == true) return true;
+  }
+  return false;
 }
 void 
 handle_event(XEvent *event) {
@@ -265,7 +276,11 @@ handle_event(XEvent *event) {
           XWindowAttributes wa;
           XGetWindowAttributes(display, event->xcrossing.window, &wa);
 
-          if (wa.override_redirect) {
+          lf_widget_t* active_widget = lf_widget_from_id(
+            win_data.ui, 
+            win_data.ui->root, 
+            win_data.ui->active_widget_id);
+          if (wa.override_redirect && (!active_widget || active_widget->type != LF_WIDGET_TYPE_SLIDER)) {
             ev.x = -1; 
             ev.y = -1; 
             ev.delta_x = 0; 
@@ -413,6 +428,7 @@ create_window(
     XSelectInput(display, win, StructureNotifyMask | KeyPressMask | KeyReleaseMask |
                  ButtonPressMask | ButtonReleaseMask | PointerMotionMask | ExposureMask | LeaveWindowMask);
   }
+  //XSelectInput(display, root, SubstructureNotifyMask);
   textprop.value = (unsigned char*)title;
   textprop.encoding = XA_STRING;
   textprop.format = 8;
@@ -544,6 +560,7 @@ create_window(
     window_callbacks[n_windows].ev_resize_cb = NULL;
     window_callbacks[n_windows].ui = NULL;
     window_callbacks[n_windows].glcontext = glcontext;
+    window_callbacks[n_windows].flags = flags;
     ++n_windows;
   } else {
     fprintf(stderr, "warning: reached maximum amount of windows to define callbacks for.\n");
@@ -603,8 +620,11 @@ lf_windowing_next_event(void) {
   XEvent event;
   while (XPending(display)) {
     XNextEvent(display, &event);
-    if(windowing_event_cb)
-      windowing_event_cb(&event);
+    for(uint32_t i = 0; i < n_windows; i++) {
+      if(window_callbacks[i].windowing_event_cb) {
+        window_callbacks[i].windowing_event_cb(&event, window_callbacks[i].ui);
+      }
+    }
     handle_event(&event);
   }
 }
@@ -730,6 +750,16 @@ lf_win_set_mouse_move_cb(lf_window_t win, lf_win_mouse_move_func mouse_move_cb) 
   }
 }
 
+void 
+lf_win_set_event_cb(lf_window_t win, lf_windowing_event_func cb) {
+  for (uint32_t i = 0; i < n_windows; ++i) {
+    if (window_callbacks[i].win == (Window)win) {
+      window_callbacks[i].windowing_event_cb = cb;
+      break;
+    }
+  }
+}
+
 
 vec2s 
 lf_win_get_size(lf_window_t win) {
@@ -745,10 +775,6 @@ lf_win_get_size(lf_window_t win) {
 int32_t lf_win_get_refresh_rate(lf_window_t win) {
   return 144;
 }
-void 
-lf_windowing_set_event_cb(lf_windowing_event_func cb) {
-  windowing_event_cb = cb;
-}
 
 void 
 lf_win_hide(lf_window_t win) {
@@ -760,6 +786,16 @@ void
 lf_win_show(lf_window_t win) {
   XMapWindow(display, win);
   XFlush(display);
+}
+
+void 
+lf_win_set_width(lf_window_t win, float width) {
+  XResizeWindow(display, win, width, lf_win_get_size(win).y);
+}
+
+void 
+lf_win_set_height(lf_window_t win, float height) {
+  XResizeWindow(display, win, lf_win_get_size(win).x, (uint32_t)height);
 }
 
 #endif

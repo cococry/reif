@@ -4,6 +4,7 @@
 #include "../include/leif/animation.h"
 #include "../include/leif/widgets/text.h"
 #include "../include/leif/widgets/div.h"
+#include "../include/leif/widgets/slider.h"
 #include <math.h>
 #include <stdbool.h>
 #include <string.h>
@@ -58,6 +59,7 @@ widget_animate(lf_ui_state_t* ui, lf_widget_t* widget) {
         anim->target == &widget->_height_percent ||  
         anim->target == &widget->_width_percent 
       ) {
+        lf_widget_apply_size_hints(widget);
         widget->_changed_size = true;
         lf_widget_flag_for_layout(ui, widget);
       }
@@ -415,7 +417,15 @@ void lf_widget_shape(lf_ui_state_t* ui, lf_widget_t* widget) {
   widget->shape(ui, widget);
   widget->_needs_shape = false;
 
-   widget->props.corner_radius = lf_widget_height(widget) * (widget->props.corner_radius_percent / 100.0f); 
+
+  float h = lf_widget_height(widget);
+  if(widget->type == LF_WIDGET_TYPE_SLIDER) {
+    h =  widget->container.size.y + 
+      widget->props.padding_top       +
+      widget->props.padding_bottom;
+  }
+
+   widget->props.corner_radius = h * (widget->props.corner_radius_percent / 100.0f); 
 
   for (uint32_t i = 0; i < widget->num_childs; i++) {
     lf_widget_shape(ui, widget->childs[i]);
@@ -571,6 +581,11 @@ lf_widget_width_ex(lf_widget_t* widget, lf_widget_props_t props) {
 float 
 lf_widget_height_ex(lf_widget_t* widget, lf_widget_props_t props) {
   if(!widget) return 0.0f;
+  if(widget->type == LF_WIDGET_TYPE_SLIDER) {
+  return ((lf_slider_t*)widget)->handle.size.x + 
+    props.padding_top       +
+    props.padding_bottom; 
+  }
   return widget->container.size.y + 
     props.padding_top       +
     props.padding_bottom;
@@ -681,6 +696,17 @@ lf_widget_is_listening(lf_widget_t* widget, uint32_t events) {
   if(!widget) return false;
   return (widget->listening_for & events) != 0;
 }
+
+lf_widget_t*
+lf_widget_from_id(lf_ui_state_t* ui, lf_widget_t* root, uint32_t id) {
+  if (root->id == id) return root;
+  for (uint32_t i = 0; i < root->num_childs; i++) {
+    lf_widget_t* widget = lf_widget_from_id(ui, root->childs[i], id);
+    if (widget != NULL) return widget; 
+  }
+  return NULL; // Not found in this subtree
+}
+
 
 void 
 lf_widget_set_listener(lf_widget_t* widget, lf_widget_handle_event_cb cb, uint32_t events) {
@@ -836,7 +862,8 @@ lf_widget_set_fixed_height_percent(lf_ui_state_t* ui, lf_widget_t* widget, float
   lf_widget_submit_props(widget);
   widget->_fixed_height = true;
   widget->_changed_size = true;
-  lf_widget_flag_for_layout(ui, widget);
+  if(!widget->anims)
+    lf_widget_flag_for_layout(ui, widget);
 }
 
 void lf_widget_set_alignment(lf_widget_t* widget, uint32_t flags) {
@@ -954,11 +981,11 @@ lf_widget_apply_size_hints(lf_widget_t* widget) {
     ;
   }
   if (widget->_fixed_height && widget->_height_percent != 0.0f && widget->parent) {
-    widget->container.size.y = lf_widget_height(widget->parent) * 
+    widget->container.size.y = MAX(0, lf_widget_height(widget->parent) * 
       widget->_height_percent - 
       widget->props.padding_top - widget->props.padding_bottom - 
       widget->parent->props.padding_top -
-      widget->props.margin_top - widget->props.margin_bottom
+      widget->props.margin_top - widget->props.margin_bottom);
     ; 
   }
 }

@@ -91,6 +91,8 @@ struct lf_ui_state_t {
   lf_ez_state_t _ez;
 
   uint32_t active_widget_id;
+
+  void* user_data;
 };
 
 struct lf_page_t {

@@ -465,4 +465,14 @@ void
 lf_win_show(lf_window_t win) {
   glfwShowWindow(win);
 }
+
+void 
+lf_win_set_width(lf_window_t win, float width) {
+  glfwSetWindowSize(window, width, lf_win_get_size(win).y); 
+}
+
+void 
+lf_win_set_height(lf_window_t win, float height) {
+  glfwSetWindowSize(window, lf_win_get_size(win).x, height); 
+}
 #endif

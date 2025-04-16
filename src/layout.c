@@ -193,8 +193,8 @@ void lf_layout_horizontal(lf_ui_state_t* ui, lf_widget_t* widget) {
       ptr.x -= size.x + child->props.margin_right;
    
     lf_widget_set_pos_y(child, ptr.y + ((centered_vertical) ? (
-      LF_WIDGET_SIZE_V2(widget).y - 
-      LF_WIDGET_SIZE_V2(child).y) / 2.0f :
+      (LF_WIDGET_SIZE_V2(widget).y - 
+      (child->type != LF_WIDGET_TYPE_SLIDER ? LF_WIDGET_SIZE_V2(child).y : child->container.size.y) ) / 2.0f) :
       child->props.margin_top));
 
     lf_widget_set_pos_x(child, ptr.x);

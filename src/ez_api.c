@@ -421,7 +421,7 @@ lf_component(lf_ui_state_t* ui, lf_component_func_t comp_func) {
         ._child_idx = _assign_idx(ui), 
         ._parent = ui->_ez.last_parent
         }));
-  comp_func();
+  comp_func(ui);
 }
 
 void reset_widgets(lf_ui_state_t* ui, lf_widget_t* widget) {
@@ -473,7 +473,7 @@ void lf_component_rerender(lf_ui_state_t* ui, lf_component_func_t comp_func) {
       ui->_ez.index_stack[ui->_ez.index_depth] = comp->_child_idx;
       ui->_ez.last_parent = comp->_parent;
       reset_widgets(ui, comp_widget);
-      comp->func();  // Run component
+      comp->func(ui);  // Run component
       needs_reshape = remove_widgets(
           ui, comp_widget, 
           ui->_ez.current_widget,

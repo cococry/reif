@@ -30,7 +30,6 @@ typedef struct {
 } lf_windowing_hints_list_t;
 
 #define OVERDRAW_CORNER_RADIUS 2 
-#define MAX_CONCURRENT_TIMERS 16
 
 static float get_elapsed_time(void);
 
@@ -49,7 +48,6 @@ static void interrupt_all_animations_recursively(lf_widget_t* widget);
 static void default_root_layout_func(lf_ui_state_t* ui);
 static void default_idle_delay_func(lf_ui_state_t* ui);
 static void init_state(lf_ui_state_t* state, lf_window_t win);
-static void update_timers(lf_ui_state_t* state);
 
 static uint32_t window_flags = 0;
 struct timespec init_time;
@@ -184,28 +182,6 @@ init_state(lf_ui_state_t* state, lf_window_t win) {
   state->_idle_delay_func = default_idle_delay_func;
   state->active_widget_id = 0; 
   state->needs_render = true; 
-}
-
-void update_timers(lf_ui_state_t* ui) {
-  for (uint32_t i = 0; i < ui->timers.size;) {
-    lf_timer_t* timer = &ui->timers.items[i];
-    if (!timer->paused) {
-      lf_timer_tick(ui, timer, ui->delta_time, false);
-      if (timer->elapsed >= timer->duration) {
-        timer->expired = true;
-      }
-    }
-
-    if (timer->expired && !timer->looping && !timer->paused) {
-      lf_vector_remove_by_idx(&ui->timers, i);
-    } else {
-      if (timer->expired && timer->looping) {
-        timer->expired = false;
-        timer->elapsed = 0.0f;
-      }
-      i++;
-    }
-  }
 }
 
 float 
@@ -544,7 +520,18 @@ void lf_ui_core_next_event(lf_ui_state_t* ui) {
   }
 
   lf_windowing_next_event();
-  update_timers(ui);
+
+  for (uint32_t i = 0; i < ui->timers.size; i++) {
+    if(!ui->timers.items[i].paused)
+      lf_timer_tick(ui, &ui->timers.items[i], ui->delta_time, false);
+  }
+
+  // Mark expired timers for deletion
+  for (uint32_t i = 0; i < ui->timers.size; i++) {
+    if (ui->timers.items[i].elapsed >= ui->timers.items[i].duration && !ui->timers.items[i].paused) {
+      ui->timers.items[i].expired = true; 
+    }
+  }
 
   if (ui->needs_render) {
     remove_marked_widgets(ui->root);
@@ -553,6 +540,7 @@ void lf_ui_core_next_event(lf_ui_state_t* ui) {
   float cur_time = get_elapsed_time();
   ui->delta_time = cur_time - ui->_last_time;
   ui->_last_time = cur_time;
+  
 
   lf_widget_t* animated = NULL;
   if (lf_widget_animate(ui, ui->root, &animated)) {
@@ -577,6 +565,21 @@ void lf_ui_core_next_event(lf_ui_state_t* ui) {
   }
 
   lf_windowing_update();
+ // Remove expired timers
+  for (uint32_t i = 0; i < ui->timers.size;) {
+    if (ui->timers.items[i].expired && !ui->timers.items[i].looping && !ui->timers.items[i].paused) {
+      lf_vector_remove_by_idx(&ui->timers, i);
+    } else {
+      i++;
+    }
+  }
+  
+  for (uint32_t i = 0; i < ui->timers.size; i++) {
+    if(ui->timers.items[i].expired && ui->timers.items[i].looping && !ui->timers.items[i].paused) {
+      ui->timers.items[i].expired = false;
+      ui->timers.items[i].elapsed = 0.0f;
+    }
+  }
 }
 
 

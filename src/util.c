@@ -58,6 +58,23 @@ float lf_ease_in_out_quad(float t) {
     return t < 0.5 ? 2 * t * t : 1 - pow(-2 * t + 2, 2) / 2;
 }
 
+float 
+lf_ease_out_cubic(float t) {
+    return 1 - powf(1 - t, 3);
+}
+
+float 
+lf_ease_out_back(float t) {
+  const float c1 = 1.70158f;
+  const float c3 = c1 + 1;
+  return 1 + c3 * powf(t - 1, 3) + c1 * powf(t - 1, 2);
+}
+
+float 
+lf_ease_out_expo(float t) {
+    return (t == 1.0f) ? 1.0f : 1 - powf(2, -10 * t);
+}
+
 void lf_flag_set(
     uint32_t* flags, 
     uint32_t flag) {

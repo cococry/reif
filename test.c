@@ -38,6 +38,20 @@ static state_t s;
 
 float val = 0;
 
+lf_div_t* mydiv;
+void timer(lf_ui_state_t* ui, lf_timer_t* timer) {
+  lf_widget_set_fixed_height(s.ui, &mydiv->base, 0.0f);
+}
+
+void print(lf_ui_state_t* ui, lf_timer_t* timer) {
+  (void)ui; 
+  (void)timer;
+  printf("Finsihed.\n");
+}
+void on_click(lf_ui_state_t* ui, lf_widget_t* widget) {
+  lf_ui_core_start_timer(ui, 1.0f, print);
+}
+
 int main(void) {
 
   if(lf_windowing_init() != 0) return EXIT_FAILURE;
@@ -46,20 +60,19 @@ int main(void) {
   lf_window_t win = lf_ui_core_create_window(1280, 720, "hello leif");
   s.ui = lf_ui_core_init(win);
 
-  {
+  mydiv = lf_div(s.ui); 
+  lf_widget_set_padding(s.ui, lf_crnt(s.ui), 0);
+  lf_widget_set_margin(s.ui, lf_crnt(s.ui), 0);
+  lf_widget_set_layout(lf_crnt(s.ui), LF_LAYOUT_HORIZONTAL);
+  lf_widget_set_alignment(lf_crnt(s.ui), LF_ALIGN_CENTER_HORIZONTAL | LF_ALIGN_CENTER_VERTICAL);
 
-  lf_div(s.ui);
-    lf_widget_set_layout(lf_crnt(s.ui), LF_LAYOUT_HORIZONTAL);
-    lf_widget_set_fixed_height_percent(s.ui, lf_crnt(s.ui), 100.0f); 
-    lf_text_h1(s.ui, "Text 1");
-    lf_widget_set_pos_x_absolute_percent(lf_crnt(s.ui), 50);
-    lf_text_h1(s.ui, "Text 2");
-    lf_widget_set_pos_x_absolute_percent(lf_crnt(s.ui), 0);
-    lf_text_h1(s.ui, "Text 3");
-    lf_widget_set_pos_x_absolute_percent(lf_crnt(s.ui), 100);
+  lf_button(s.ui);
+
+  ((lf_button_t*)lf_crnt(s.ui))->on_click = on_click;
+  lf_text_h4(s.ui, "Click"); 
+  lf_button_end(s.ui);
+
   lf_div_end(s.ui);
-  }
-
 
   lf_widget_invalidate_size_and_layout(s.ui->root);
   lf_widget_shape(s.ui, s.ui->root);

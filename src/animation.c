@@ -77,41 +77,39 @@ lf_animation_update(lf_animation_t* anim, float dt) {
   if(!anim || !anim->keyframes || anim->n_keyframes <= 0) return;
 
   anim->elapsed_time += dt;
+
   if(anim->tick_cb) {
     anim->tick_cb(anim, anim->user_data);
   }
 
-  if(anim->i_keyframes < anim->n_keyframes && 
-    anim->elapsed_time >= anim->keyframes[anim->i_keyframes].duration) {
+  lf_animation_keyframe_t* kf = &anim->keyframes[anim->i_keyframes];
 
-    if(anim->i_keyframes + 1 < anim->n_keyframes) {
+  if(kf->duration <= 0.0f || !kf->easing) return;
+
+  float t = anim->elapsed_time / kf->duration;
+
+  if (t >= 1.0f) {
+    *anim->target = kf->end; 
+    anim->elapsed_time = 0.0f;
+
+    if (anim->i_keyframes + 1 < anim->n_keyframes) {
       anim->i_keyframes++;
-      anim->elapsed_time = 0.0f;
-    }
-    else {
+    } else {
       if(anim->looping) {
         anim->i_keyframes = 0;
-        anim->elapsed_time = 0.0f;
+      } else {
+        anim->active = false;
+        if(anim->finish_cb) {
+          anim->finish_cb(anim, anim->user_data);
+        }
       }
     }
+  } else {
+    float eased_t = kf->easing(t);
+    *anim->target = kf->start + (kf->end - kf->start) * eased_t;
   }
-
-  lf_animation_keyframe_t kf = anim->keyframes[anim->i_keyframes];
-
-  if(kf.duration <= 0.0f) return;
-  if(!kf.easing) return;
-
-  float t = anim->elapsed_time / kf.duration;
-  if (t >= 1.0f) {
-    t = 1.0f;
-    anim->active = false; 
-    if(anim->finish_cb) {
-      anim->finish_cb(anim, anim->user_data);
-    }
-  }
-  float eased_t = kf.easing(t);
-  *anim->target = kf.start + (kf.end - kf.start) * eased_t;
 }
+
 
 void 
 lf_animation_interrupt(lf_animation_t* head, float* target) {

@@ -56,7 +56,6 @@ do {                                                                            
   (vec)->items[_i] = (vec)->items[_i + 1];                                        \
   }                                                                               \
   (vec)->size--;                                                                  \
-  (vec)->items = realloc((vec)->items, (vec)->size * sizeof(*(vec)->items));      \
 } while (0)                                                                       
 
 #define lf_vector_append(vec, item)                                               \
@@ -154,7 +153,7 @@ typedef struct {
 
 } lf_widget_props_t;
 
-typedef void (*lf_component_func_t)(void);
+typedef void (*lf_component_func_t)(lf_ui_state_t* ui);
 
 typedef struct {
   lf_component_func_t func;
@@ -197,6 +196,12 @@ float lf_ease_out_quad(float t);
 float lf_ease_in_quad(float t);
 
 float lf_ease_in_out_quad(float t);
+
+float lf_ease_out_cubic(float t);
+
+float lf_ease_out_back(float t);
+
+float lf_ease_out_expo(float t);
 
 void lf_flag_set(
     uint32_t* flags, 
