@@ -92,7 +92,7 @@ _slider_handle_event(
     lf_widget_set_prop_color(
       ui, widget,
       &slider->handle_props.color, 
-      lf_color_dim(slider->_initial_handle_props.color, 80.0f));
+      lf_color_dim(slider->_initial_handle_props.color, 70.0f));
     if(slider->on_slide)
       slider->on_slide(ui, widget, slider->val);
   }
@@ -108,7 +108,6 @@ _slider_handle_event(
     if(slider->on_leave) {
       slider->on_leave(ui, widget);
     }
-    printf("left slider.\n");
     return;
   }
  if(on_handle && event->type == LF_EVENT_MOUSE_MOVE &&
@@ -117,7 +116,7 @@ _slider_handle_event(
     lf_widget_set_prop_color(
       ui, widget, 
       &slider->handle_props.color, 
-      lf_color_dim(slider->_initial_handle_props.color, 90.0f));
+      lf_color_dim(slider->_initial_handle_props.color, 80.0f));
     ui->needs_render = true;
     if(slider->on_enter) {
       slider->on_enter(ui, widget);
@@ -182,10 +181,10 @@ _slider_render(
     ui->render_state, 
     widget->container.pos,
     (vec2s){
-      .x = (slider->handle.pos.x - widget->container.pos.x) + widget->props.corner_radius,
+      .x = (slider->handle.pos.x - widget->container.pos.x) + widget->props.corner_radius * 2,
       .y = widget->container.size.y + widget->props.padding_top + widget->props.padding_bottom
     },
-    widget->props.text_color, LF_NO_COLOR, 0, widget->props.corner_radius * 2);
+    widget->props.text_color, LF_NO_COLOR, 0, widget->props.corner_radius);
 
 
   ui->render_rect(
