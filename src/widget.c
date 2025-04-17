@@ -409,14 +409,16 @@ void lf_widget_shape(lf_ui_state_t* ui, lf_widget_t* widget) {
 
   if (widget->size_calc && widget->_needs_size_calc){
     widget->size_calc(ui, widget);
+    widget->_needs_size_calc = false;
   }
 
   widget->_changed_size = !(widget->container.size.x == size_before.x &&
-                            widget->container.size.y == size_before.y);
+    widget->container.size.y == size_before.y);
 
-  widget->shape(ui, widget);
-  widget->_needs_shape = false;
-
+  if (widget->_needs_shape || widget->_changed_size) {
+    widget->shape(ui, widget);
+    widget->_needs_shape = false;
+  }
 
   float h = lf_widget_height(widget);
   if(widget->type == LF_WIDGET_TYPE_SLIDER) {
@@ -425,7 +427,7 @@ void lf_widget_shape(lf_ui_state_t* ui, lf_widget_t* widget) {
       widget->props.padding_bottom;
   }
 
-   widget->props.corner_radius = h * (widget->props.corner_radius_percent / 100.0f); 
+  widget->props.corner_radius = h * (widget->props.corner_radius_percent / 100.0f); 
 
   for (uint32_t i = 0; i < widget->num_childs; i++) {
     lf_widget_shape(ui, widget->childs[i]);
@@ -1185,7 +1187,7 @@ lf_widget_flag_for_layout(lf_ui_state_t* ui, lf_widget_t* widget) {
     if ((to_flag->_changed_size || (
       to_flag->container.size.x != size_before.x || 
       to_flag->container.size.y != size_before.y) ||
-      widget->alignment_flags != 0) && to_flag->parent) {
+      to_flag->sizing_type == LF_SIZING_FIT_CONTENT) && to_flag->parent) {
       size_changed = true;
       to_flag = to_flag->parent;
     } else {

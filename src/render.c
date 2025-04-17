@@ -113,6 +113,7 @@ lf_rn_render_get_text_dimension_paragraph(
       .align = (RnParagraphAlignment)props.align
     });
 
+
   return (lf_text_dimension_t){
     .width  = text_props.width,
     .height = text_props.height,

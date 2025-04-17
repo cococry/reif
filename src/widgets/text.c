@@ -12,10 +12,6 @@ _recalculate_label(
 ) {
   if(!text->base._needs_size_calc) return;
   lf_widget_t* widget = &text->base;
-  vec2s text_pos = (vec2s){
-    .x = widget->container.pos.x + widget->props.padding_left, 
-    .y =  widget->container.pos.y + widget->props.padding_top 
-  };
 
   float wrap = widget->parent->container.pos.x +
     widget->parent->scroll_offset.x + widget->parent->container.size.x +
@@ -23,6 +19,10 @@ _recalculate_label(
   if(widget->parent->sizing_type == LF_SIZING_FIT_CONTENT || widget->_positioned_absolute_x) {
     wrap = -1.0f;
   }
+  vec2s text_pos = (vec2s){
+    .x = widget->container.pos.x + widget->props.padding_left, 
+    .y =  widget->container.pos.y + widget->props.padding_top 
+  };
   lf_text_dimension_t text_dimension = ui->render_get_paragraph_dimension(
     ui->render_state,
     text->label,
@@ -170,20 +170,19 @@ lf_text_set_label(
     const char* label) 
 {
   if (text->label) {
-    free(text->label);  // Free the old label
+    free(text->label);  
   }
 
   if (label) {
-    text->label = strdup(label);  // Duplicate the string
+    text->label = strdup(label);  
   } else {
     text->label = NULL;
   }
 
   lf_text_dimension_t dim_before = text->_text_dimension;
 
-  _recalculate_label(ui, text);
-  text->base._needs_size_calc = false;
-
+  lf_widget_t* shaping = lf_widget_flag_for_layout(ui, &text->base);
+  lf_widget_shape(ui, shaping);
   if (dim_before.width != text->_text_dimension.width || 
       dim_before.height != text->_text_dimension.height) {
     text->base._changed_size = true;

@@ -48,9 +48,22 @@ void print(lf_ui_state_t* ui, lf_timer_t* timer) {
   (void)timer;
   printf("Finsihed.\n");
 }
-void on_click(lf_ui_state_t* ui, lf_widget_t* widget) {
-  lf_ui_core_start_timer(ui, 1.0f, print);
+int count = 0;
+char* text = "Button Text";
+
+void comp(lf_ui_state_t* ui) {
+  lf_button(ui);
+  lf_text_h4(ui, text);
+  lf_button_end(ui);
+
 }
+void on_click(lf_ui_state_t* ui, lf_widget_t* widget) {
+  char buf[32];
+  sprintf(buf, "Fuck This: %i", count++);
+  text = strdup(buf);
+  lf_component_rerender(s.ui, comp);
+}
+
 
 int main(void) {
 
@@ -60,24 +73,26 @@ int main(void) {
   lf_window_t win = lf_ui_core_create_window(1280, 720, "hello leif");
   s.ui = lf_ui_core_init(win);
 
-  mydiv = lf_div(s.ui); 
-  lf_widget_set_padding(s.ui, lf_crnt(s.ui), 0);
-  lf_widget_set_margin(s.ui, lf_crnt(s.ui), 0);
+  lf_div(s.ui);
+  lf_style_widget_prop_color(s.ui, lf_crnt(s.ui), color, lf_color_from_hex(0x444444));
+  lf_style_widget_prop(s.ui, lf_crnt(s.ui), corner_radius_percent, 5); 
+  lf_widget_set_fixed_height(s.ui, lf_crnt(s.ui), 500.0f);
+  lf_widget_set_fixed_width(s.ui, lf_crnt(s.ui), 500.0f);
+
+  lf_div(s.ui);
   lf_widget_set_layout(lf_crnt(s.ui), LF_LAYOUT_HORIZONTAL);
-  lf_widget_set_alignment(lf_crnt(s.ui), LF_ALIGN_CENTER_HORIZONTAL | LF_ALIGN_CENTER_VERTICAL);
 
-  lf_button(s.ui);
-
-  ((lf_button_t*)lf_crnt(s.ui))->on_click = on_click;
-  lf_text_h4(s.ui, "Click"); 
+  lf_component(s.ui, comp);
+  
+  lf_button(s.ui)->on_click = on_click;
+  lf_text_h4(s.ui, "Button text.");
   lf_button_end(s.ui);
 
   lf_div_end(s.ui);
+  lf_text_h4(s.ui, "  The      Industrial Revolution and its consequences have been a disaster for the human race. They have greatly");
+  lf_div_end(s.ui);
+  
 
-  lf_widget_invalidate_size_and_layout(s.ui->root);
-  lf_widget_shape(s.ui, s.ui->root);
-  lf_widget_invalidate_size_and_layout(s.ui->root);
-  lf_widget_shape(s.ui, s.ui->root);
   while(s.ui->running) {
     lf_ui_core_next_event(s.ui);
   }
