@@ -179,7 +179,7 @@ lf_font_t lf_rn_render_font_create_from_face(
   return (lf_font_t)rn_load_font_from_face((RnState*)render_state, filepath, size, face_idx);
 }
 
-lf_font_t lf_rn_render_font_create_from_data(
+lf_font_t lf_rn_render_font_create_from_loaded_data(
     void* render_state, 
     const char* filepath, 
     uint32_t size,

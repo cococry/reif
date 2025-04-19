@@ -170,7 +170,6 @@ lf_text_set_label(
     lf_text_t* text,
     const char* label) 
 {
-  bool had_label = text->label != NULL;
   if (text->label) {
     free(text->label);  
   }
@@ -181,17 +180,8 @@ lf_text_set_label(
     text->label = NULL;
   }
 
-  if(had_label) {
-    lf_text_dimension_t dim_before = text->_text_dimension;
-    if (dim_before.width != text->_text_dimension.width || 
-      dim_before.height != text->_text_dimension.height) {
-      text->base._changed_size = true;
-      ui->needs_render = true;
-    }
-  } else {
-    text->base._changed_size = true;
-    ui->needs_render = true;
-  }
+  text->base._changed_size = true;
+  ui->needs_render = true;
 
   lf_widget_t* shaping = lf_widget_flag_for_layout(ui, &text->base);
   lf_widget_shape(ui, shaping);
