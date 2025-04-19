@@ -3,6 +3,7 @@
 #include "../include/leif/render.h"
 #include "../include/leif/util.h"
 #include "../include/leif/ez_api.h"
+#include "../include/leif/task.h"
 
 #include <cglm/types-struct.h>
 #include <fontconfig/fontconfig.h>
@@ -519,6 +520,7 @@ void lf_ui_core_next_event(lf_ui_state_t* ui) {
     fprintf(stderr, "leif: no active page set, but pages available, defaulting to first page.\n");
   }
 
+  lf_task_flush_all_tasks();
   lf_windowing_next_event();
 
   for (uint32_t i = 0; i < ui->timers.size; i++) {

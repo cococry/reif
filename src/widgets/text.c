@@ -102,8 +102,8 @@ lf_text_t* _text_create(
   if(!parent) return NULL;
   lf_text_t* text = (lf_text_t*)malloc(sizeof(lf_text_t));
 
-  text->label = strdup(label);
   text->font = font;
+  text->label = strdup(label);
 
   lf_text_dimension_t text_dimension = ui->render_get_paragraph_dimension(
     ui->render_state,
@@ -134,6 +134,7 @@ lf_text_t* _text_create(
   text->base.props.text_color = parent->props.text_color;
   text->base.layout_type = LF_LAYOUT_NONE;
   lf_widget_add_child(parent, (lf_widget_t*)text);
+
 
   _recalculate_label(ui, text);
   text->base._needs_size_calc = false;
@@ -169,6 +170,7 @@ lf_text_set_label(
     lf_text_t* text,
     const char* label) 
 {
+  bool had_label = text->label != NULL;
   if (text->label) {
     free(text->label);  
   }
@@ -179,13 +181,18 @@ lf_text_set_label(
     text->label = NULL;
   }
 
-  lf_text_dimension_t dim_before = text->_text_dimension;
-
-  lf_widget_t* shaping = lf_widget_flag_for_layout(ui, &text->base);
-  lf_widget_shape(ui, shaping);
-  if (dim_before.width != text->_text_dimension.width || 
+  if(had_label) {
+    lf_text_dimension_t dim_before = text->_text_dimension;
+    if (dim_before.width != text->_text_dimension.width || 
       dim_before.height != text->_text_dimension.height) {
+      text->base._changed_size = true;
+      ui->needs_render = true;
+    }
+  } else {
     text->base._changed_size = true;
     ui->needs_render = true;
   }
+
+  lf_widget_t* shaping = lf_widget_flag_for_layout(ui, &text->base);
+  lf_widget_shape(ui, shaping);
 }

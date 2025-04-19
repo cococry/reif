@@ -51,16 +51,20 @@ void print(lf_ui_state_t* ui, lf_timer_t* timer) {
 int count = 0;
 char* text = "Button Text";
 
-void comp(lf_ui_state_t* ui) {
-  lf_button(ui);
-  lf_text_h4(ui, text);
-  lf_button_end(ui);
+int32_t percents[] = {
+  20, 
+  82
+};
 
+void comp(lf_ui_state_t* ui) {
+  for(uint32_t i = 0; i < 2; i++) {
+    char buf[32];
+    sprintf(buf, "%i%%", percents[i]);
+    lf_text_h4(ui, buf);
+  }
 }
 void on_click(lf_ui_state_t* ui, lf_widget_t* widget) {
-  char buf[32];
-  sprintf(buf, "Fuck This: %i", count++);
-  text = strdup(buf);
+  percents[1] = 81;
   lf_component_rerender(s.ui, comp);
 }
 
@@ -85,13 +89,8 @@ int main(void) {
   lf_component(s.ui, comp);
   
   lf_button(s.ui)->on_click = on_click;
-  lf_text_h4(s.ui, "Button text.");
+  lf_text_h4(s.ui, "Button");
   lf_button_end(s.ui);
-
-  lf_div_end(s.ui);
-  lf_text_h4(s.ui, "  The      Industrial Revolution and its consequences have been a disaster for the human race. They have greatly");
-  lf_div_end(s.ui);
-  
 
   while(s.ui->running) {
     lf_ui_core_next_event(s.ui);
