@@ -4,3 +4,6 @@
 ./tests/
 .cache
 ./tests/.cache/
+./test
+./test.c 
+./config.mk
