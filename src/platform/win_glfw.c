@@ -280,7 +280,7 @@ glfw_key_callback(
 
   for(uint32_t i = 0; i < n_windows; i++) {
     if(window_callbacks[i].win == window && window_callbacks[i].ev_key_cb)
-      window_callbacks[i].ev_key_cb(data->ui, window, key, scancode, ev.action, mods); 
+      window_callbacks[i].ev_key_cb(data->ui, window, key, scancode, ev.keyaction, mods); 
   }
 }
 
