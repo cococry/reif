@@ -22,7 +22,7 @@ typedef enum {
 
 typedef enum {
   LF_KEY_ACTION_PRESS = 0,
-  LF_KEY_ACTION_RELEASE = 0,
+  LF_KEY_ACTION_RELEASE,
 } lf_event_key_action;
 
 typedef struct {

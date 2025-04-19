@@ -273,7 +273,7 @@ glfw_key_callback(
   ev.keyscancode = scancode;
   ev.keyaction = (action == GLFW_RELEASE) ? LF_KEY_ACTION_RELEASE : LF_KEY_ACTION_PRESS;
   ev.keymods = mods;
-  ev.type = action == GLFW_RELEASE ? LF_EVENT_KEY_RELEASE : LF_EVENT_KEY_PRESS;;
+  ev.type = action == GLFW_RELEASE ? LF_EVENT_KEY_RELEASE : LF_EVENT_KEY_PRESS;
   current_event = ev.type; 
 
   lf_widget_handle_event(data->ui, data->ui->root, &ev);
