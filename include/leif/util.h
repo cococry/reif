@@ -220,3 +220,4 @@ bool lf_flag_exists(
 
 uint64_t lf_djb2_hash(const unsigned char* str);
 
+int32_t lf_codepoint_to_utf8(uint32_t codepoint, char* out);

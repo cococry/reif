@@ -86,6 +86,12 @@ typedef void (*lf_win_key_func)(
     int32_t mods
     );
 
+typedef void (*lf_win_char_func)(
+    lf_ui_state_t*,
+    lf_window_t,
+    char* utf8
+    );
+
 int32_t lf_windowing_init(void);
 
 int32_t lf_windowing_terminate(void);
@@ -135,6 +141,8 @@ void lf_win_set_mouse_release_cb(lf_window_t win, lf_win_mouse_release_func mous
 void lf_win_set_mouse_move_cb(lf_window_t win, lf_win_mouse_move_func mouse_move_cb);
 
 void lf_win_set_key_cb(lf_window_t win, lf_win_key_func key_cb);
+
+void lf_win_set_typing_char_cb(lf_window_t win, lf_win_char_func char_cb);
 
 void lf_win_set_event_cb(lf_window_t win, lf_windowing_event_func windowing_cb);
 

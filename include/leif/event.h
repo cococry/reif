@@ -14,6 +14,7 @@ typedef enum {
   LF_EVENT_MOUSE_PRESS = 1 << 7,
   LF_EVENT_MOUSE_RELEASE = 1 << 8,
   LF_EVENT_MOUSE_WHEEL = 1 << 9,
+  LF_EVENT_TYPING_CHAR = 1 << 10,
 #ifdef LF_X11
   LF_EVENT_X11_PROPERTY = 1 << 10,
 #endif 
@@ -29,11 +30,11 @@ typedef struct {
   int32_t width, height;
   uint32_t keycode, keyscancode, keymods;
   lf_event_key_action keyaction;
+  char charutf8[5];
   uint32_t button;
   int16_t x, y;
   int16_t scroll_x, scroll_y;
   int16_t delta_x, delta_y;
-  char keyunicode[32];
   uint32_t atom;
 
   bool handled;

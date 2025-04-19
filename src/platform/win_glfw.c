@@ -34,6 +34,7 @@ typedef struct {
   lf_win_mouse_move_func ev_move_cb;
   lf_win_mouse_wheel_func ev_mouse_wheel_cb;
   lf_win_key_func ev_key_cb;
+  lf_win_char_func ev_char_cb;
 
   lf_windowing_event_func windowing_event_cb;
   GLFWwindow* win;
@@ -83,6 +84,10 @@ static void glfw_key_callback(
   int32_t action,
   int32_t mods);
 
+static void glfw_char_callback(
+  GLFWwindow* window, 
+  uint32_t charcode);
+
 static window_callbacks_t* win_data_from_native(lf_window_t win);
 
 lf_window_t
@@ -129,6 +134,7 @@ create_window(
     window_callbacks[n_windows].ev_move_cb = NULL;
     window_callbacks[n_windows].ev_mouse_wheel_cb = NULL;
     window_callbacks[n_windows].ev_key_cb = NULL;
+    window_callbacks[n_windows].ev_char_cb = NULL;
     window_callbacks[n_windows].ui = NULL;
     ++n_windows;
     glfwSetMouseButtonCallback(win, glfw_mouse_button_callback);
@@ -138,6 +144,7 @@ create_window(
     glfwSetCursorPosCallback(win, glfw_mouse_move_callback);
     glfwSetScrollCallback(win, glfw_scroll_callback);
     glfwSetKeyCallback(win, glfw_key_callback);
+    glfwSetCharCallback(win, glfw_char_callback);
   }
   else {
     fprintf(stderr, "warning: reached maximum amount of windows to define callbacks for.\n");
@@ -260,19 +267,41 @@ glfw_key_callback(
   int32_t mods) {
   window_callbacks_t* data = win_data_from_native(window);
   if(!data) return;
-  lf_event_t ev = {0};
 
+  lf_event_t ev = {0};
   ev.keycode = key;
   ev.keyscancode = scancode;
   ev.keyaction = (action == GLFW_RELEASE) ? LF_KEY_ACTION_RELEASE : LF_KEY_ACTION_PRESS;
   ev.keymods = mods;
+  ev.type = action == GLFW_RELEASE ? LF_EVENT_KEY_RELEASE : LF_EVENT_KEY_PRESS;;
+  current_event = ev.type; 
 
-  current_event = action == GLFW_RELEASE ? LF_EVENT_KEY_RELEASE : LF_EVENT_KEY_PRESS;
   lf_widget_handle_event(data->ui, data->ui->root, &ev);
 
   for(uint32_t i = 0; i < n_windows; i++) {
     if(window_callbacks[i].win == window && window_callbacks[i].ev_key_cb)
       window_callbacks[i].ev_key_cb(data->ui, window, key, scancode, action, mods); 
+  }
+}
+
+void 
+glfw_char_callback(
+  GLFWwindow* window, 
+  uint32_t charcode) {
+  window_callbacks_t* data = win_data_from_native(window);
+  if(!data) return;
+  char utf8[5];
+  lf_codepoint_to_utf8(charcode, utf8);
+
+  lf_event_t ev = {0};
+  memcpy(ev.charutf8, utf8, 5);
+  ev.type = LF_EVENT_TYPING_CHAR;
+  
+  lf_widget_handle_event(data->ui, data->ui->root, &ev);
+  
+  for(uint32_t i = 0; i < n_windows; i++) {
+    if(window_callbacks[i].win == window && window_callbacks[i].ev_char_cb)
+      window_callbacks[i].ev_char_cb(data->ui, window, utf8); 
   }
 }
 
@@ -444,6 +473,11 @@ lf_win_set_mouse_move_cb(lf_window_t win, lf_win_mouse_move_func mouse_move_cb) 
 void 
 lf_win_set_key_cb(lf_window_t win, lf_win_key_func key_cb) {
   SET_WINDOW_DATA(win, ev_key_cb, key_cb);
+}
+
+void 
+lf_win_set_typing_char_cb(lf_window_t win, lf_win_char_func char_cb) {
+  SET_WINDOW_DATA(win, ev_char_cb, char_cb);
 }
 
 void 

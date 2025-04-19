@@ -103,3 +103,33 @@ uint64_t lf_djb2_hash(const unsigned char *str) {
 
   return hash;
 }
+
+int32_t 
+lf_codepoint_to_utf8(uint32_t codepoint, char* out) {
+  if (codepoint <= 0x7F) {
+    out[0] = codepoint;
+    out[1] = '\0';
+    return 1;
+  } else if (codepoint <= 0x7FF) {
+    out[0] = 0xC0 | (codepoint >> 6);
+    out[1] = 0x80 | (codepoint & 0x3F);
+    out[2] = '\0';
+    return 2;
+  } else if (codepoint <= 0xFFFF) {
+    out[0] = 0xE0 | (codepoint >> 12);
+    out[1] = 0x80 | ((codepoint >> 6) & 0x3F);
+    out[2] = 0x80 | (codepoint & 0x3F);
+    out[3] = '\0';
+    return 3;
+  } else if (codepoint <= 0x10FFFF) {
+    out[0] = 0xF0 | (codepoint >> 18);
+    out[1] = 0x80 | ((codepoint >> 12) & 0x3F);
+    out[2] = 0x80 | ((codepoint >> 6) & 0x3F);
+    out[3] = 0x80 | (codepoint & 0x3F);
+    out[4] = '\0';
+    return 4;
+  }
+
+  // Invalid codepoint
+  return 0;
+}
