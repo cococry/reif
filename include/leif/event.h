@@ -31,6 +31,7 @@ typedef struct {
   uint32_t keycode, keyscancode, keymods;
   lf_event_key_action keyaction;
   char charutf8[5];
+  int32_t charutf8len;
   uint32_t button;
   int16_t x, y;
   int16_t scroll_x, scroll_y;

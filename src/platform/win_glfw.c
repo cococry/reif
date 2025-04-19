@@ -291,7 +291,7 @@ glfw_char_callback(
   window_callbacks_t* data = win_data_from_native(window);
   if(!data) return;
   char utf8[5];
-  lf_codepoint_to_utf8(charcode, utf8);
+  int32_t utf8len = lf_codepoint_to_utf8(charcode, utf8);
 
   lf_event_t ev = {0};
   memcpy(ev.charutf8, utf8, 5);
@@ -301,7 +301,7 @@ glfw_char_callback(
   
   for(uint32_t i = 0; i < n_windows; i++) {
     if(window_callbacks[i].win == window && window_callbacks[i].ev_char_cb)
-      window_callbacks[i].ev_char_cb(data->ui, window, utf8); 
+      window_callbacks[i].ev_char_cb(data->ui, window, utf8, utf8len); 
   }
 }
 

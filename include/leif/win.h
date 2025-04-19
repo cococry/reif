@@ -89,7 +89,8 @@ typedef void (*lf_win_key_func)(
 typedef void (*lf_win_char_func)(
     lf_ui_state_t*,
     lf_window_t,
-    char* utf8
+    char* utf8,
+    uint32_t utf8charlen
     );
 
 int32_t lf_windowing_init(void);
@@ -145,7 +146,6 @@ void lf_win_set_key_cb(lf_window_t win, lf_win_key_func key_cb);
 void lf_win_set_typing_char_cb(lf_window_t win, lf_win_char_func char_cb);
 
 void lf_win_set_event_cb(lf_window_t win, lf_windowing_event_func windowing_cb);
-
 
 vec2s lf_win_get_size(lf_window_t win);
 
