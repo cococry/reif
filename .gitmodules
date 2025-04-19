@@ -1,3 +1,4 @@
 [submodule "vendor/runara"]
 	path = vendor/runara
 	url = https://github.com/cococry/runara
+	branch = main
