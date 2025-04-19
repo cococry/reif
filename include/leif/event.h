@@ -19,10 +19,16 @@ typedef enum {
 #endif 
 } lf_event_type_t;
 
+typedef enum {
+  LF_KEY_ACTION_PRESS = 0,
+  LF_KEY_ACTION_RELEASE = 0,
+} lf_event_key_action;
+
 typedef struct {
   lf_event_type_t type;
   int32_t width, height;
-  uint32_t keycode, keystate;
+  uint32_t keycode, keyscancode, keymods;
+  lf_event_key_action keyaction;
   uint32_t button;
   int16_t x, y;
   int16_t scroll_x, scroll_y;

@@ -11,6 +11,20 @@
 
 #define MAX_WINDOWS 16
 
+#define SET_WINDOW_DATA(win, cb_field, cb_func)                      \
+  do {                                                               \
+    for (uint32_t i = 0; i < n_windows; ++i) {                       \
+      if (window_callbacks[i].win == (win)) {                        \
+        window_callbacks[i].cb_field = (cb_func);                    \
+        break;                                                       \
+      }                                                              \
+    }                                                                \
+  } while (0)
+
+
+#define MAX_KEYS GLFW_KEY_LAST
+#define MAX_MOUSE_BUTTONS GLFW_MOUSE_BUTTON_LAST
+
 typedef struct {
   lf_win_mouse_press_func ev_mouse_press_cb;
   lf_win_mouse_release_func ev_mouse_release_cb;
@@ -19,11 +33,14 @@ typedef struct {
   lf_win_close_func ev_close_cb;
   lf_win_mouse_move_func ev_move_cb;
   lf_win_mouse_wheel_func ev_mouse_wheel_cb;
+  lf_win_key_func ev_key_cb;
+
+  lf_windowing_event_func windowing_event_cb;
   GLFWwindow* win;
   lf_ui_state_t* ui;
-} window_callbacks_t; 
+} window_callbacks_t;
 
-static lf_windowing_event_func  windowing_event_cb = NULL;
+
 static window_callbacks_t window_callbacks[MAX_WINDOWS];
 static uint32_t n_windows = 0;
 static lf_event_type_t current_event;
@@ -58,6 +75,13 @@ static void glfw_mouse_move_callback(
 static void glfw_refresh_callback(GLFWwindow* window);
 
 static void glfw_scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
+
+static void glfw_key_callback(
+  GLFWwindow* window, 
+  int32_t key, 
+  int32_t scancode, 
+  int32_t action,
+  int32_t mods);
 
 static window_callbacks_t* win_data_from_native(lf_window_t win);
 
@@ -104,6 +128,7 @@ create_window(
     window_callbacks[n_windows].ev_refresh_cb = NULL;
     window_callbacks[n_windows].ev_move_cb = NULL;
     window_callbacks[n_windows].ev_mouse_wheel_cb = NULL;
+    window_callbacks[n_windows].ev_key_cb = NULL;
     window_callbacks[n_windows].ui = NULL;
     ++n_windows;
     glfwSetMouseButtonCallback(win, glfw_mouse_button_callback);
@@ -112,6 +137,7 @@ create_window(
     glfwSetWindowRefreshCallback(win, glfw_refresh_callback);
     glfwSetCursorPosCallback(win, glfw_mouse_move_callback);
     glfwSetScrollCallback(win, glfw_scroll_callback);
+    glfwSetKeyCallback(win, glfw_key_callback);
   }
   else {
     fprintf(stderr, "warning: reached maximum amount of windows to define callbacks for.\n");
@@ -218,10 +244,35 @@ glfw_scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
 
   current_event = LF_EVENT_MOUSE_WHEEL;
   lf_widget_handle_event(data->ui, data->ui->root, &ev);
-  
+
   for(uint32_t i = 0; i < n_windows; i++) {
-      if(window_callbacks[i].win == window && window_callbacks[i].ev_mouse_wheel_cb)
-        window_callbacks[i].ev_mouse_wheel_cb(data->ui, window, (int16_t)xoffset, (int16_t)yoffset);
+    if(window_callbacks[i].win == window && window_callbacks[i].ev_mouse_wheel_cb)
+      window_callbacks[i].ev_mouse_wheel_cb(data->ui, window, (int16_t)xoffset, (int16_t)yoffset);
+  }
+}
+
+void 
+glfw_key_callback(
+  GLFWwindow* window, 
+  int32_t key, 
+  int32_t scancode, 
+  int32_t action,
+  int32_t mods) {
+  window_callbacks_t* data = win_data_from_native(window);
+  if(!data) return;
+  lf_event_t ev = {0};
+
+  ev.keycode = key;
+  ev.keyscancode = scancode;
+  ev.keyaction = (action == GLFW_RELEASE) ? LF_KEY_ACTION_RELEASE : LF_KEY_ACTION_PRESS;
+  ev.keymods = mods;
+
+  current_event = action == GLFW_RELEASE ? LF_EVENT_KEY_RELEASE : LF_EVENT_KEY_PRESS;
+  lf_widget_handle_event(data->ui, data->ui->root, &ev);
+
+  for(uint32_t i = 0; i < n_windows; i++) {
+    if(window_callbacks[i].win == window && window_callbacks[i].ev_key_cb)
+      window_callbacks[i].ev_key_cb(data->ui, window, key, scancode, action, mods); 
   }
 }
 
@@ -298,11 +349,7 @@ lf_windowing_update(void) {
 
 void 
 lf_win_set_ui_state(lf_window_t win, lf_ui_state_t* state) {
-  for(uint32_t i = 0; i < n_windows; i++) {
-    if(window_callbacks[i].win == win) {
-      window_callbacks[i].ui = state;
-    }
-  }
+  SET_WINDOW_DATA(win, ui, state);
 }
 
 lf_event_type_t 
@@ -313,8 +360,11 @@ lf_windowing_get_current_event(void) {
 void 
 lf_windowing_next_event(void) {
   glfwPollEvents();
-  if(windowing_event_cb)
-    windowing_event_cb(&current_event);
+  for(uint32_t i = 0; i < n_windows; i++) {
+    if(window_callbacks[i].windowing_event_cb) {
+      window_callbacks[i].windowing_event_cb(&current_event, window_callbacks[i].ui);
+    }
+  }
 }
 
 lf_window_t 
@@ -363,63 +413,44 @@ lf_win_cursor_pos(lf_window_t win) {
 
 void 
 lf_win_set_close_cb(lf_window_t win, lf_win_close_func close_cb) {
-  for (uint32_t i = 0; i < n_windows; ++i) {
-    if (window_callbacks[i].win == win) {
-      window_callbacks[i].ev_close_cb = close_cb;
-      break;
-    }
-  }
+  SET_WINDOW_DATA(win, ev_close_cb, close_cb);
 }
 
 void 
 lf_win_set_refresh_cb(lf_window_t win, lf_win_refresh_func refresh_cb) {
-  for (uint32_t i = 0; i < n_windows; ++i) {
-    if (window_callbacks[i].win == win) {
-      window_callbacks[i].ev_refresh_cb = refresh_cb;
-      break;
-    }
-  }
+  SET_WINDOW_DATA(win, ev_refresh_cb, refresh_cb);
 }
 
 void 
 lf_win_set_resize_cb(lf_window_t win, lf_win_resize_func resize_cb) {
-  for (uint32_t i = 0; i < n_windows; ++i) {
-    if (window_callbacks[i].win == win) {
-      window_callbacks[i].ev_resize_cb = resize_cb;
-      break;
-    }
-  }
+  SET_WINDOW_DATA(win, ev_resize_cb, resize_cb);
 }
 
 void 
 lf_win_set_mouse_press_cb(lf_window_t win, lf_win_mouse_press_func mouse_press_cb) {
-  for (uint32_t i = 0; i < n_windows; ++i) {
-    if (window_callbacks[i].win == win) {
-      window_callbacks[i].ev_mouse_press_cb = mouse_press_cb;
-      break;
-    }
-  }
+  SET_WINDOW_DATA(win, ev_mouse_press_cb, mouse_press_cb);
 }
 
 void 
 lf_win_set_mouse_release_cb(lf_window_t win, lf_win_mouse_release_func mouse_release_cb) {
-  for (uint32_t i = 0; i < n_windows; ++i) {
-    if (window_callbacks[i].win == win) {
-      window_callbacks[i].ev_mouse_release_cb = mouse_release_cb;
-      break;
-    }
-  }
+  SET_WINDOW_DATA(win, ev_mouse_release_cb, mouse_release_cb);
 }
 
 void 
 lf_win_set_mouse_move_cb(lf_window_t win, lf_win_mouse_move_func mouse_move_cb) {
- for (uint32_t i = 0; i < n_windows; ++i) {
-    if (window_callbacks[i].win == win) {
-      window_callbacks[i].ev_move_cb = mouse_move_cb;
-      break;
-    }
-  }
+  SET_WINDOW_DATA(win, ev_move_cb, mouse_move_cb);
 }
+
+void 
+lf_win_set_key_cb(lf_window_t win, lf_win_key_func key_cb) {
+  SET_WINDOW_DATA(win, ev_key_cb, key_cb);
+}
+
+void 
+lf_win_set_event_cb(lf_window_t win, lf_windowing_event_func windowing_cb) {
+  SET_WINDOW_DATA(win, windowing_event_cb, windowing_cb);
+}
+
 vec2s 
 lf_win_get_size(lf_window_t win) {
   int32_t width, height;
@@ -451,10 +482,6 @@ lf_win_get_refresh_rate(lf_window_t win) {
     return -1;
 }
 
-void 
-lf_windowing_set_event_cb(lf_windowing_event_func cb) {
-  windowing_event_cb = cb;
-}
 
 void 
 lf_win_hide(lf_window_t win) {
@@ -468,11 +495,11 @@ lf_win_show(lf_window_t win) {
 
 void 
 lf_win_set_width(lf_window_t win, float width) {
-  glfwSetWindowSize(window, width, lf_win_get_size(win).y); 
+  glfwSetWindowSize(win, width, lf_win_get_size(win).y); 
 }
 
 void 
 lf_win_set_height(lf_window_t win, float height) {
-  glfwSetWindowSize(window, lf_win_get_size(win).x, height); 
+  glfwSetWindowSize(win, lf_win_get_size(win).x, height); 
 }
 #endif

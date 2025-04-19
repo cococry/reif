@@ -28,6 +28,7 @@ typedef struct {
   lf_win_refresh_func ev_refresh_cb;
   lf_win_resize_func ev_resize_cb;
   lf_win_close_func ev_close_cb;
+  lf_win_key_func ev_key_cb;
   lf_windowing_event_func windowing_event_cb;
 
   lf_win_mouse_move_func ev_move_cb;
@@ -79,6 +80,8 @@ static window_callbacks_t* win_data_from_native(lf_window_t win);
 
 static void handle_event(XEvent *event);
 
+static void handle_key_event(XKeyEvent *event, window_callbacks_t data);
+
 static lf_window_t create_window(uint32_t width, uint32_t height, const char* title, uint32_t flags, lf_windowing_hint_kv_t* hints, uint32_t nhints);
 
 void get_window_size(Display* display, Window window, int32_t* width, int32_t* height) {
@@ -106,6 +109,7 @@ bool boolean_hint_set(lf_windowing_hint_kv_t* hints, uint32_t nhints, lf_window_
   }
   return false;
 }
+
 void 
 handle_event(XEvent *event) {
   lf_event_t ev = {0};
@@ -297,8 +301,41 @@ handle_event(XEvent *event) {
           }
           break;
         }
+      case KeyPress:
+      case KeyRelease:
+        {
+          handle_key_event(&event->xkey, window_callbacks[i]);
+        }
     }
   }
+}
+
+void 
+handle_key_event(XKeyEvent *event, window_callbacks_t data) {
+  KeySym keysym = XLookupKeysym(event, 0);
+  int32_t key = (int32_t)keysym;                 
+  int32_t scancode = event->keycode;             
+  int32_t action = (event->type == KeyPress) ? LF_KEY_ACTION_PRESS : LF_KEY_ACTION_RELEASE;  
+  int32_t mods = 0;
+
+  if (event->state & ShiftMask)   mods |= (1 << 0);  // MOD_SHIFT
+  if (event->state & ControlMask) mods |= (1 << 1);  // MOD_CONTROL
+  if (event->state & Mod1Mask)    mods |= (1 << 2);  // MOD_ALT
+  if (event->state & Mod4Mask)    mods |= (1 << 3);  // MOD_SUPER
+
+  lf_event_t ev = {0};
+  ev.keycode = key;
+  ev.keyscancode = scancode;
+  ev.keyaction = action; 
+  ev.keymods = mods;
+
+  current_event = ev.type; 
+  if(data.ui)
+    lf_widget_handle_event(data.ui, data.ui->root, &ev);
+  if (data.ev_key_cb && data.ui)
+    data.ev_key_cb(
+      data.ui, 
+      (lf_window_t)event->window, key, scancode, action, mods);
 }
 
 lf_window_t
@@ -558,6 +595,7 @@ create_window(
     window_callbacks[n_windows].ev_close_cb = NULL;
     window_callbacks[n_windows].ev_refresh_cb = NULL;
     window_callbacks[n_windows].ev_resize_cb = NULL;
+    window_callbacks[n_windows].ev_key_cb = NULL;
     window_callbacks[n_windows].ui = NULL;
     window_callbacks[n_windows].glcontext = glcontext;
     window_callbacks[n_windows].flags = flags;

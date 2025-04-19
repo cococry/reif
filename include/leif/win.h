@@ -77,6 +77,15 @@ typedef void (*lf_win_mouse_wheel_func)(
     int16_t scroll_x, int16_t scroll_y
     );
 
+typedef void (*lf_win_key_func)(
+    lf_ui_state_t*,
+    lf_window_t,
+    int32_t key, 
+    int32_t scancode,
+    int32_t action,
+    int32_t mods
+    );
+
 int32_t lf_windowing_init(void);
 
 int32_t lf_windowing_terminate(void);
@@ -125,7 +134,10 @@ void lf_win_set_mouse_release_cb(lf_window_t win, lf_win_mouse_release_func mous
 
 void lf_win_set_mouse_move_cb(lf_window_t win, lf_win_mouse_move_func mouse_move_cb);
 
-void lf_win_set_event_cb(lf_window_t win, lf_windowing_event_func cb);
+void lf_win_set_key_cb(lf_window_t win, lf_win_key_func key_cb);
+
+void lf_win_set_event_cb(lf_window_t win, lf_windowing_event_func windowing_cb);
+
 
 vec2s lf_win_get_size(lf_window_t win);
 
