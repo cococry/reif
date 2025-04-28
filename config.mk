@@ -1,9 +1,9 @@
 WINDOWING=-DLF_X11
 # Comment out for GLFW Windowing:
-# WINDOWING=-DLF_GLFW
+WINDOWING=-DLF_GLFW
 PLATFORM_SPECIFIC = src/platform/win_glfw.c  src/platform/win_x11.c  
 PLATFORM_SPECIFIC_LIBS = -lX11 -lXrandr -lXrender
 # Comment out for GLFW Windowing:
-# PLATFORM_SPECIFIC_LIBS = -lglfw
+PLATFORM_SPECIFIC_LIBS = -lglfw
 ADDITIONAL_FLAGS=-DLF_RUNARA
 RUNARA_LIBS=-lrunara -lharfbuzz -lfreetype -lm -lGL
