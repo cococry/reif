@@ -70,6 +70,8 @@ lf_asset_manager_request_texture(lf_ui_state_t* ui, const char* filepath) {
   return tex;
 }
 
+
+
 lf_font_style_list_t 
 lf_asset_manager_get_font_styles_from_family(lf_ui_state_t* ui, const char* family_name) {
   if(!ui || !lf_ui_core_get_asset_manager()->fonts.items) return (lf_font_style_list_t){0}; 
@@ -103,8 +105,12 @@ lf_asset_manager_get_font_styles_from_family(lf_ui_state_t* ui, const char* fami
       if (FcPatternGetString(font, FC_FILE, 0, &file) == FcResultMatch &&
         FcPatternGetString(font, FC_STYLE, 0, &style) == FcResultMatch) { 
         lf_font_style_t style_i = 0; 
-        for(uint32_t j = 0; j < LF_FONT_STYLE_COUNT - 1; j++) {
-          if(strcmp((char*)style, font_style_mappings[j]) == 0) {
+        for(uint32_t j = 0; j < LF_FONT_STYLE_COUNT; j++) {
+          bool regular_double_standard = (j == LF_FONT_STYLE_REGULAR) && 
+            ((strcmp((char*)style, "Book") == 0) || 
+            strcmp((char*)style, "Roman") == 0);
+          if(strcmp((char*)style, font_style_mappings[j]) == 0 || 
+            regular_double_standard) {
             style_i = (lf_font_style_t)j;
             break;
           } 
@@ -157,11 +163,14 @@ lf_loaded_font_style_t lf_asset_manager_get_loaded_font_style(
       FcChar8 *file_str, *style_str;
       int index = -1;
       FcPatternGetString(font, FC_STYLE, 0, &style_str);
-      if(strcmp((char*)style_str, LF_FONT_STYLE_TO_STRING(style)) == 0) {
+      bool regular_double_standard = (style == LF_FONT_STYLE_REGULAR) && 
+        ((strcmp((char*)style_str, "Book") == 0) || 
+        strcmp((char*)style_str, "Roman") == 0);
+      if(regular_double_standard ||
+        strcmp((char*)style_str, LF_FONT_STYLE_TO_STRING(style)) == 0) {
         if( FcPatternGetInteger(font, FC_INDEX, 0, &index) != FcResultMatch || 
             FcPatternGetString(font, FC_FILE, 0, &file_str) != FcResultMatch)
           return (lf_loaded_font_style_t){0}; 
-
         lf_loaded_font_style_t loaded_style;
         loaded_style.style = style;
         loaded_style.filepath = NULL;
