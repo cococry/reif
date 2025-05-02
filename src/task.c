@@ -27,16 +27,19 @@ lf_task_enqueue(lf_task_cb_t cb, void* userdata) {
   return true;
 }
 
-void 
-lf_task_flush_all_tasks(void) {
-  pthread_mutex_lock(&s_queue_mutex);
-  while (s_head != s_tail) {
+void lf_task_flush_all_tasks(void) {
+  while (true) {
+    pthread_mutex_lock(&s_queue_mutex);
+    if (s_head == s_tail) {
+      pthread_mutex_unlock(&s_queue_mutex);
+      break;
+    }
+
     lf_task_t task = s_tasks[s_head];
     s_head = (s_head + 1) % MAX_TASKS;
-    pthread_mutex_unlock(&s_queue_mutex); 
-    task.cb(task.userdata);
-    pthread_mutex_lock(&s_queue_mutex);
-  }
-  pthread_mutex_unlock(&s_queue_mutex);
-}
+    pthread_mutex_unlock(&s_queue_mutex);
 
+    task.cb(task.userdata);
+    // now loop again to check if any new tasks were added
+  }
+}

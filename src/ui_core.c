@@ -32,8 +32,6 @@ typedef struct {
 
 #define OVERDRAW_CORNER_RADIUS 2 
 
-static float get_elapsed_time(void);
-
 static void render_widget_and_submit(
   lf_ui_state_t* ui, 
   lf_widget_t* widget,
@@ -44,14 +42,13 @@ static void root_resize(lf_ui_state_t* ui, lf_widget_t* widget, lf_event_t* ev);
 static void root_size_calc(lf_ui_state_t* ui, lf_widget_t* widget);
 static void win_close_callback(lf_ui_state_t* ui, lf_window_t window);
 static void win_refresh_callback(lf_ui_state_t* ui, lf_window_t window);
-static void remove_marked_widgets(lf_widget_t* root);
 static void interrupt_all_animations_recursively(lf_widget_t* widget);
 static void default_root_layout_func(lf_ui_state_t* ui);
 static void default_idle_delay_func(lf_ui_state_t* ui);
 static void init_state(lf_ui_state_t* state, lf_window_t win);
 
 static uint32_t window_flags = 0;
-struct timespec init_time;
+static struct timespec init_time;
 
 static lf_windowing_hints_list_t windowing_hints;
 
@@ -74,24 +71,6 @@ win_refresh_callback(lf_ui_state_t* ui, lf_window_t window) {
   ui->render_resize_display(ui->render_state, winsize.x, winsize.y);
 }
 
-void 
-remove_marked_widgets(lf_widget_t* root) {
-  if (!root) return;
-
-  for (uint32_t i = 0; i < root->num_childs; ) {
-    lf_widget_t* child = root->childs[i];
-    if (child->_marked_for_removal) {
-      lf_widget_remove_child_from_memory(root, i);
-    } else {
-      remove_marked_widgets(child);
-      i++;
-    }
-  }
-
-  if (root->_marked_for_removal) {
-    lf_widget_remove_from_memory(root);
-  }
-}
 
 void 
 interrupt_all_animations_recursively(lf_widget_t* widget) {
@@ -177,7 +156,7 @@ init_state(lf_ui_state_t* state, lf_window_t win) {
   state->_ez = lf_ez_api_init(state); 
 
   clock_gettime(CLOCK_MONOTONIC, &init_time);
-  state->_last_time = get_elapsed_time();
+  state->_last_time = lf_ui_core_get_elapsed_time();
   state->delta_time = 0.0f;
 
   state->_idle_delay_func = default_idle_delay_func;
@@ -185,14 +164,6 @@ init_state(lf_ui_state_t* state, lf_window_t win) {
   state->needs_render = true; 
 }
 
-float 
-get_elapsed_time(void) {
-  struct timespec now;
-  clock_gettime(CLOCK_MONOTONIC, &now);
-  float elapsed_time = (now.tv_sec - init_time.tv_sec) +
-    (now.tv_nsec - init_time.tv_nsec) / 1e9f;
-  return elapsed_time;
-}
 
 void 
 render_widget_and_submit(
@@ -502,7 +473,35 @@ lf_ui_state_t* lf_ui_core_init_ex(
   return state;
 }
 
-void shape_widgets_if_needed(lf_ui_state_t* ui, lf_widget_t* widget, bool parent_shaped) {
+float 
+lf_ui_core_get_elapsed_time(void) {
+  struct timespec now;
+  clock_gettime(CLOCK_MONOTONIC, &now);
+  float elapsed_time = (now.tv_sec - init_time.tv_sec) +
+    (now.tv_nsec - init_time.tv_nsec) / 1e9f;
+  return elapsed_time;
+}
+
+void 
+lf_ui_core_remove_marked_widgets(lf_widget_t* root) {
+  if (!root) return;
+
+  for (uint32_t i = 0; i < root->num_childs; ) {
+    lf_widget_t* child = root->childs[i];
+    if (child->_marked_for_removal) {
+      lf_widget_remove_child_from_memory(root, i);
+    } else {
+      lf_ui_core_remove_marked_widgets(child);
+      i++;
+    }
+  }
+
+  if (root->_marked_for_removal) {
+    lf_widget_remove_from_memory(root);
+  }
+}
+
+void lf_ui_core_shape_widgets_if_needed(lf_ui_state_t* ui, lf_widget_t* widget, bool parent_shaped) {
   bool shaped = false;
 
   if (!parent_shaped && widget->_needs_shape) {
@@ -510,7 +509,7 @@ void shape_widgets_if_needed(lf_ui_state_t* ui, lf_widget_t* widget, bool parent
     shaped = true;  
   }
   for (uint32_t i = 0; i < widget->num_childs; i++) {
-    shape_widgets_if_needed(ui, widget->childs[i], shaped);
+    lf_ui_core_shape_widgets_if_needed(ui, widget->childs[i], shaped);
   }
 }
 
@@ -536,10 +535,10 @@ void lf_ui_core_next_event(lf_ui_state_t* ui) {
   }
 
   if (ui->needs_render) {
-    remove_marked_widgets(ui->root);
+    lf_ui_core_remove_marked_widgets(ui->root);
   }
 
-  float cur_time = get_elapsed_time();
+  float cur_time = lf_ui_core_get_elapsed_time();
   ui->delta_time = cur_time - ui->_last_time;
   ui->_last_time = cur_time;
   
@@ -554,7 +553,7 @@ void lf_ui_core_next_event(lf_ui_state_t* ui) {
 
   bool rendered = lf_windowing_get_current_event() == LF_EVENT_WINDOW_REFRESH;
 
-  shape_widgets_if_needed(ui, ui->root, false);
+  lf_ui_core_shape_widgets_if_needed(ui, ui->root, false);
 
   if (ui->needs_render) {
     lf_win_make_gl_context(ui->win);
@@ -621,7 +620,7 @@ lf_ui_core_terminate(lf_ui_state_t* ui) {
   lf_vector_free(&ui->pages);
 
   lf_widget_remove(ui->root);
-  remove_marked_widgets(ui->root);
+  lf_ui_core_remove_marked_widgets(ui->root);
 
   lf_win_destroy(ui->win);
 

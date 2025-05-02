@@ -137,6 +137,13 @@ lf_ui_state_t* lf_ui_core_init_ex(
     lf_render_delete_texture render_delete_texture,
     lf_render_texture render_texture);
 
+
+float lf_ui_core_get_elapsed_time(void);
+
+void lf_ui_core_remove_marked_widgets(lf_widget_t* root);
+
+void lf_ui_core_shape_widgets_if_needed(lf_ui_state_t* ui, lf_widget_t* widget, bool parent_shaped);
+
 void lf_ui_core_next_event(lf_ui_state_t* ui);
 
 void lf_ui_core_submit(lf_ui_state_t* ui);
