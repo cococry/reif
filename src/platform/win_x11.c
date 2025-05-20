@@ -645,6 +645,7 @@ create_window(
   return win;
 }
 
+typedef void (*glXSwapIntervalEXTProc)(Display*, GLXDrawable, int);
 int32_t 
 lf_windowing_init(void) {
   if(display) return 0;
@@ -661,6 +662,10 @@ lf_windowing_init(void) {
     return 1;
   }
 
+glXSwapIntervalEXTProc glXSwapIntervalEXT = (glXSwapIntervalEXTProc)glXGetProcAddressARB((const GLubyte *)"glXSwapIntervalEXT");
+if (glXSwapIntervalEXT) {
+    glXSwapIntervalEXT(display, glXGetCurrentDrawable(), 1);
+}
   wm_protocols = XInternAtom(display, "WM_PROTOCOLS", False);
   wm_delete_window = XInternAtom(display, "WM_DELETE_WINDOW", False);
   motif_wm_hints = XInternAtom(display, "_MOTIF_WM_HINTS", False);
@@ -703,6 +708,7 @@ lf_windowing_next_event(void) {
   XEvent event;
   while (XPending(display)) {
     XNextEvent(display, &event);
+    XFilterEvent(&event, None);  
     for(uint32_t i = 0; i < n_windows; i++) {
       if(window_callbacks[i].windowing_event_cb) {
         window_callbacks[i].windowing_event_cb(&event, window_callbacks[i].ui);
