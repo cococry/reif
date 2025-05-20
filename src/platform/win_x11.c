@@ -1,8 +1,8 @@
 
+#ifdef LF_X11
 #include <GL/gl.h>
 #include <stdint.h>
 #include <unistd.h>
-#ifdef LF_X11
 #include <X11/X.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -13,6 +13,13 @@
 #include <assert.h>
 #include <X11/extensions/Xrandr.h>
 #include <X11/Xatom.h>
+#include <X11/X.h>
+#include <X11/Xlib.h>
+#include <X11/Xproto.h>
+#include <X11/keysym.h>
+#include <X11/keysymdef.h>
+#include <X11/Xutil.h>
+#include <X11/Xlocale.h>
 #include <GL/glx.h>
 #include "../../include/leif/win.h"
 #include "../../include/leif/ui_core.h"
@@ -29,6 +36,7 @@ typedef struct {
   lf_win_resize_func ev_resize_cb;
   lf_win_close_func ev_close_cb;
   lf_win_key_func ev_key_cb;
+  lf_win_char_func ev_char_cb;
   lf_windowing_event_func windowing_event_cb;
 
   lf_win_mouse_move_func ev_move_cb;
@@ -39,6 +47,8 @@ typedef struct {
   uint32_t flags;
   lf_windowing_hint_kv_t* hints;
   uint32_t nhints;
+
+  XIC xinputcontext;
 } window_callbacks_t;
 
 typedef struct {
@@ -72,6 +82,7 @@ wm_protocols,
 wm_delete_window,
 motif_wm_hints;
 static GLXContext share_gl_context = 0;
+static XIM xim;
 
 static int last_mouse_x = 0;
 static int last_mouse_y = 0;
@@ -310,8 +321,7 @@ handle_event(XEvent *event) {
   }
 }
 
-void 
-handle_key_event(XKeyEvent *event, window_callbacks_t data) {
+void handle_key_event(XKeyEvent *event, window_callbacks_t data) {
   KeySym keysym = XLookupKeysym(event, 0);
   int32_t key = (int32_t)keysym;                 
   int32_t scancode = event->keycode;             
@@ -323,19 +333,38 @@ handle_key_event(XKeyEvent *event, window_callbacks_t data) {
   if (event->state & Mod1Mask)    mods |= (1 << 2);  // MOD_ALT
   if (event->state & Mod4Mask)    mods |= (1 << 3);  // MOD_SUPER
 
-  lf_event_t ev = {0};
-  ev.keycode = key;
-  ev.keyscancode = scancode;
-  ev.keyaction = action; 
-  ev.keymods = mods;
+  // --- Handle raw key press/release
+  lf_event_t key_ev = {0};
+  key_ev.keycode = key;
+  key_ev.keyscancode = scancode;
+  key_ev.keyaction = action;
+  key_ev.keymods = mods;
+  key_ev.type = (event->type == KeyPress) ? LF_EVENT_KEY_PRESS : LF_EVENT_KEY_RELEASE;
 
-  current_event = ev.type; 
-  if(data.ui)
-    lf_widget_handle_event(data.ui, data.ui->root, &ev);
+  current_event = key_ev.type;
+  if (data.ui)
+    lf_widget_handle_event(data.ui, data.ui->root, &key_ev);
   if (data.ev_key_cb && data.ui)
-    data.ev_key_cb(
-      data.ui, 
-      (lf_window_t)event->window, key, scancode, action, mods);
+    data.ev_key_cb(data.ui, (lf_window_t)event->window, key, scancode, action, mods);
+
+  if (event->type == KeyPress) {
+    char utf8[32] = {0};
+    Status status;
+    KeySym dummy_keysym;
+    int len = Xutf8LookupString(data.xinputcontext, event, utf8, sizeof(utf8) - 1, &dummy_keysym, &status);
+
+    if (len > 0 && (status == XLookupChars || status == XLookupBoth)) {
+      lf_event_t char_ev = {0};
+      char_ev.type = LF_EVENT_TYPING_CHAR;
+      memcpy(char_ev.charutf8, utf8, 5);  // copy only first 5 bytes max
+      current_event = char_ev.type;
+
+      if (data.ui)
+        lf_widget_handle_event(data.ui, data.ui->root, &char_ev);
+      if (data.ev_char_cb && data.ui)
+        data.ev_char_cb(data.ui, (lf_window_t)event->window, char_ev.charutf8, len);
+    }
+  }
 }
 
 lf_window_t
@@ -583,6 +612,7 @@ create_window(
     XFree(sizehints);
   }
 
+
   if (n_windows + 1 <= MAX_WINDOWS) {
     window_callbacks[n_windows].win = win;
     int32_t w, h;
@@ -596,9 +626,17 @@ create_window(
     window_callbacks[n_windows].ev_refresh_cb = NULL;
     window_callbacks[n_windows].ev_resize_cb = NULL;
     window_callbacks[n_windows].ev_key_cb = NULL;
+    window_callbacks[n_windows].ev_char_cb = NULL;
     window_callbacks[n_windows].ui = NULL;
     window_callbacks[n_windows].glcontext = glcontext;
     window_callbacks[n_windows].flags = flags;
+    window_callbacks[n_windows].xinputcontext = XCreateIC(
+      xim, XNInputStyle, 
+      XIMPreeditNothing | XIMStatusNothing, 
+      XNClientWindow, win, NULL);
+    if (!window_callbacks[n_windows].xinputcontext) {
+      fprintf(stderr, "reif: cannot create input context\n");
+    }
     ++n_windows;
   } else {
     fprintf(stderr, "warning: reached maximum amount of windows to define callbacks for.\n");
@@ -613,6 +651,13 @@ lf_windowing_init(void) {
   display = XOpenDisplay(NULL);
   if (!display) {
     fprintf(stderr, "reif: cannot open X display.\n");
+    return 1;
+  }
+
+  XSetLocaleModifiers("");
+  xim = XOpenIM(display, NULL, NULL, NULL);
+  if (xim == NULL) {
+    fprintf(stderr, "txt: cannot open X input method\n");
     return 1;
   }
 
@@ -797,6 +842,27 @@ lf_win_set_event_cb(lf_window_t win, lf_windowing_event_func cb) {
     }
   }
 }
+
+void 
+lf_win_set_key_cb(lf_window_t win, lf_win_key_func cb) {
+  for (uint32_t i = 0; i < n_windows; ++i) {
+    if (window_callbacks[i].win == (Window)win) {
+      window_callbacks[i].ev_key_cb = cb;
+      break;
+    }
+  }
+}
+
+void 
+lf_win_set_typing_char_cb(lf_window_t win, lf_win_char_func cb) {
+  for (uint32_t i = 0; i < n_windows; ++i) {
+    if (window_callbacks[i].win == (Window)win) {
+      window_callbacks[i].ev_char_cb = cb;
+      break;
+    }
+  }
+}
+
 
 
 vec2s 
