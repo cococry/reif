@@ -126,6 +126,19 @@ create_window(
     }
   }
   if(n_windows + 1 <= MAX_WINDOWS) {
+    lf_win_register(win);
+  }
+  else {
+    fprintf(stderr, "warning: reached maximum amount of windows to define callbacks for.\n");
+  }
+
+  glfwSwapInterval(1);
+
+  return win;
+}
+
+void 
+lf_win_register(lf_window_t win) {
     window_callbacks[n_windows].win = win;
     window_callbacks[n_windows].ev_mouse_press_cb = NULL;
     window_callbacks[n_windows].ev_mouse_release_cb = NULL;
@@ -145,14 +158,6 @@ create_window(
     glfwSetScrollCallback(win, glfw_scroll_callback);
     glfwSetKeyCallback(win, glfw_key_callback);
     glfwSetCharCallback(win, glfw_char_callback);
-  }
-  else {
-    fprintf(stderr, "warning: reached maximum amount of windows to define callbacks for.\n");
-  }
-
-  glfwSwapInterval(1);
-
-  return win;
 }
 
 void 

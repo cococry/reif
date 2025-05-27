@@ -81,6 +81,7 @@ net_wm_pid,
 wm_protocols, 
 wm_delete_window,
 motif_wm_hints;
+static GLXContext share_gl_context = 0;
 static XIM xim;
 
 static int last_mouse_x = 0;
@@ -140,6 +141,11 @@ handle_event(XEvent *event) {
         }
         break;
       case ConfigureNotify:
+        if (event->xconfigure.width == window_callbacks[i].win_width &&
+          event->xconfigure.height == window_callbacks[i].win_height) {
+          break;  // No need to process the event if the size is the same
+        }
+
         int32_t actual_win_w, actual_win_h;
         get_window_size(display, window_callbacks[i].win, 
                         &actual_win_w, 
@@ -361,90 +367,257 @@ void handle_key_event(XKeyEvent *event, window_callbacks_t data) {
   }
 }
 
-typedef GLXContext (*glXCreateContextAttribsARBProc)(
-    Display*, GLXFBConfig, GLXContext, Bool, const int*);
-
-lf_window_t create_window(
+lf_window_t
+create_window(
   uint32_t width, 
   uint32_t height, 
   const char* title,
   uint32_t flags, 
   lf_windowing_hint_kv_t* hints,
   uint32_t nhints) {
+  Window root = DefaultRootWindow(display);
 
-  Display* dpy = XOpenDisplay(NULL);
-  if (!dpy) {
-    fprintf(stderr, "Cannot open display\n");
-    return 0;
+  uint32_t winpos_x = 0, winpos_y = 0;
+  bool adjusting_pos = false;
+  bool transparent_framebuffer = false, decorated = false, 
+  visible = true, resizable = true, above = false, below = false;
+  for(uint32_t i = 0; i < nhints; i++) {
+    if(hints[i].key == LF_WINDOWING_HINT_TRANSPARENT_FRAMEBUFFER) {
+      transparent_framebuffer = hints[i].value;
+    } 
+    if(hints[i].key == LF_WINDOWING_HINT_DECORATED) {
+      decorated = hints[i].value;
+    } 
+    if(hints[i].key == LF_WINDOWING_HINT_POS_X) {
+      adjusting_pos = true;
+      winpos_x = hints[i].value;
+    }
+    else if(hints[i].key == LF_WINDOWING_HINT_POS_Y) {
+      adjusting_pos = true;
+      winpos_y = hints[i].value;
+    }
+    else if(hints[i].key == LF_WINDOWING_HINT_RESIZABLE) {
+      resizable = hints[i].value;
+    }
+    else if(hints[i].key == LF_WINDOWING_HINT_VISIBLE) {
+      visible = hints[i].value;
+    }  
+    else if(hints[i].key == LF_WINDOWING_HINT_ABOVE) {
+      above = true;
+    }
+    else if(hints[i].key == LF_WINDOWING_HINT_BELOW) {
+      below = true;
+    }
   }
 
-  static int fbAttribs[] = {
-    GLX_X_RENDERABLE,  True,
+  int screen_num = DefaultScreen(display);
+
+  static int visdata[] = {
+    GLX_RENDER_TYPE, GLX_RGBA_BIT,
     GLX_DRAWABLE_TYPE, GLX_WINDOW_BIT,
-    GLX_RENDER_TYPE,   GLX_RGBA_BIT,
-    GLX_X_VISUAL_TYPE, GLX_TRUE_COLOR,
-    GLX_RED_SIZE,      8,
-    GLX_GREEN_SIZE,    8,
-    GLX_BLUE_SIZE,     8,
-    GLX_ALPHA_SIZE,    8,
+    GLX_DOUBLEBUFFER, True,
+    GLX_RED_SIZE, 1,
+    GLX_GREEN_SIZE, 1,
+    GLX_BLUE_SIZE, 1,
+    GLX_ALPHA_SIZE, 1,
+    GLX_DEPTH_SIZE, 1,
     None
   };
 
-  int fbcount;
-  GLXFBConfig* fbc = glXChooseFBConfig(dpy, DefaultScreen(dpy), fbAttribs, &fbcount);
-  if (!fbc) {
-    fprintf(stderr, "Failed to get FBConfig\n");
-    return 0;
+  int32_t nfb;
+  visual_info_t* visual = NULL;
+  XRenderPictFormat* pic_fmt;
+  GLXFBConfig fbconfig = NULL;  
+  GLXFBConfig* fbconfigs = glXChooseFBConfig(display, screen_num, visdata, &nfb);
+  for(int i = 0; i < nfb; i++) {
+    visual = (visual_info_t*) glXGetVisualFromFBConfig(display, fbconfigs[i]);
+    if(!visual)
+      continue;
+
+    pic_fmt = XRenderFindVisualFormat(display, visual->visual);
+    if(!pic_fmt)
+      continue;
+
+    if(pic_fmt->direct.alphaMask > 0) {
+      fbconfig = fbconfigs[i];
+      break;
+    }
+  }
+  if(!visual) return 0;
+  if(!fbconfig) return 0;
+
+  Colormap cmap = XCreateColormap(display, DefaultRootWindow(display), visual->visual, AllocNone);
+
+  int dummy;
+  if (!glXQueryExtension(display, &dummy, &dummy)) {
+    fprintf(stderr, "reif: OpenGL not supported by X server.\n");
+    assert(false);
+  }
+  GLXContext glcontext = glXCreateNewContext(display, fbconfig, GLX_RGBA_TYPE, share_gl_context, True);
+  if(!share_gl_context)
+    share_gl_context = glcontext;
+  if (!glcontext) {
+    fprintf(stderr, "reif: failed to create an OpenGL context.\n");
+    assert(false);
   }
 
-  XVisualInfo* vi = glXGetVisualFromFBConfig(dpy, fbc[0]);
-  if (!vi) {
-    fprintf(stderr, "No appropriate visual found\n");
-    return 0;
+
+  XTextProperty textprop;
+  XSizeHints size_hints;
+  XWMHints* startup_state;
+  Window win;
+  if(transparent_framebuffer) {
+    XSetWindowAttributes attr;
+    if(transparent_framebuffer) {
+      attr.colormap = cmap;
+      attr.background_pixmap = None;
+    }
+    attr.border_pixel = 0;
+    attr.event_mask =  
+      StructureNotifyMask | KeyPressMask      | KeyReleaseMask    |
+      ButtonPressMask     | ButtonReleaseMask | PointerMotionMask | 
+      ExposureMask        | LeaveWindowMask;
+    int32_t attr_mask;
+    attr_mask =
+      CWBackPixmap  |
+      CWColormap    |
+      CWBorderPixel |
+      CWEventMask;   
+    win = XCreateWindow(display, root, 
+                        winpos_x, winpos_y, width, height, 0,
+                        visual->depth, InputOutput,  
+                        visual->visual, attr_mask, &attr); 
+  } else {
+    int screen = DefaultScreen(display);
+    win = XCreateSimpleWindow(display, root, winpos_x, winpos_y, width, height, 0,
+                              BlackPixel(display, screen), BlackPixel(display, screen));
+    XSelectInput(display, win, StructureNotifyMask | KeyPressMask | KeyReleaseMask |
+                 ButtonPressMask | ButtonReleaseMask | PointerMotionMask | ExposureMask | LeaveWindowMask);
+  }
+  //XSelectInput(display, root, SubstructureNotifyMask);
+  textprop.value = (unsigned char*)title;
+  textprop.encoding = XA_STRING;
+  textprop.format = 8;
+  textprop.nitems = strlen(title);
+
+  size_hints.x = winpos_x;
+  size_hints.y = winpos_y;
+  size_hints.width = width;
+  size_hints.height = height;
+  size_hints.flags = USPosition|USSize;
+
+  startup_state = XAllocWMHints();
+  startup_state->initial_state = NormalState;
+  startup_state->flags = StateHint;
+
+  XSetWMProperties(display, win, &textprop, &textprop,
+                   NULL, 0,
+                   &size_hints, 
+                   startup_state,
+                   NULL);
+
+  XFree(startup_state);
+
+  {
+    Atom states[1];
+    uint32_t count = 0;
+    if(above) {
+      states[count++] = net_wm_state_above; 
+    } else if(below) {
+      states[count++] = net_wm_state_below; 
+    }
+    XChangeProperty(display, win,
+                    net_wm_state, XA_ATOM, 32,
+                    PropModeReplace, (unsigned char*) states, count);
   }
 
-  XSetWindowAttributes swa;
-  swa.colormap = XCreateColormap(dpy, RootWindow(dpy, vi->screen), vi->visual, AllocNone);
-  swa.event_mask = ExposureMask | KeyPressMask | StructureNotifyMask;
+  {
+    Atom supported[] = {
+      wm_delete_window,
+      net_wm_ping 
+    };
+    XSetWMProtocols(
+      display, win,
+      supported, sizeof(supported) / sizeof(Atom));
 
-  Window win = XCreateWindow(dpy, RootWindow(dpy, vi->screen), 
-                             0, 0, width, height, 0, vi->depth, InputOutput,
-                             vi->visual,
-                             CWColormap | CWEventMask, &swa);
+    const long pid = getpid();
 
-  XStoreName(dpy, win, title);
-  XMapWindow(dpy, win);
-
-  // Get modern GL context creation function
-  glXCreateContextAttribsARBProc glXCreateContextAttribsARB =
-      (glXCreateContextAttribsARBProc)
-      glXGetProcAddressARB((const GLubyte *)"glXCreateContextAttribsARB");
-
-  if (!glXCreateContextAttribsARB) {
-    fprintf(stderr, "glXCreateContextAttribsARB not supported\n");
-    return 0;
+    XChangeProperty(
+      display,win,
+      net_wm_pid, XA_CARDINAL, 32,
+      PropModeReplace,
+      (unsigned char*) &pid, 1);
   }
 
-  int context_attribs[] = {
-    GLX_CONTEXT_MAJOR_VERSION_ARB, 2,
-    GLX_CONTEXT_MINOR_VERSION_ARB, 1,
-    GLX_CONTEXT_PROFILE_MASK_ARB,  GLX_CONTEXT_CORE_PROFILE_BIT_ARB,
-    None
-  };
 
-  GLXContext ctx = glXCreateContextAttribsARB(dpy, fbc[0], 0, True, context_attribs);
-  if (!ctx) {
-    fprintf(stderr, "Failed to create OpenGL context\n");
-    return 0;
+  if(lf_flag_exists(&flags, LF_WINDOWING_FLAG_X11_OVERRIDE_REDIRECT)) {
+    XSetWindowAttributes attributes;
+    attributes.override_redirect = True;
+    XChangeWindowAttributes(display, win, CWOverrideRedirect, &attributes);  
+  } else {
+    Atom type = net_wm_window_type_normal;
+    XChangeProperty(
+      display, win,
+      net_wm_window_type, XA_ATOM, 32,
+      PropModeReplace, (unsigned char*) &type, 1);
   }
 
-  XFree(vi);
-  XFree(fbc);
+  if(visible)
+    XMapWindow(display, win);
+  else 
+    XUnmapWindow(display, win);
 
-  if (!glXMakeCurrent(dpy, win, ctx)) {
-    fprintf(stderr, "Failed to make OpenGL context current\n");
-    return 0;
+  struct
+  {
+    unsigned long flags;
+    unsigned long functions;
+    unsigned long decorations;
+    long input_mode;
+    unsigned long status;
+  } decoration_hints = {0};
+
+  static const uint32_t MWM_HINTS_DECORATIONS   =   2;
+  static const uint32_t MWM_DECOR_ALL           =   1;
+  decoration_hints.flags = MWM_HINTS_DECORATIONS;
+  decoration_hints.decorations = decorated ? MWM_DECOR_ALL : 0;
+
+  XChangeProperty(display, win,
+                  motif_wm_hints,
+                  motif_wm_hints, 32,
+                  PropModeReplace,
+                  (unsigned char*) &hints,
+                  sizeof(decoration_hints) / sizeof(long));
+
+
+  {
+    XSizeHints* sizehints = XAllocSizeHints();
+    if(!sizehints) {
+      fprintf(stderr, "reif: cannot create X11 window because allocating WM hints failed.\n");
+      return 0;
+    }
+    if(!resizable) {
+      sizehints->flags |= (PMinSize | PMaxSize);
+      sizehints->min_width  = sizehints->max_width  = width;
+      sizehints->min_height = sizehints->max_height = height;
+    }
+    if (adjusting_pos) {
+      sizehints->flags |= PPosition;
+      sizehints->x = 0;
+      sizehints->y = 0;
+    }
+    sizehints->flags |= PWinGravity;
+    sizehints->win_gravity = StaticGravity;
+
+    XSetWMNormalHints(display, win, sizehints);
+    XFree(sizehints);
   }
+
+
+  if (n_windows + 1 <= MAX_WINDOWS) {
+  } else {
+    fprintf(stderr, "warning: reached maximum amount of windows to define callbacks for.\n");
+  }
+
   return win;
 }
 
@@ -481,6 +654,35 @@ if (glXSwapIntervalEXT) {
   net_wm_window_type_normal = XInternAtom(display, "_NET_WM_WINDOW_TYPE_NORMAL", False);
 
   return 0;
+}
+
+
+void 
+lf_win_register(lf_window_t win, GLXContext glcontext, uint32_t flags) {
+    window_callbacks[n_windows].win = win;
+    int32_t w, h;
+  get_window_size(display, win, &w, &h);
+  window_callbacks[n_windows].win = win;
+  window_callbacks[n_windows].win_width = w;
+  window_callbacks[n_windows].win_height = h;
+  window_callbacks[n_windows].ev_mouse_press_cb = NULL;
+  window_callbacks[n_windows].ev_mouse_release_cb = NULL;
+  window_callbacks[n_windows].ev_close_cb = NULL;
+  window_callbacks[n_windows].ev_refresh_cb = NULL;
+  window_callbacks[n_windows].ev_resize_cb = NULL;
+  window_callbacks[n_windows].ev_key_cb = NULL;
+  window_callbacks[n_windows].ev_char_cb = NULL;
+  window_callbacks[n_windows].ui = NULL;
+  window_callbacks[n_windows].glcontext = glcontext;
+  window_callbacks[n_windows].flags = flags;
+  window_callbacks[n_windows].xinputcontext = XCreateIC(
+    xim, XNInputStyle, 
+    XIMPreeditNothing | XIMStatusNothing, 
+    XNClientWindow, win, NULL);
+  if (!window_callbacks[n_windows].xinputcontext) {
+    fprintf(stderr, "reif: cannot create input context.\n");
+  }
+  ++n_windows;
 }
 
 int32_t 

@@ -159,3 +159,11 @@ void lf_win_show(lf_window_t win);
 void lf_win_set_width(lf_window_t win, float width);
 
 void lf_win_set_height(lf_window_t win, float height);
+
+#ifdef LF_GLFW
+void lf_win_register(lf_window_t win);
+#elif defined(LF_X11)
+#include <GL/glx.h>
+void lf_win_register(lf_window_t win, GLXContext glcontext, uint32_t flags);
+#endif 
+
