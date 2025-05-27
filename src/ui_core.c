@@ -113,7 +113,7 @@ void
 init_state(lf_ui_state_t* state, lf_window_t win) {
   state->win = win;
   state->refresh_rate = lf_win_get_refresh_rate(win);
-  state->_frame_duration = 1.0f / state->refresh_rate;
+  state->_frame_duration = 1.0f / 60; 
 
   state->theme = lf_ui_core_default_theme();
 

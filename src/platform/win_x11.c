@@ -81,7 +81,6 @@ net_wm_pid,
 wm_protocols, 
 wm_delete_window,
 motif_wm_hints;
-static GLXContext share_gl_context = 0;
 static XIM xim;
 
 static int last_mouse_x = 0;
@@ -376,7 +375,7 @@ lf_window_t create_window(
   Display* dpy = XOpenDisplay(NULL);
   if (!dpy) {
     fprintf(stderr, "Cannot open display\n");
-    return NULL;
+    return 0;
   }
 
   static int fbAttribs[] = {
@@ -395,13 +394,13 @@ lf_window_t create_window(
   GLXFBConfig* fbc = glXChooseFBConfig(dpy, DefaultScreen(dpy), fbAttribs, &fbcount);
   if (!fbc) {
     fprintf(stderr, "Failed to get FBConfig\n");
-    return NULL;
+    return 0;
   }
 
   XVisualInfo* vi = glXGetVisualFromFBConfig(dpy, fbc[0]);
   if (!vi) {
     fprintf(stderr, "No appropriate visual found\n");
-    return NULL;
+    return 0;
   }
 
   XSetWindowAttributes swa;
@@ -423,7 +422,7 @@ lf_window_t create_window(
 
   if (!glXCreateContextAttribsARB) {
     fprintf(stderr, "glXCreateContextAttribsARB not supported\n");
-    return NULL;
+    return 0;
   }
 
   int context_attribs[] = {
@@ -436,7 +435,7 @@ lf_window_t create_window(
   GLXContext ctx = glXCreateContextAttribsARB(dpy, fbc[0], 0, True, context_attribs);
   if (!ctx) {
     fprintf(stderr, "Failed to create OpenGL context\n");
-    return NULL;
+    return 0;
   }
 
   XFree(vi);
@@ -444,14 +443,9 @@ lf_window_t create_window(
 
   if (!glXMakeCurrent(dpy, win, ctx)) {
     fprintf(stderr, "Failed to make OpenGL context current\n");
-    return NULL;
+    return 0;
   }
-
-  lf_window_t new_window;
-  new_window.dpy = dpy;
-  new_window.win = win;
-  new_window.ctx = ctx;
-  return new_window;
+  return win;
 }
 
 typedef void (*glXSwapIntervalEXTProc)(Display*, GLXDrawable, int);
