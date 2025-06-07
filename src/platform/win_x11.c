@@ -614,6 +614,7 @@ create_window(
 
 
   if (n_windows + 1 <= MAX_WINDOWS) {
+    lf_win_register(win, glcontext, flags);
   } else {
     fprintf(stderr, "warning: reached maximum amount of windows to define callbacks for.\n");
   }
@@ -751,7 +752,9 @@ lf_win_set_title(lf_window_t win, const char* title) {
 int32_t 
 lf_win_make_gl_context(lf_window_t win) {
   window_callbacks_t* data = win_data_from_native(win);
-  if(!data) return 1;
+  if(!data) {
+  return 1;
+  }
   glXMakeCurrent(display, win, data->glcontext);
   return 0;
 }
