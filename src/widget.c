@@ -5,7 +5,6 @@
 #include "../include/leif/widgets/text.h"
 #include "../include/leif/widgets/div.h"
 #include "../include/leif/widgets/slider.h"
-#include <math.h>
 #include <stdbool.h>
 #include <string.h>
 #include <time.h>
@@ -34,9 +33,7 @@ widget_animate(lf_ui_state_t* ui, lf_widget_t* widget) {
   lf_animation_t* anim = widget->anims;
  
   bool animated = false;
-  uint32_t nanims = 0;
   while(anim) {
-    nanims++;
     anim = anim->next;
   }
   anim = widget->anims;
@@ -208,12 +205,7 @@ lf_widget_render(lf_ui_state_t* ui,  lf_widget_t* widget) {
 
 
   if(widget->render) {
-    if(!lf_container_intersets_container(
-          LF_WIDGET_CONTAINER(widget), ui->root->container) || 
-        !lf_container_intersets_container(
-          LF_WIDGET_CONTAINER(widget), LF_WIDGET_CONTAINER(widget->parent))) {
-      return;
-    }
+    if(!lf_widget_in_viewport(ui, widget)) return;
 #ifdef LF_RUNARA
     vec2s last_cull_start = ((RnState*)ui->render_state)->cull_start;
     vec2s last_cull_end = ((RnState*)ui->render_state)->cull_end;
@@ -1257,4 +1249,15 @@ lf_widget_set_pos_y_absolute_percent(lf_widget_t* widget, float y) {
     widget->parent->scrollable = false;
   widget->_positioned_absolute_y = true;
   widget->_abs_y_percent = y;
+}
+
+bool 
+lf_widget_in_viewport(lf_ui_state_t* ui, lf_widget_t* widget) {
+    if(!lf_container_intersets_container(
+          LF_WIDGET_CONTAINER(widget), ui->root->container) || 
+        !lf_container_intersets_container(
+          LF_WIDGET_CONTAINER(widget), LF_WIDGET_CONTAINER(widget->parent))) {
+      return false;
+    }
+  return true;
 }

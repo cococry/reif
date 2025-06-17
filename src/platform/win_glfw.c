@@ -49,6 +49,8 @@ static lf_event_type_t current_event;
 static int last_mouse_x = 0;
 static int last_mouse_y = 0;
 
+static GLFWCursor* cursors[LF_CURSOR_COUNT];
+
 static lf_window_t create_window(
   uint32_t width, 
   uint32_t height, 
@@ -367,11 +369,17 @@ lf_windowing_init(void) {
     fprintf(stderr, "reif: cannot initialize GLFW windowing system.\n");
     return 1;
   }
+  memset(cursors, NULL, sizeof(cursors));
   return 0;
 }
 
 int32_t 
 lf_windowing_terminate(void) {
+  for(uint32_t i = 0; i < LF_CURSOR_COUNT; i++) {
+    if(cursors[i] != NULL) {
+      glfwDestroyCursor(cursors[i]);
+    }
+  }
   glfwTerminate();
   return 0;
 }
@@ -540,5 +548,20 @@ lf_win_set_width(lf_window_t win, float width) {
 void 
 lf_win_set_height(lf_window_t win, float height) {
   glfwSetWindowSize(win, lf_win_get_size(win).x, height); 
+}
+
+void 
+lf_win_set_cursor(lf_window_t win, lf_cursor_type_t cursor_type) {
+  GLFWcursor* cursor = cursors[cursor_type];
+  if(!cursor) {
+    cursor = glfwCreateStandardCursor(cursor_type);
+  }
+  glfwSetCursor(win, cursor);
+}
+
+
+void 
+lf_win_reset_cursor(lf_window_t win) {
+  glfwSetCursor(window, NULL);
 }
 #endif

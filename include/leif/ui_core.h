@@ -17,6 +17,7 @@ typedef struct {
   lf_widget_props_t text_props;
   lf_widget_props_t img_props;
   lf_widget_props_t scrollbar_props;
+  lf_widget_props_t input_props;
   float scrollbar_static_size;
   lf_color_t text_color, background_color;
 } lf_theme_t;

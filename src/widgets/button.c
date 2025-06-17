@@ -52,6 +52,7 @@ _button_handle_event(
       &widget->props.color, 
       button->base._initial_props.color);
 
+    lf_win_set_cursor(ui->win, LF_CURSOR_ARROW); 
     if(button->on_leave) {
       button->on_leave(ui, widget);
     }
@@ -65,6 +66,7 @@ _button_handle_event(
       &widget->props.color, 
       lf_color_dim(button->base._initial_props.color, 90.0f));
     ui->needs_render = true;
+    lf_win_set_cursor(ui->win, LF_CURSOR_ARROW);
     if(button->on_enter) {
       button->on_enter(ui, widget);
     }

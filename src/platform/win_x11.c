@@ -28,6 +28,7 @@
 #include "../../include/leif/util.h"
 
 #define MAX_WINDOWS 16
+  
 
 typedef struct {
   lf_win_mouse_press_func ev_mouse_press_cb;
@@ -49,6 +50,7 @@ typedef struct {
   uint32_t nhints;
 
   XIC xinputcontext;
+
 } window_callbacks_t;
 
 typedef struct {
@@ -86,6 +88,8 @@ static XIM xim;
 
 static int last_mouse_x = 0;
 static int last_mouse_y = 0;
+
+static Cursor cursors[LF_CURSOR_COUNT];
 
 static window_callbacks_t* win_data_from_native(lf_window_t win);
 
@@ -356,7 +360,8 @@ void handle_key_event(XKeyEvent *event, window_callbacks_t data) {
     if (len > 0 && (status == XLookupChars || status == XLookupBoth)) {
       lf_event_t char_ev = {0};
       char_ev.type = LF_EVENT_TYPING_CHAR;
-      memcpy(char_ev.charutf8, utf8, 5);  // copy only first 5 bytes max
+      memcpy(char_ev.charutf8, utf8, 5);
+      char_ev.charutf8len = len;
       current_event = char_ev.type;
 
       if (data.ui)
@@ -381,7 +386,14 @@ create_window(
   bool adjusting_pos = false;
   bool transparent_framebuffer = false, decorated = false, 
   visible = true, resizable = true, above = false, below = false;
+  uint32_t border_width = 0, border_color = 0;
   for(uint32_t i = 0; i < nhints; i++) {
+    if(hints[i].key == LF_WINDOWING_HINT_BORDER_WIDTH) {
+      border_width = hints[i].value;
+    } 
+    if(hints[i].key == LF_WINDOWING_HINT_BORDER_COLOR) {
+      border_color = hints[i].value;
+    } 
     if(hints[i].key == LF_WINDOWING_HINT_TRANSPARENT_FRAMEBUFFER) {
       transparent_framebuffer = hints[i].value;
     } 
@@ -472,7 +484,7 @@ create_window(
       attr.colormap = cmap;
       attr.background_pixmap = None;
     }
-    attr.border_pixel = 0;
+    attr.border_pixel = border_color;
     attr.event_mask =  
       StructureNotifyMask | KeyPressMask      | KeyReleaseMask    |
       ButtonPressMask     | ButtonReleaseMask | PointerMotionMask | 
@@ -484,12 +496,12 @@ create_window(
       CWBorderPixel |
       CWEventMask;   
     win = XCreateWindow(display, root, 
-                        winpos_x, winpos_y, width, height, 0,
+                        winpos_x, winpos_y, width, height, border_width,
                         visual->depth, InputOutput,  
                         visual->visual, attr_mask, &attr); 
   } else {
     int screen = DefaultScreen(display);
-    win = XCreateSimpleWindow(display, root, winpos_x, winpos_y, width, height, 0,
+    win = XCreateSimpleWindow(display, root, winpos_x, winpos_y, width, height, border_width,
                               BlackPixel(display, screen), BlackPixel(display, screen));
     XSelectInput(display, win, StructureNotifyMask | KeyPressMask | KeyReleaseMask |
                  ButtonPressMask | ButtonReleaseMask | PointerMotionMask | ExposureMask | LeaveWindowMask);
@@ -654,6 +666,7 @@ if (glXSwapIntervalEXT) {
   net_wm_pid = XInternAtom(display, "_NET_WM_PID", False);
   net_wm_window_type_normal = XInternAtom(display, "_NET_WM_WINDOW_TYPE_NORMAL", False);
 
+  memset(cursors, 0, sizeof(cursors));
   return 0;
 }
 
@@ -689,6 +702,11 @@ lf_win_register(lf_window_t win, GLXContext glcontext, uint32_t flags) {
 int32_t 
 lf_windowing_terminate(void) {
   XCloseDisplay(display);
+  for(uint32_t i = 0; i < LF_CURSOR_COUNT; i++) {
+    if(cursors[i] != 0) {
+      XFreeCursor(display, cursors[i]);
+    }
+  }
   return 0;
 }
 
@@ -914,6 +932,23 @@ lf_win_set_width(lf_window_t win, float width) {
 void 
 lf_win_set_height(lf_window_t win, float height) {
   XResizeWindow(display, win, lf_win_get_size(win).x, (uint32_t)height);
+}
+
+void 
+lf_win_set_cursor(lf_window_t win, lf_cursor_type_t cursor_type) {
+  Cursor cursor = cursors[cursor_type];
+  if(cursor == 0) {
+    cursor = XCreateFontCursor(display, cursor_type);
+    if(!cursor) return;
+  }
+  XDefineCursor(display, win, cursor);
+  XFlush(display);
+}
+
+void 
+lf_win_reset_cursor(lf_window_t win) {
+  XUndefineCursor(display, win);
+  XFlush(display);
 }
 
 #endif

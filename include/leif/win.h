@@ -1,6 +1,7 @@
 #pragma once
 
 #include "event.h"
+#include "platform/input_x11.h"
 #include <cglm/types-struct.h>
 #ifdef LF_GLFW 
 #include "platform/win_glfw.h"
@@ -27,7 +28,9 @@ typedef enum {
   LF_WINDOWING_HINT_RESIZABLE,
   LF_WINDOWING_HINT_VISIBLE,
   LF_WINDOWING_HINT_ABOVE,
-  LF_WINDOWING_HINT_BELOW
+  LF_WINDOWING_HINT_BELOW,
+  LF_WINDOWING_HINT_BORDER_WIDTH,
+  LF_WINDOWING_HINT_BORDER_COLOR
 } lf_window_hint_t;
 
 typedef struct {
@@ -167,3 +170,6 @@ void lf_win_register(lf_window_t win);
 void lf_win_register(lf_window_t win, GLXContext glcontext, uint32_t flags);
 #endif 
 
+void lf_win_set_cursor(lf_window_t win, lf_cursor_type_t cursor_type);
+
+void lf_win_reset_cursor(lf_window_t win);

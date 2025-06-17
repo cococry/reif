@@ -6,6 +6,7 @@
 #include "widgets/div.h"
 #include "widgets/button.h"
 #include "widgets/image.h"
+#include "widgets/input.h"
 #include "widgets/text.h"
 #include "widgets/slider.h"
 
@@ -42,6 +43,8 @@ void lf_ez_api_set_assignment_only_mode(lf_ui_state_t* ui, bool assignment_only)
 lf_div_t* lf_div(lf_ui_state_t* ui);
 
 void lf_div_end(lf_ui_state_t* ui);
+
+void lf_slider_end(lf_ui_state_t* ui);
 
 lf_button_t* lf_button(lf_ui_state_t* ui);
 
@@ -88,3 +91,5 @@ void lf_content_box(lf_ui_state_t* ui);
 void lf_content_box_end(lf_ui_state_t* ui);
 
 void lf_grower(lf_ui_state_t* ui);
+
+lf_input_t* lf_input(lf_ui_state_t* ui, char* buf);

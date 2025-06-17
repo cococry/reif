@@ -14,6 +14,16 @@ typedef enum {
 } lf_mouse_button_t;
 
 typedef enum {
+    LF_CURSOR_ARROW        = GLFW_ARROW_CURSOR,
+    LF_CURSOR_IBEAM        = GLFW_IBEAM_CURSOR,
+    LF_CURSOR_CROSSHAIR    = GLFW_CROSSHAIR_CURSOR,
+    LF_CURSOR_HAND         = GLFW_HAND_CURSOR,
+    LF_CURSOR_HRESIZE      = GLFW_HRESIZE_CURSOR,
+    LF_CURSOR_VRESIZE      = GLFW_VRESIZE_CURSOR,
+    LF_CURSOR_COUNT        = 6,
+} lf_cursor_type_t;
+
+typedef enum {
     KeyUnknown = GLFW_KEY_UNKNOWN,
 
     // Printable keys

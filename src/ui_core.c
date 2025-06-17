@@ -250,6 +250,7 @@ lf_ui_core_create_window(
   lf_win_set_close_cb(win, win_close_callback);
   lf_win_set_refresh_cb(win, win_refresh_callback);
 
+
   window_flags = 0;
   windowing_hints.size = 0;
   return win;
@@ -303,6 +304,7 @@ lf_ui_core_init(lf_window_t win) {
   ev.height = lf_win_get_size(state->win).y; 
   lf_widget_handle_event(state, state->root, &ev);
 
+  lf_win_set_cursor(state->win, LF_CURSOR_ARROW);
   return state;
 }
 
@@ -411,6 +413,24 @@ lf_ui_core_default_theme(void) {
     .corner_radius_percent = 50.0f, 
     .border_width = 0.0f, 
     .border_color = LF_NO_COLOR,
+  };
+  
+  theme->input_props = (lf_widget_props_t){
+    .color = lf_color_from_hex(0xffffff),
+    .text_color = lf_color_from_hex(0x111111),
+    .padding_left = global_padding,
+    .padding_right = global_padding,
+    .padding_top = global_padding,
+    .padding_bottom = global_padding,
+    .margin_left = global_margin,
+    .margin_right = global_margin,
+    .margin_top = global_margin,
+    .margin_bottom = global_margin,
+    .corner_radius = 0.0f, 
+    .corner_radius_percent = 0.0f, 
+    .border_width = 0.0f, 
+    .border_color = LF_NO_COLOR,
+    .text_align = ParagraphAlignmentLeft,
   };
 
 

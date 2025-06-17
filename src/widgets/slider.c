@@ -217,7 +217,15 @@ _slider_shape(
       - slider->handle.size.x) {
       slider->handle.pos.x = widget->container.pos.x + widget->container.size.x - slider->handle.size.x;
     }
+  lf_widget_apply_layout(ui, widget);
+}
 
+void 
+_slider_size_calc(lf_ui_state_t* ui, lf_widget_t* widget) {
+  (void)ui;
+  if(!widget) return;
+  if(widget->type != LF_WIDGET_TYPE_SLIDER) return;
+  lf_widget_calc_layout_size(ui, widget);
 }
   
 lf_slider_t* 
@@ -244,14 +252,15 @@ lf_slider_create(
     ui->crnt_widget_id++,
     LF_WIDGET_TYPE_SLIDER,
     LF_SCALE_CONTAINER(
-      150, 
-      5),
+      0, 
+      0),
     props,
     _slider_render, 
     _slider_handle_event,
     _slider_shape,
-    NULL 
+    _slider_size_calc 
   );
+
 
   slider->handle_props = (lf_widget_props_t){
     .color = lf_color_from_hex(0x555555),
@@ -275,12 +284,15 @@ lf_slider_create(
   slider->_initial_handle_props = slider->handle_props; 
 
 
-  slider->base.layout_type = LF_LAYOUT_NONE;
+  slider->base.layout_type = LF_LAYOUT_HORIZONTAL;
+  slider->base.sizing_type = LF_SIZING_FIT_PARENT;
 
   lf_widget_listen_for(&slider->base, 
                        LF_EVENT_MOUSE_RELEASE | LF_EVENT_MOUSE_PRESS | LF_EVENT_MOUSE_MOVE);
   
   lf_widget_add_child(parent, (lf_widget_t*)slider);
+  lf_widget_set_fixed_width(ui, &slider->base, 150);
+  lf_widget_set_fixed_height(ui, &slider->base, 5);
 
   return slider;
 }

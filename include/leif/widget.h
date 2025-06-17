@@ -15,6 +15,7 @@ typedef enum {
   LF_WIDGET_TYPE_TEXT,
   LF_WIDGET_TYPE_IMAGE,
   LF_WIDGET_TYPE_SLIDER,
+  LF_WIDGET_TYPE_INPUT,
 } lf_widget_type_t;
 
 typedef struct lf_widget_t lf_widget_t;
@@ -278,3 +279,4 @@ void lf_widget_set_pos_x_absolute_percent(lf_widget_t* widget, float x);
 
 void lf_widget_set_pos_y_absolute_percent(lf_widget_t* widget, float y);
 
+bool lf_widget_in_viewport(lf_ui_state_t* ui, lf_widget_t* widget);

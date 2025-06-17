@@ -74,8 +74,8 @@ _text_create_from_level(lf_ui_state_t* ui, const char* label, lf_text_level lvl)
   if (!ui->_ez._assignment_only || overflowing) {
     lf_mapped_font_t font = lf_asset_manager_request_font(
         ui, 
-      ui->root->font_family,
-      ui->root->font_style,
+      ui->_ez.last_parent->font_family,
+      ui->_ez.last_parent->font_style,
         _get_font_size(ui, lvl)
         ); 
     lf_text_t* txt = lf_text_create_ex(ui, ui->_ez.last_parent, label, font);
@@ -197,42 +197,36 @@ lf_div_end(lf_ui_state_t* ui) {
 lf_button_end(lf_ui_state_t* ui) {
   _end_widget(ui);
 }
+ void
+lf_slider_end(lf_ui_state_t* ui) {
+  _end_widget(ui);
+}
 
 lf_slider_t* 
 lf_slider(lf_ui_state_t* ui, float* val, float min, float max) {
   bool overflowing = _assign_idx(ui) >= ui->_ez.last_parent->num_childs;
   if (!ui->_ez._assignment_only || overflowing) {
     lf_slider_t* slider = lf_slider_create(ui, ui->_ez.last_parent, val, min, max);
+
+    ui->_ez.last_parent = &slider->base;
     ui->_ez.current_widget = &slider->base;
 
-    ui->_ez.index_stack[ui->_ez.index_depth]++;
+    _level_deeper(ui);
 
     if(overflowing && ui->delta_time) {
       ui->needs_render = true;
       slider->base._changed_size = true;
-      lf_widget_shape(ui, lf_widget_flag_for_layout(ui, &slider->base));
+      lf_widget_flag_for_layout(ui, &slider->base);
     }
-
     slider->base._rendered_within_comp = true;
 
     return slider;
   } else {
-    lf_widget_t* widget = 
-      ui->_ez.last_parent->childs[
-      ui->_ez.index_stack[ui->_ez.index_depth]++];
-
-    widget->_rendered_within_comp = true;
-
-    if (widget->type != LF_WIDGET_TYPE_SLIDER) {
-      fprintf(stderr, "leif: lf_slider: mismatch in widget tree. widget ID: %i.\n", widget->id);
-      return NULL;
-    }
-
-    ((lf_slider_t*)widget)->val = val;
-    ((lf_slider_t*)widget)->min = min;
-    ((lf_slider_t*)widget)->max = max;
-    ui->_ez.current_widget = widget; 
-    return (lf_slider_t*)widget;
+    lf_slider_t* slider =(lf_slider_t*)_get_assignment_widget(ui, LF_WIDGET_TYPE_SLIDER);
+    slider->val = val;
+    slider->min = min;
+    slider->max = max;
+    return slider; 
   }
 }
 
@@ -517,3 +511,28 @@ lf_grower(lf_ui_state_t* ui) {
   lf_widget_set_sizing(lf_crnt(ui), LF_SIZING_GROW);
   lf_div_end(ui);
 } 
+
+lf_input_t*
+lf_input(lf_ui_state_t* ui, char* buf) {
+  if (!ui->_ez.last_parent) return NULL;
+  bool overflowing = _assign_idx(ui) >= ui->_ez.last_parent->num_childs;
+  if (!ui->_ez._assignment_only || overflowing) {
+    lf_input_t* input = lf_input_create(ui, ui->_ez.last_parent, buf);
+
+    ui->_ez.last_parent = &input->base;
+    ui->_ez.current_widget = &input->base;
+
+    _level_deeper(ui);
+
+    if(overflowing && ui->delta_time) {
+      ui->needs_render = true;
+      input->base._changed_size = true;
+      lf_widget_flag_for_layout(ui, &input->base);
+    }
+    input->base._rendered_within_comp = true;
+
+    return input;
+  } else {
+    return (lf_input_t*)_get_assignment_widget(ui, LF_WIDGET_TYPE_INPUT);
+  }
+}

@@ -2,6 +2,7 @@
 
 #include <X11/Xlib.h>
 #include <X11/keysym.h>
+#include <X11/cursorfont.h>
 
 typedef enum {
     LeftMouse = Button1,      // Left mouse button
@@ -14,6 +15,16 @@ typedef enum {
     MouseButton7 = 1000,      
     MouseButton8 = 1001 
 } lf_mouse_button_t;
+
+typedef enum {
+    LF_CURSOR_ARROW        = XC_left_ptr,
+    LF_CURSOR_IBEAM        = XC_xterm,
+    LF_CURSOR_CROSSHAIR    = XC_crosshair,
+    LF_CURSOR_HAND         = XC_hand2,
+    LF_CURSOR_HRESIZE      = XC_sb_h_double_arrow,
+    LF_CURSOR_VRESIZE      = XC_sb_v_double_arrow,
+    LF_CURSOR_COUNT      = 6,
+} lf_cursor_type_t;
 
 typedef enum {
     KeyUnknown = 0,
