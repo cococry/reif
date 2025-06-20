@@ -23,7 +23,9 @@ typedef struct {
 
   char* buf;
 
-  lf_text_t* text_widget;
+  uint32_t _cursor_idx;
+
+  lf_text_t* _text_widget;
 } lf_input_t;
 
 lf_input_t* lf_input_create(

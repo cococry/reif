@@ -1,4 +1,5 @@
 #include "../../include/leif/widgets/button.h"
+#include "../../include/leif/widgets/text.h"
 
 #ifdef LF_RUNARA
 #include <runara/runara.h>
@@ -56,6 +57,7 @@ _button_handle_event(
     if(button->on_leave) {
       button->on_leave(ui, widget);
     }
+    printf("on leave: %s\n", ((lf_text_t*)widget->childs[0])->label);
     return;
   }
  if(on_button && event->type == LF_EVENT_MOUSE_MOVE &&

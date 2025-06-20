@@ -29,33 +29,29 @@ void _slider_handle_mouse(vec2s mouse, lf_widget_t* widget, lf_slider_t* slider)
     *slider->val = slider->min;
     return;
   }
-  float rel_x = (mouse.x - widget->container.pos.x) / widget->container.size.x;
+
+  float container_x = widget->container.pos.x;
+  float container_w = widget->container.size.x;
+
+  float handle_half = (slider->handle.size.x + slider->handle_props.padding_left + slider->handle_props.padding_right) / 2.0f;
+  float rel_x = (mouse.x - container_x - handle_half) / (container_w - slider->handle.size.x);
   if (rel_x < 0.0f) rel_x = 0.0f;
   if (rel_x > 1.0f) rel_x = 1.0f;
 
   *slider->val = slider->min + rel_x * range;
-  if (*slider->val < slider->min) *slider->val = slider->min;
-  if (*slider->val > slider->max) *slider->val = slider->max;
 
-  float handle_x = widget->container.pos.x + 
-    rel_x * widget->container.size.x - slider->handle.size.x / 2.0f;
-
-  float min_x = widget->container.pos.x;
-  float max_x = widget->container.pos.x + widget->container.size.x - slider->handle.size.x;
-  if (handle_x < min_x) handle_x = min_x;
-  if (handle_x > max_x) handle_x = max_x;
+  float handle_x = container_x + rel_x * (container_w - slider->handle.size.x);
 
   slider->handle.pos = (vec2s){
     .x = handle_x,
-    .y = widget->container.pos.y      +
-    ((widget->container.size.y        + 
-    widget->props.padding_top         + 
-    widget->props.padding_bottom)     - 
-    (slider->handle.size.y            + 
-    slider->handle_props.padding_top  + 
-    slider->handle_props.padding_bottom)) / 2.0f
+    .y = container_x +
+      ((widget->container.size.y +
+        widget->props.padding_top +
+        widget->props.padding_bottom) -
+        (slider->handle.size.y +
+         slider->handle_props.padding_top +
+         slider->handle_props.padding_bottom)) / 2.0f
   };
-
 }
 
 
@@ -108,6 +104,7 @@ _slider_handle_event(
     if(slider->on_leave) {
       slider->on_leave(ui, widget);
     }
+      printf("Left slider.\n");
     return;
   }
  if(on_handle && event->type == LF_EVENT_MOUSE_MOVE &&
@@ -121,6 +118,7 @@ _slider_handle_event(
     if(slider->on_enter) {
       slider->on_enter(ui, widget);
     }
+      printf("Entered slider.\n");
     return;
   }
 
@@ -131,6 +129,7 @@ _slider_handle_event(
         &slider->handle_props.color, 
         slider->_initial_handle_props.color);
     ui->needs_render = true;
+    printf("Released slider.\n");
     if(widget->id == ui->active_widget_id) {
       if(slider->on_click && on_handle) {
         slider->on_click(ui, widget);
@@ -147,6 +146,7 @@ _slider_handle_event(
       ui, widget,
       &slider->handle_props.color, 
       lf_color_dim(slider->_initial_handle_props.color, 80.0f));
+    printf("Holding slider.\n");
     return;
   }
   if(event->type == LF_EVENT_MOUSE_MOVE && slider->_held) {
@@ -154,6 +154,7 @@ _slider_handle_event(
     _slider_handle_mouse(mouse, widget, slider);
     if(slider->on_slide)
       slider->on_slide(ui, widget, slider->val);
+    printf("Slided slider.\n");
     return;
   }
 }
@@ -204,19 +205,22 @@ _slider_shape(
   lf_widget_t* widget) {
   lf_slider_t* slider = (lf_slider_t*)widget;
   slider->handle.pos = (vec2s){
-      .x = slider->handle.pos.x = widget->container.pos.x + 
-      (widget->container.size.x * (*slider->val / (slider->max - slider->min)))
+    .x = slider->handle.pos.x = widget->container.pos.x + 
+    (widget->container.size.x * (*slider->val / (slider->max - slider->min)))
     - slider->handle.size.x / 2.0f,
-      .y = widget->container.pos.y +
-      ((widget->container.size.y + widget->props.padding_top + widget->props.padding_bottom) - 
-      (slider->handle.size.y + 
-      slider->handle_props.padding_top + 
-      slider->handle_props.padding_bottom)) / 2.0f
-    };
-    if(slider->handle.pos.x >= widget->container.pos.x + widget->container.size.x
-      - slider->handle.size.x) {
-      slider->handle.pos.x = widget->container.pos.x + widget->container.size.x - slider->handle.size.x;
-    }
+    .y = widget->container.pos.y +
+    ((widget->container.size.y + widget->props.padding_top + widget->props.padding_bottom) - 
+    (slider->handle.size.y + 
+    slider->handle_props.padding_top + 
+    slider->handle_props.padding_bottom)) / 2.0f
+  };
+  if(slider->handle.pos.x >= widget->container.pos.x + widget->container.size.x
+    - slider->handle.size.x) {
+    slider->handle.pos.x = widget->container.pos.x + widget->container.size.x - slider->handle.size.x;
+  }
+  if(slider->handle.pos.x < widget->container.pos.x) {
+    slider->handle.pos.x = widget->container.pos.x;
+  }
   lf_widget_apply_layout(ui, widget);
 }
 

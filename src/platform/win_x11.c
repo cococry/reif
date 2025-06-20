@@ -147,7 +147,7 @@ handle_event(XEvent *event) {
       case ConfigureNotify:
         if (event->xconfigure.width == window_callbacks[i].win_width &&
           event->xconfigure.height == window_callbacks[i].win_height) {
-          break;  // No need to process the event if the size is the same
+          break;  // no need to process the event if the size is the same
         }
 
         int32_t actual_win_w, actual_win_h;

@@ -585,51 +585,55 @@ lf_widget_height_ex(lf_widget_t* widget, lf_widget_props_t props) {
     props.padding_bottom;
 }
 
-void lf_widget_set_padding(
+lf_animation_t* lf_widget_set_padding(
   lf_ui_state_t* ui,
   lf_widget_t* widget,
   float padding) {
-  if(!widget) return;
+  if(!widget) return NULL;
   if(
     widget->props.padding_top == padding && 
     widget->props.padding_bottom == padding && 
     widget->props.padding_left == padding && 
-    widget->props.padding_right == padding && !widget->transition_func) return;
+    widget->props.padding_right == padding && !widget->transition_func) return NULL;
 
   lf_widget_set_prop(ui, widget, &widget->props.padding_left, padding); 
   lf_widget_set_prop(ui, widget, &widget->props.padding_right, padding); 
   lf_widget_set_prop(ui, widget, &widget->props.padding_top, padding); 
-  lf_widget_set_prop(ui, widget, &widget->props.padding_bottom, padding); 
+  lf_animation_t* anim = lf_widget_set_prop(ui, widget, &widget->props.padding_bottom, padding); 
 
   if(!widget->transition_func) {
     ui->needs_render = true;
   widget->_changed_size = true;
     lf_widget_flag_for_layout(ui, widget);
   }
+
+  return anim;
  
 }
 
-void lf_widget_set_margin(
+lf_animation_t* lf_widget_set_margin(
   lf_ui_state_t* ui,
   lf_widget_t* widget,
   float margin) {
-  if(!widget) return;
+  if(!widget) return NULL;
   if(
     widget->props.margin_top == margin && 
     widget->props.margin_bottom == margin && 
     widget->props.margin_left == margin && 
-    widget->props.margin_right == margin && !widget->transition_func) return;
+    widget->props.margin_right == margin && !widget->transition_func) return NULL;
 
   lf_widget_set_prop(ui, widget, &widget->props.margin_left, margin); 
   lf_widget_set_prop(ui, widget, &widget->props.margin_right, margin); 
   lf_widget_set_prop(ui, widget, &widget->props.margin_top, margin); 
-  lf_widget_set_prop(ui, widget, &widget->props.margin_bottom, margin); 
+  lf_animation_t* anim = lf_widget_set_prop(ui, widget, &widget->props.margin_bottom, margin); 
 
   widget->_changed_size = true;
   if(!widget->transition_func) {
     ui->needs_render = true;
     lf_widget_flag_for_layout(ui, widget);
   }
+
+  return anim;
 }
 
 void 
@@ -809,11 +813,11 @@ lf_widget_submit_props(lf_widget_t* widget) {
   widget->_rendered_props = widget->props;
 }
 
-void 
+lf_animation_t*
 lf_widget_set_fixed_width(lf_ui_state_t* ui, lf_widget_t* widget, float width) {
-  if(!widget) return;
-  if(widget->container.size.x == width) return;
-  lf_widget_set_prop(ui, widget, &widget->container.size.x, width);
+  if(!widget) return NULL;
+  if(widget->container.size.x == width) return NULL;
+  lf_animation_t* anim = lf_widget_set_prop(ui, widget, &widget->container.size.x, width);
   widget->_fixed_width = true;
 
   if(!widget->transition_func && ui->delta_time) {
@@ -821,43 +825,47 @@ lf_widget_set_fixed_width(lf_ui_state_t* ui, lf_widget_t* widget, float width) {
     widget->_changed_size = true;
     lf_widget_flag_for_layout(ui, widget);
   }
-
+  return anim; 
 
 }
 
-void 
+lf_animation_t* 
 lf_widget_set_fixed_height(lf_ui_state_t* ui, lf_widget_t* widget, float height) {
-  if(!widget) return;
-  if(widget->container.size.y == height) return;
-  lf_widget_set_prop(ui, widget, &widget->container.size.y, height);
+  if(!widget) return NULL;
+  if(widget->container.size.y == height) return NULL;
+  lf_animation_t* anim = lf_widget_set_prop(ui, widget, &widget->container.size.y, height);
   widget->_fixed_height = true;
   if(!widget->anims && ui->delta_time) {
     widget->_changed_size = true;
     ui->needs_render = true;
     lf_widget_flag_for_layout(ui, widget);
   }
+  return anim;
 }
 
-void 
+lf_animation_t* 
 lf_widget_set_fixed_width_percent(lf_ui_state_t* ui, lf_widget_t* widget, float percent) {
-  if(!widget) return;
-  if(widget->_width_percent == percent / 100.0f) return;
-  widget->_width_percent = percent / 100.0f;
+  if(!widget) return NULL;
+  lf_animation_t* anim = 
+    lf_widget_set_prop(ui, widget, &widget->_height_percent, percent / 100.0f);
   widget->_fixed_width = true;
   widget->_changed_size = true;
   if(!widget->anims)
     lf_widget_flag_for_layout(ui, widget);
+  return anim;
 }
 
-void 
+lf_animation_t*
 lf_widget_set_fixed_height_percent(lf_ui_state_t* ui, lf_widget_t* widget, float percent) {
-  if(!widget) return;
-  lf_widget_set_prop(ui, widget, &widget->_height_percent, percent / 100.0f);
+  if(!widget) return NULL;
+  lf_animation_t* anim = 
+    lf_widget_set_prop(ui, widget, &widget->_height_percent, percent / 100.0f);
   lf_widget_submit_props(widget);
   widget->_fixed_height = true;
   widget->_changed_size = true;
   if(!widget->anims)
     lf_widget_flag_for_layout(ui, widget);
+  return anim;
 }
 
 void lf_widget_set_alignment(lf_widget_t* widget, uint32_t flags) {
@@ -1100,13 +1108,13 @@ lf_widget_set_transition_props(
   widget->transition_func = transition_func;
 }
 
-void lf_widget_set_prop(
+lf_animation_t* lf_widget_set_prop(
   lf_ui_state_t* ui,
   lf_widget_t* widget, 
   float* prop, float val) {
-  if(*prop == val) return;
+  if(*prop == val) return NULL;
   if(widget->transition_func && ui->delta_time != 0.0f) {
-    lf_widget_add_animation(
+    return lf_widget_add_animation(
       widget,
       prop, 
       *prop, val,
@@ -1114,11 +1122,12 @@ void lf_widget_set_prop(
   } else {
     *prop = val;
     lf_widget_submit_props(widget);
+    return NULL;
   }
 }
 
 
-void 
+lf_animation_t* 
 lf_widget_set_prop_color(
   lf_ui_state_t* ui,
   lf_widget_t* widget, 
@@ -1126,9 +1135,10 @@ lf_widget_set_prop_color(
   lf_widget_set_prop(ui, widget, &prop->r, val.r);
   lf_widget_set_prop(ui, widget, &prop->g, val.g);
   lf_widget_set_prop(ui, widget, &prop->b, val.b);
-  lf_widget_set_prop(ui, widget, &prop->a, val.a);
+  lf_animation_t* anim = lf_widget_set_prop(ui, widget, &prop->a, val.a);
   lf_widget_submit_props(widget);
   ui->needs_render = true;
+  return anim;
 }
 
 void 

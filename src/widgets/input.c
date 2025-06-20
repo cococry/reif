@@ -64,11 +64,12 @@ _input_handle_event(
     utf8insert(
       input->buf, 512, strlen(input->buf), event->charutf8,
       event->charutf8len);
-    lf_text_set_label(ui, input->text_widget, input->buf);
+    lf_text_set_label(ui, input->_text_widget, input->buf);
     ui->needs_render = true;
     input->_show_cursor = true; 
     input->_blink_held = true;
     printf("Got key event: %s\n", event->charutf8);
+    input->_cursor_idx++;
   }
 
   if(on_input && event->type == LF_EVENT_MOUSE_PRESS && !input->_focused) {
@@ -94,10 +95,10 @@ _input_handle_event(
 }
 
 void strtill(const char* src, char* dest, uint32_t len, uint32_t index) {
-  if(index > len - 1) return;
-  for(uint32_t i = 0; i < index; i++) {
+  for(uint32_t i = 0; i <= index; i++) {
     dest[i] = src[i];
   }
+  dest[index + 1] = '\0';
 }
 
 void
@@ -123,22 +124,37 @@ _input_render(
       input->_blinktimer = lf_ui_core_start_timer_looped(ui, 1.0f, _do_cursor_blink);
       input->_blinktimer->user_data = input;
     }
-    float overflow = (widget->container.pos.x + widget->props.padding_left + input->text_widget->_text_dimension.width) - 
+    float overflow = (widget->container.pos.x + widget->props.padding_left + input->_text_widget->_text_dimension.width) - 
       (widget->container.pos.x + widget->container.size.x + widget->props.padding_left + widget->props.padding_right);
     if (overflow > 0) {
-      input->text_widget->base.container.pos.x = 
+      input->_text_widget->base.container.pos.x = 
       widget->container.pos.x + widget->props.padding_left - overflow - 2;
     } else {
-      input->text_widget->base.container.pos.x = 
+      input->_text_widget->base.container.pos.x = 
       widget->container.pos.x + widget->props.padding_left; 
     }
-    FT_Face face = input->text_widget->font.font->face;
+    FT_Face face = input->_text_widget->font.font->face;
     int font_height_px = 
       (face->size->metrics.ascender - face->size->metrics.descender) / 64;
-    char buf[strlen(input->text_widget->label)];
-    float textwidth = 
-    float cursoroffset = input->text_widget->_text_dimension.width;
-    if(input->text_widget->_text_dimension.width > widget->container.size.x) {
+    char buf[strlen(input->_text_widget->label)];
+    strtill(input->_text_widget->label, buf, strlen(input->_text_widget->label),
+            input->_cursor_idx
+            );
+    printf("Text behind cursor: %s\n", buf);
+
+    lf_widget_t* text = &input->_text_widget->base;
+    float wrap = text->parent->container.pos.x +
+      text->parent->scroll_offset.x + text->parent->container.size.x +
+      text->parent->props.padding_left / 2.0f; 
+    if(text->parent->sizing_type == LF_SIZING_FIT_CONTENT || text->_positioned_absolute_x) {
+      wrap = -1.0f;
+    }
+    float textwidth = ui->render_get_paragraph_dimension(
+      ui->render_state, buf, input->_text_widget->base.container.pos, 
+      input->_text_widget->font.font, (lf_paragraph_props_t){.align = ParagraphAlignmentLeft,
+      .wrap = wrap}).width; 
+    float cursoroffset = textwidth; 
+    if(input->_text_widget->_text_dimension.width > widget->container.size.x) {
       cursoroffset = widget->container.size.x - widget->props.padding_right - 2;
     }
     ui->render_rect(
@@ -153,7 +169,7 @@ _input_render(
         .y =  
         font_height_px
       }, 
-      input->text_widget->base.props.text_color,
+      input->_text_widget->base.props.text_color,
       LF_NO_COLOR, 0.0f, 0.0f);
   }
   
@@ -237,10 +253,11 @@ lf_input_create(
     ui->_ez.last_parent->font_style,
     16
   ); 
-  input->text_widget = lf_text_create_ex(ui, &input->base, buf, font);
-  lf_widget_set_padding(ui, &input->text_widget->base, 0);
-  lf_widget_set_margin(ui, &input->text_widget->base, 0);
+  input->_text_widget = lf_text_create_ex(ui, &input->base, buf, font);
+  lf_widget_set_padding(ui, &input->_text_widget->base, 0);
+  lf_widget_set_margin(ui, &input->_text_widget->base, 0);
 
+  input->_cursor_idx = 0;
   input->_show_cursor = true;
 
   FT_Face face = font.font->face;
@@ -250,7 +267,7 @@ lf_input_create(
   lf_widget_set_fixed_height(ui, &input->base, font_height_px + 2);
 char esc = 0x1B;
 utf8insert(input->buf, 512, strlen(input->buf), &esc, 1);
-lf_text_set_label(ui, input->text_widget, input->buf);
+lf_text_set_label(ui, input->_text_widget, input->buf);
  
 
   return input;

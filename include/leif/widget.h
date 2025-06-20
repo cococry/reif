@@ -142,12 +142,12 @@ void lf_widget_remove_from_memory(lf_widget_t* widget);
 
 void lf_widget_remove_child_from_memory(lf_widget_t* parent, uint32_t child_idx);
 
-void lf_widget_set_padding(
+lf_animation_t* lf_widget_set_padding(
     lf_ui_state_t* ui,
     lf_widget_t* widget,
     float padding);
 
-void lf_widget_set_margin(
+lf_animation_t* lf_widget_set_margin(
     lf_ui_state_t* ui,
     lf_widget_t* widget,
     float margin);
@@ -208,13 +208,13 @@ void lf_widget_interrupt_all_animations(
 
 void lf_widget_submit_props(lf_widget_t* widget);
 
-void lf_widget_set_fixed_width(lf_ui_state_t* ui, lf_widget_t* widget, float width);
+lf_animation_t* lf_widget_set_fixed_width(lf_ui_state_t* ui, lf_widget_t* widget, float width);
 
-void lf_widget_set_fixed_height(lf_ui_state_t* ui, lf_widget_t* widget, float height);
+lf_animation_t* lf_widget_set_fixed_height(lf_ui_state_t* ui, lf_widget_t* widget, float height);
 
-void lf_widget_set_fixed_width_percent(lf_ui_state_t* ui, lf_widget_t* widget, float percent);
+lf_animation_t* lf_widget_set_fixed_width_percent(lf_ui_state_t* ui, lf_widget_t* widget, float percent);
 
-void lf_widget_set_fixed_height_percent(lf_ui_state_t* ui, lf_widget_t* widget, float percent);
+lf_animation_t* lf_widget_set_fixed_height_percent(lf_ui_state_t* ui, lf_widget_t* widget, float percent);
 
 void lf_widget_set_alignment(lf_widget_t* widget, uint32_t flags);
 
@@ -244,12 +244,12 @@ void lf_widget_set_transition_props(
     lf_widget_t* widget, float transition_time,
     lf_animation_func_t transition_func);
 
-void lf_widget_set_prop(
+lf_animation_t* lf_widget_set_prop(
     lf_ui_state_t* ui,
     lf_widget_t* widget, 
     float* prop, float val);
 
-void lf_widget_set_prop_color(
+lf_animation_t* lf_widget_set_prop_color(
     lf_ui_state_t* ui,
     lf_widget_t* widget, 
     lf_color_t* prop, lf_color_t val);
