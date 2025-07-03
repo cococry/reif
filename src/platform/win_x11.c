@@ -7,6 +7,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <fcntl.h>
+#include <sys/select.h>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/keysym.h>
@@ -89,7 +91,10 @@ static XIM xim;
 static int last_mouse_x = 0;
 static int last_mouse_y = 0;
 
+static bool wait_events = true;
 static Cursor cursors[LF_CURSOR_COUNT];
+
+static int pipe_fds[2]; 
 
 static window_callbacks_t* win_data_from_native(lf_window_t win);
 
@@ -98,6 +103,24 @@ static void handle_event(XEvent *event);
 static void handle_key_event(XKeyEvent *event, window_callbacks_t data);
 
 static lf_window_t create_window(uint32_t width, uint32_t height, const char* title, uint32_t flags, lf_windowing_hint_kv_t* hints, uint32_t nhints);
+
+void 
+lf_windowing_wake_up_event_loop(void) {
+  write(pipe_fds[1], "x", 1); 
+}
+
+void 
+drain_pipe() {
+  char buf[64];
+  read(pipe_fds[0], buf, sizeof(buf));
+}
+
+void 
+init_pipe() {
+  pipe(pipe_fds);
+  fcntl(pipe_fds[0], F_SETFL, O_NONBLOCK);
+  fcntl(pipe_fds[1], F_SETFL, O_NONBLOCK);
+}
 
 void get_window_size(Display* display, Window window, int32_t* width, int32_t* height) {
   XWindowAttributes attrs;
@@ -667,6 +690,8 @@ if (glXSwapIntervalEXT) {
   net_wm_window_type_normal = XInternAtom(display, "_NET_WM_WINDOW_TYPE_NORMAL", False);
 
   memset(cursors, 0, sizeof(cursors));
+
+  init_pipe();
   return 0;
 }
 
@@ -715,6 +740,11 @@ lf_windowing_update(void) {
   current_event = LF_EVENT_NONE;
 }
 
+void 
+lf_windowing_set_wait_events(bool wait) {
+  wait_events = wait;
+}
+
 void
 lf_win_set_ui_state(lf_window_t win, lf_ui_state_t* state) {
   window_callbacks_t* data;
@@ -727,19 +757,49 @@ lf_windowing_get_current_event(void) {
   return current_event;
 }
 
-void 
-lf_windowing_next_event(void) {
+
+void lf_windowing_next_event(void) {
   XEvent event;
+
+  int x11_fd = ConnectionNumber(display);
+
+if (wait_events) {
+  // wait for x event or pipe wakeup
+  fd_set in_fds;
+  FD_ZERO(&in_fds);
+  FD_SET(x11_fd, &in_fds);
+  FD_SET(pipe_fds[0], &in_fds);
+  int max_fd = (x11_fd > pipe_fds[0] ? x11_fd : pipe_fds[0]) + 1;
+
+  select(max_fd, &in_fds, NULL, NULL, NULL);
+
+  if (FD_ISSET(pipe_fds[0], &in_fds)) {
+    drain_pipe(); // clear wakeup
+  }
+
+  // 🔥 FIX: Handle *all* queued events after waking up
   while (XPending(display)) {
     XNextEvent(display, &event);
-    XFilterEvent(&event, None);  
-    for(uint32_t i = 0; i < n_windows; i++) {
-      if(window_callbacks[i].windowing_event_cb) {
+    handle_event(&event);
+    for (uint32_t i = 0; i < n_windows; i++) {
+      if (window_callbacks[i].windowing_event_cb) {
         window_callbacks[i].windowing_event_cb(&event, window_callbacks[i].ui);
       }
     }
-    handle_event(&event);
   }
+
+} else {
+  // polling mode
+  while (XPending(display)) {
+    XNextEvent(display, &event);
+    handle_event(&event);
+    for (uint32_t i = 0; i < n_windows; i++) {
+      if (window_callbacks[i].windowing_event_cb) {
+        window_callbacks[i].windowing_event_cb(&event, window_callbacks[i].ui);
+      }
+    }
+  }
+}
 }
 
 void* 

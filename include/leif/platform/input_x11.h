@@ -1,5 +1,5 @@
 #pragma once
-
+#ifdef LF_X11
 #include <X11/Xlib.h>
 #include <X11/keysym.h>
 #include <X11/cursorfont.h>
@@ -158,4 +158,4 @@ typedef enum {
     KeyMenu = XK_Menu
 
 } lf_key_code_t;
-
+#endif

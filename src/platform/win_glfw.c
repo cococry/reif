@@ -49,7 +49,9 @@ static lf_event_type_t current_event;
 static int last_mouse_x = 0;
 static int last_mouse_y = 0;
 
-static GLFWCursor* cursors[LF_CURSOR_COUNT];
+static bool wait_events = true;
+
+static GLFWcursor* cursors[LF_CURSOR_COUNT];
 
 static lf_window_t create_window(
   uint32_t width, 
@@ -140,6 +142,29 @@ create_window(
 }
 
 void 
+cursor_enter_callback(GLFWwindow* window, int entered) {
+  lf_event_t ev = {0};
+  window_callbacks_t* data = win_data_from_native(window);
+  if (!entered && data->ui) {
+    ev.x = -1; 
+    ev.y = -1; 
+    ev.delta_x = 0; 
+    ev.delta_y = 0; 
+    ev.type = LF_EVENT_MOUSE_MOVE;
+    current_event = ev.type; 
+    lf_widget_handle_event(data->ui, data->ui->root, &ev);
+    for(uint32_t i = 0; i < n_windows; i++) {
+    if (window_callbacks[i].ev_move_cb)
+      window_callbacks[i].ev_move_cb(
+        data->ui, 
+        window_callbacks[i].win,
+        -1, -1);
+      }
+      printf("called here.\n");
+  }
+}
+
+void 
 lf_win_register(lf_window_t win) {
     window_callbacks[n_windows].win = win;
     window_callbacks[n_windows].ev_mouse_press_cb = NULL;
@@ -160,6 +185,7 @@ lf_win_register(lf_window_t win) {
     glfwSetScrollCallback(win, glfw_scroll_callback);
     glfwSetKeyCallback(win, glfw_key_callback);
     glfwSetCharCallback(win, glfw_char_callback);
+  glfwSetCursorEnterCallback(win, cursor_enter_callback);
 }
 
 void 
@@ -369,7 +395,9 @@ lf_windowing_init(void) {
     fprintf(stderr, "reif: cannot initialize GLFW windowing system.\n");
     return 1;
   }
-  memset(cursors, NULL, sizeof(cursors));
+  for(uint32_t i = 0; i < LF_CURSOR_COUNT; i++) {
+    cursors[i] = NULL;
+  }
   return 0;
 }
 
@@ -401,12 +429,25 @@ lf_windowing_get_current_event(void) {
 
 void 
 lf_windowing_next_event(void) {
-  glfwPollEvents();
+  if(wait_events) {
+    glfwWaitEvents();
+  } else {
+    glfwPollEvents();
+  }
   for(uint32_t i = 0; i < n_windows; i++) {
     if(window_callbacks[i].windowing_event_cb) {
       window_callbacks[i].windowing_event_cb(&current_event, window_callbacks[i].ui);
     }
   }
+}
+
+void
+lf_windowing_wake_up_event_loop(void) {
+  // not implement in GLFW windowing as glfw handles this internally 
+}
+void 
+lf_windowing_set_wait_events(bool wait) {
+  wait_events = wait;
 }
 
 lf_window_t 
@@ -552,7 +593,20 @@ lf_win_set_height(lf_window_t win, float height) {
 
 void 
 lf_win_set_cursor(lf_window_t win, lf_cursor_type_t cursor_type) {
-  GLFWcursor* cursor = cursors[cursor_type];
+  uint32_t idx = 0;
+  switch(cursor_type) {
+    case LF_CURSOR_ARROW: {idx = 0; break;}
+    case LF_CURSOR_IBEAM: {idx = 1; break;}
+    case LF_CURSOR_CROSSHAIR: {idx = 2; break;}
+    case LF_CURSOR_HAND: {idx = 3; break;}
+    case LF_CURSOR_HRESIZE: {idx = 4; break;}
+    case LF_CURSOR_VRESIZE: {idx = 5; break;}
+    default: {
+        fprintf(stderr, "reif: invalid cursor type specified.\n"); 
+        return;
+      }
+  }
+  GLFWcursor* cursor = cursors[idx];
   if(!cursor) {
     cursor = glfwCreateStandardCursor(cursor_type);
   }
@@ -562,6 +616,6 @@ lf_win_set_cursor(lf_window_t win, lf_cursor_type_t cursor_type) {
 
 void 
 lf_win_reset_cursor(lf_window_t win) {
-  glfwSetCursor(window, NULL);
+  glfwSetCursor(win, NULL);
 }
 #endif

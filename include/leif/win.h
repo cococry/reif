@@ -1,12 +1,13 @@
 #pragma once
 
 #include "event.h"
-#include "platform/input_x11.h"
 #include <cglm/types-struct.h>
 #ifdef LF_GLFW 
 #include "platform/win_glfw.h"
+#include "platform/input_glfw.h"
 #elif defined(LF_X11)
 #include "platform/win_x11.h"
+#include "platform/input_x11.h"
 #else
 #error "Invalid windowing system specified (valid windowing systems: LF_GLFW, LF_X11)"
 #endif
@@ -102,9 +103,13 @@ int32_t lf_windowing_terminate(void);
 
 void lf_windowing_update(void);
 
+void lf_windowing_set_wait_events(bool wait);
+
 void lf_win_set_ui_state(lf_window_t win, lf_ui_state_t* state);
 
 lf_event_type_t lf_windowing_get_current_event(void);
+
+void lf_windowing_wake_up_event_loop(void);
 
 void lf_windowing_next_event(void);
 
@@ -173,3 +178,4 @@ void lf_win_register(lf_window_t win, GLXContext glcontext, uint32_t flags);
 void lf_win_set_cursor(lf_window_t win, lf_cursor_type_t cursor_type);
 
 void lf_win_reset_cursor(lf_window_t win);
+

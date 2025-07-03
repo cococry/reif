@@ -129,9 +129,8 @@ _slider_handle_event(
         &slider->handle_props.color, 
         slider->_initial_handle_props.color);
     ui->needs_render = true;
-    printf("Released slider.\n");
     if(widget->id == ui->active_widget_id) {
-      if(slider->on_click && on_handle) {
+      if(slider->on_click) {
         slider->on_click(ui, widget);
       }
     }

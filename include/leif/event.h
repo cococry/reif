@@ -15,6 +15,7 @@ typedef enum {
   LF_EVENT_MOUSE_RELEASE = 1 << 8,
   LF_EVENT_MOUSE_WHEEL = 1 << 9,
   LF_EVENT_TYPING_CHAR = 1 << 10,
+  LF_EVENT_MOUSE_LEAVE = 1 << 11,
 #ifdef LF_X11
   LF_EVENT_X11_PROPERTY = 1 << 10,
 #endif 

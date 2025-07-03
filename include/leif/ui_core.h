@@ -94,6 +94,8 @@ struct lf_ui_state_t {
   uint32_t active_widget_id;
 
   void* user_data;
+
+  lf_widget_t* hovered_widget;
 };
 
 struct lf_page_t {

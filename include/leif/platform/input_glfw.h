@@ -1,5 +1,5 @@
 #pragma once
-
+#ifdef LF_GLFW
 #include <GLFW/glfw3.h>
 
 typedef enum {
@@ -155,3 +155,4 @@ typedef enum {
     KeyMenu = GLFW_KEY_MENU
 
 } lf_key_code_t;
+#endif

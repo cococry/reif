@@ -45,7 +45,8 @@ struct lf_widget_t {
 
   lf_container_t container;
 
-  lf_widget_props_t props, _rendered_props, _initial_props;
+  lf_widget_props_t props, _rendered_props, _initial_props; 
+  lf_widget_props_t _component_props;
 
   lf_widget_render_cb render;
   lf_widget_handle_event_cb handle_event;
@@ -249,12 +250,17 @@ lf_animation_t* lf_widget_set_prop(
     lf_widget_t* widget, 
     float* prop, float val);
 
+void lf_widget_set_props(
+    lf_ui_state_t* ui,
+    lf_widget_t* widget,
+    lf_widget_props_t props);
+
 lf_animation_t* lf_widget_set_prop_color(
     lf_ui_state_t* ui,
     lf_widget_t* widget, 
     lf_color_t* prop, lf_color_t val);
 
-void lf_widget_set_visible(lf_widget_t* widget, bool visible);
+void lf_widget_set_visible(lf_ui_state_t* ui, lf_widget_t* widget, bool visible);
 
 void lf_widget_invalidate_size(lf_widget_t* widget);
 
@@ -280,3 +286,5 @@ void lf_widget_set_pos_x_absolute_percent(lf_widget_t* widget, float x);
 void lf_widget_set_pos_y_absolute_percent(lf_widget_t* widget, float y);
 
 bool lf_widget_in_viewport(lf_ui_state_t* ui, lf_widget_t* widget);
+
+bool lf_widget_props_equal(lf_widget_props_t a, lf_widget_props_t b);

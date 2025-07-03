@@ -14,6 +14,7 @@
 #endif
 
 #define INIT_CHILD_CAP 4
+#define FLOAT_EQ(a, b) (fabsf((a) - (b)) < 0.0001f)
 
 static void widget_resize_children(lf_widget_t* widget, uint32_t new_cap);
 static bool widget_animate(lf_ui_state_t* ui, lf_widget_t* widget);
@@ -40,6 +41,7 @@ widget_animate(lf_ui_state_t* ui, lf_widget_t* widget) {
   while (anim) {
     if (anim->active) {
       lf_animation_update(anim, ui->delta_time);
+      // This is a fucking disgusting hack
       if(
         anim->target == &widget->props.padding_left || 
         anim->target == &widget->props.padding_right || 
@@ -52,6 +54,7 @@ widget_animate(lf_ui_state_t* ui, lf_widget_t* widget) {
         anim->target == &widget->container.size.x || 
         anim->target == &widget->container.size.y ||  
         anim->target == &widget->container.pos.x || 
+        anim->target == &widget->props.corner_radius_percent || 
         anim->target == &widget->container.pos.y ||  
         anim->target == &widget->_height_percent ||  
         anim->target == &widget->_width_percent 
@@ -63,6 +66,7 @@ widget_animate(lf_ui_state_t* ui, lf_widget_t* widget) {
       animated = true;
     }
     if (!anim->active) {
+      // TODO: Desync of the list head due to deletions. WTF???
       if (prev) {
         prev->next = anim->next;
       } else {
@@ -206,6 +210,8 @@ lf_widget_render(lf_ui_state_t* ui,  lf_widget_t* widget) {
 
   if(widget->render) {
     if(!lf_widget_in_viewport(ui, widget)) return;
+    // I cringe at this code so much, we need to cull the widgets recursively, 
+    // thats why i need to do this dance.
 #ifdef LF_RUNARA
     vec2s last_cull_start = ((RnState*)ui->render_state)->cull_start;
     vec2s last_cull_end = ((RnState*)ui->render_state)->cull_end;
@@ -1126,6 +1132,43 @@ lf_animation_t* lf_widget_set_prop(
   }
 }
 
+void lf_widget_set_props(
+    lf_ui_state_t* ui,
+    lf_widget_t* widget,
+    lf_widget_props_t props) {
+  if (!widget) return;
+
+  // Padding
+  lf_widget_set_prop(ui, widget, &widget->props.padding_left, props.padding_left);
+  lf_widget_set_prop(ui, widget, &widget->props.padding_right, props.padding_right);
+  lf_widget_set_prop(ui, widget, &widget->props.padding_top, props.padding_top);
+  lf_widget_set_prop(ui, widget, &widget->props.padding_bottom, props.padding_bottom);
+
+  // Margin
+  lf_widget_set_prop(ui, widget, &widget->props.margin_left, props.margin_left);
+  lf_widget_set_prop(ui, widget, &widget->props.margin_right, props.margin_right);
+  lf_widget_set_prop(ui, widget, &widget->props.margin_top, props.margin_top);
+  lf_widget_set_prop(ui, widget, &widget->props.margin_bottom, props.margin_bottom);
+
+  // Radius, border width, radius percent
+  lf_widget_set_prop(ui, widget, &widget->props.corner_radius_percent, props.corner_radius_percent);
+  lf_widget_set_prop(ui, widget, &widget->props.border_width, props.border_width);
+
+  // Colors
+  lf_widget_set_prop_color(ui, widget, &widget->props.color, props.color);
+  lf_widget_set_prop_color(ui, widget, &widget->props.text_color, props.text_color);
+  lf_widget_set_prop_color(ui, widget, &widget->props.border_color, props.border_color);
+
+  widget->props.text_align = props.text_align;
+
+  // Trigger layout/size update if not animated
+  if (!widget->transition_func) {
+    ui->needs_render = true;
+    widget->_changed_size = true;
+    lf_widget_flag_for_layout(ui, widget);
+  }
+}
+
 
 lf_animation_t* 
 lf_widget_set_prop_color(
@@ -1142,9 +1185,10 @@ lf_widget_set_prop_color(
 }
 
 void 
-lf_widget_set_visible(lf_widget_t* widget, bool visible) {
+lf_widget_set_visible(lf_ui_state_t* ui, lf_widget_t* widget, bool visible) {
   widget->visible = visible;
-  widget->parent->_changed_size =true;
+  widget->_changed_size = true;
+  lf_widget_flag_for_layout(ui, widget);
 }
 
 void 
@@ -1270,4 +1314,30 @@ lf_widget_in_viewport(lf_ui_state_t* ui, lf_widget_t* widget) {
       return false;
     }
   return true;
+}
+
+bool lf_color_equal(lf_color_t a, lf_color_t b);
+
+bool lf_widget_props_equal(lf_widget_props_t a, lf_widget_props_t b) {
+  return
+    lf_color_equal(a.color, b.color) &&
+    lf_color_equal(a.text_color, b.text_color) &&
+
+    FLOAT_EQ(a.padding_left, b.padding_left) &&
+    FLOAT_EQ(a.padding_right, b.padding_right) &&
+    FLOAT_EQ(a.padding_top, b.padding_top) &&
+    FLOAT_EQ(a.padding_bottom, b.padding_bottom) &&
+
+    FLOAT_EQ(a.margin_left, b.margin_left) &&
+    FLOAT_EQ(a.margin_right, b.margin_right) &&
+    FLOAT_EQ(a.margin_top, b.margin_top) &&
+    FLOAT_EQ(a.margin_bottom, b.margin_bottom) &&
+
+    FLOAT_EQ(a.corner_radius, b.corner_radius) &&
+    FLOAT_EQ(a.border_width, b.border_width) &&
+    FLOAT_EQ(a.corner_radius_percent, b.corner_radius_percent) &&
+
+    lf_color_equal(a.border_color, b.border_color) &&
+
+    a.text_align == b.text_align;
 }

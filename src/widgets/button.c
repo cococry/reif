@@ -1,5 +1,4 @@
 #include "../../include/leif/widgets/button.h"
-#include "../../include/leif/widgets/text.h"
 
 #ifdef LF_RUNARA
 #include <runara/runara.h>
@@ -43,44 +42,51 @@ _button_handle_event(
 
   lf_button_t* button = (lf_button_t*)widget;
   bool on_button = lf_point_intersets_container(mouse, container);
-
+ if(!on_button && !button->_hovered && event->type == LF_EVENT_MOUSE_MOVE && !lf_widget_props_equal(widget->props, widget->_initial_props) && button->_was_hovered) {
+    lf_widget_set_props(ui, widget, widget->_component_props);
+    ui->needs_render = true;
+    button->_was_hovered = false;
+    printf("resetting to %f, %f, %f, %f.\n", 
+           widget->_component_props.color.r, 
+           widget->_component_props.color.g, 
+           widget->_component_props.color.b, 
+           widget->_component_props.color.a 
+           );
+  }
   if(!on_button && event->type == LF_EVENT_MOUSE_MOVE &&  !button->_held && button->_hovered) {
     button->_held = false;
     button->_hovered = false;
     ui->needs_render = true;
-    lf_widget_set_prop_color(
-      ui, widget, 
-      &widget->props.color, 
-      button->base._initial_props.color);
+    lf_widget_set_props(ui, widget, widget->_component_props);
 
     lf_win_set_cursor(ui->win, LF_CURSOR_ARROW); 
     if(button->on_leave) {
       button->on_leave(ui, widget);
     }
-    printf("on leave: %s\n", ((lf_text_t*)widget->childs[0])->label);
     return;
   }
  if(on_button && event->type == LF_EVENT_MOUSE_MOVE &&
     !button->_hovered && ui->active_widget_id == 0) {
     button->_hovered = true;
-    lf_widget_set_prop_color(
-      ui, widget, 
-      &widget->props.color, 
-      lf_color_dim(button->base._initial_props.color, 90.0f));
+    lf_widget_set_props(ui, widget, button->hovered_props);
     ui->needs_render = true;
     lf_win_set_cursor(ui->win, LF_CURSOR_ARROW);
     if(button->on_enter) {
       button->on_enter(ui, widget);
     }
+    button->_was_hovered = true;
     return;
   }
 
   if(event->type == LF_EVENT_MOUSE_RELEASE && button->_held) {
     button->_held = false;
-      lf_widget_set_prop_color(
-        ui, widget, 
-        &widget->props.color, 
-        button->base._initial_props.color);
+    lf_widget_props_t clicked_props = button->hovered_props;
+    if(on_button) {
+    clicked_props.color = lf_color_dim(button->hovered_props.color, 90.0f);
+    } else {
+      clicked_props = widget->_component_props; 
+    }
+    lf_widget_set_props(ui, widget, clicked_props);
     ui->needs_render = true;
     if(widget->id == ui->active_widget_id) {
       if(button->on_click && on_button) {
@@ -91,13 +97,12 @@ _button_handle_event(
     return;
   }
   if(event->type == LF_EVENT_MOUSE_PRESS && on_button) {
+    lf_widget_props_t held_props = button->hovered_props;
+    held_props.color = lf_color_dim(button->hovered_props.color, 80.0f);
+    lf_widget_set_props(ui, widget, held_props);
     button->_held = true;
     ui->active_widget_id = widget->id;
     ui->needs_render = true;
-    lf_widget_set_prop_color(
-      ui, widget,
-      &widget->props.color, 
-      lf_color_dim(button->base._initial_props.color, 80.0f));
     return;
   }
 }
@@ -146,7 +151,7 @@ lf_button_create(
   button->on_leave = NULL;
   button->_hovered = false;
   button->_held = false;
-
+  button->_was_hovered = false;
 
   lf_widget_props_t props = ui->theme->button_props;
   button->base = *lf_widget_create(
@@ -161,6 +166,9 @@ lf_button_create(
     _button_shape,
     _button_size_calc
   );
+  button->hovered_props = props;
+  button->hovered_props.color = 
+    lf_color_dim(button->base._initial_props.color, 90.0f);
 
   button->base.layout_type = LF_LAYOUT_HORIZONTAL;
   lf_widget_set_alignment(&button->base, LF_ALIGN_CENTER_VERTICAL | LF_ALIGN_CENTER_HORIZONTAL);

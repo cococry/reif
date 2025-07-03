@@ -490,6 +490,7 @@ lf_ui_state_t* lf_ui_core_init_ex(
   state->render_texture             = render_texture; 
 
   init_state(state, win);
+  state->hovered_widget = state->root;
   return state;
 }
 
@@ -533,12 +534,38 @@ void lf_ui_core_shape_widgets_if_needed(lf_ui_state_t* ui, lf_widget_t* widget, 
   }
 }
 
+void render_ui(lf_ui_state_t* ui) {
+  lf_widget_t* animated = NULL;
+  if (lf_widget_animate(ui, ui->root, &animated)) {
+    if(animated->_changed_size) {
+      lf_widget_shape(ui, lf_widget_flag_for_layout(ui, animated));
+    }
+    ui->needs_render = true;
+  } else {
+    lf_windowing_set_wait_events(true);
+  }
+
+  lf_ui_core_shape_widgets_if_needed(ui, ui->root, false);
+
+  ui->needs_render = true;
+  if (ui->needs_render) {
+    lf_win_make_gl_context(ui->win);
+    lf_ui_core_commit_entire_render(ui);
+    ui->needs_render = false;
+  }
+}
+
+static bool first_render = true;
 void lf_ui_core_next_event(lf_ui_state_t* ui) {
   if (ui->crnt_page_id == 0 && ui->pages.size != 0) {
     lf_ui_core_set_page_by_id(ui, ui->pages.items[0].id);
     fprintf(stderr, "leif: no active page set, but pages available, defaulting to first page.\n");
   }
 
+  if(first_render) {
+    render_ui(ui);
+    first_render = false;
+  }
   lf_task_flush_all_tasks();
   lf_windowing_next_event();
 
@@ -561,29 +588,8 @@ void lf_ui_core_next_event(lf_ui_state_t* ui) {
   float cur_time = lf_ui_core_get_elapsed_time();
   ui->delta_time = cur_time - ui->_last_time;
   ui->_last_time = cur_time;
-  
 
-  lf_widget_t* animated = NULL;
-  if (lf_widget_animate(ui, ui->root, &animated)) {
-    if(animated->_changed_size) {
-      lf_widget_shape(ui, lf_widget_flag_for_layout(ui, animated));
-    }
-    ui->needs_render = true;
-  }
-
-  bool rendered = lf_windowing_get_current_event() == LF_EVENT_WINDOW_REFRESH;
-
-  lf_ui_core_shape_widgets_if_needed(ui, ui->root, false);
-
-  if (ui->needs_render) {
-    lf_win_make_gl_context(ui->win);
-    lf_ui_core_commit_entire_render(ui);
-    ui->needs_render = false;
-    rendered = true;
-  }
-  if (!rendered) {
-    ui->_idle_delay_func(ui);
-  }
+  render_ui(ui);
 
   lf_windowing_update();
  // Remove expired timers
@@ -601,6 +607,7 @@ void lf_ui_core_next_event(lf_ui_state_t* ui) {
       ui->timers.items[i].elapsed = 0.0f;
     }
   }
+
 }
 
 

@@ -418,6 +418,12 @@ lf_component(lf_ui_state_t* ui, lf_component_func_t comp_func) {
   comp_func(ui);
 }
 
+void apply_widget_props(lf_ui_state_t* ui, lf_widget_t* widget) {
+  widget->_initial_props = widget->props;
+  for(uint32_t i = 0; i < widget->num_childs; i++) {
+    apply_widget_props(ui, widget->childs[i]);
+  }
+}
 void reset_widgets(lf_ui_state_t* ui, lf_widget_t* widget) {
   widget->_rendered_within_comp = false;
   for(uint32_t i = 0; i < widget->num_childs; i++) {
@@ -468,11 +474,11 @@ void lf_component_rerender(lf_ui_state_t* ui, lf_component_func_t comp_func) {
       ui->_ez.last_parent = comp->_parent;
       reset_widgets(ui, comp_widget);
       comp->func(ui);  // Run component
+      apply_widget_props(ui, comp_widget);
       needs_reshape = remove_widgets(
           ui, comp_widget, 
           ui->_ez.current_widget,
           comp_widget);
-
       lf_ez_api_set_assignment_only_mode(ui, false);
 
       if (needs_reshape) {

@@ -25,6 +25,12 @@ typedef enum {
     lf_widget_set_prop((ui), (widget), &(widget)->props.prop, (val)); \
     (widget)->_initial_props.prop = (val); \
     (widget)->_rendered_props.prop = (val); \
+    if(!ui->_ez._assignment_only) {         \
+      (widget)->_component_props = (widget)->props; \
+    } \
+    if((widget)->_component_props.prop != (widget)->_rendered_props.prop) { \
+      (widget)->_component_props.prop = (val); \
+    } \
   } while(0)
 
 #define lf_style_widget_prop_color(ui, widget, prop, val) \
@@ -32,7 +38,18 @@ typedef enum {
     lf_widget_set_prop_color((ui), (widget), &(widget)->props.prop, (val)); \
     (widget)->_initial_props.prop = (val); \
     (widget)->_rendered_props.prop = (val); \
+    if(!ui->_ez._assignment_only) { \
+      (widget)->_component_props = (widget)->props; \
+    } \
+    if( \
+        (widget)->_component_props.prop.r != (widget)->_rendered_props.prop.r || \
+        (widget)->_component_props.prop.g != (widget)->_rendered_props.prop.g || \
+        (widget)->_component_props.prop.b != (widget)->_rendered_props.prop.b || \
+        (widget)->_component_props.prop.a != (widget)->_rendered_props.prop.a ) { \
+      (widget)->_component_props.prop = (val); \
+    } \
   } while(0)
+
 
 lf_ez_state_t lf_ez_api_init(lf_ui_state_t* ui);
 

@@ -1,5 +1,6 @@
 #include "../include/leif/animation.h"
 #include "../include/leif/util.h"
+#include "../include/leif/win.h"
 
 #include <math.h>
 #include <stdlib.h>
@@ -59,6 +60,9 @@ lf_animation_create(
 
   anim->elapsed_time = 0.0f;
   anim->active = true;
+  lf_windowing_set_wait_events(false);
+  lf_windowing_wake_up_event_loop(); 
+
 
   anim->looping = looping;
 
