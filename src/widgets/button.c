@@ -46,12 +46,6 @@ _button_handle_event(
     lf_widget_set_props(ui, widget, widget->_component_props);
     ui->needs_render = true;
     button->_was_hovered = false;
-    printf("resetting to %f, %f, %f, %f.\n", 
-           widget->_component_props.color.r, 
-           widget->_component_props.color.g, 
-           widget->_component_props.color.b, 
-           widget->_component_props.color.a 
-           );
   }
   if(!on_button && event->type == LF_EVENT_MOUSE_MOVE &&  !button->_held && button->_hovered) {
     button->_held = false;

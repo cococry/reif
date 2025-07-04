@@ -26,7 +26,7 @@ typedef enum {
     (widget)->_initial_props.prop = (val); \
     (widget)->_rendered_props.prop = (val); \
     if(!ui->_ez._assignment_only) {         \
-      (widget)->_component_props = (widget)->props; \
+      (widget)->_component_props = (widget)->_rendered_props; \
     } \
     if((widget)->_component_props.prop != (widget)->_rendered_props.prop) { \
       (widget)->_component_props.prop = (val); \
@@ -39,7 +39,7 @@ typedef enum {
     (widget)->_initial_props.prop = (val); \
     (widget)->_rendered_props.prop = (val); \
     if(!ui->_ez._assignment_only) { \
-      (widget)->_component_props = (widget)->props; \
+      (widget)->_component_props = (widget)->_rendered_props; \
     } \
     if( \
         (widget)->_component_props.prop.r != (widget)->_rendered_props.prop.r || \
