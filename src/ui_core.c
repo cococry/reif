@@ -523,15 +523,15 @@ lf_ui_core_remove_marked_widgets(lf_widget_t* root) {
   }
 }
 
-void lf_ui_core_shape_widgets_if_needed(lf_ui_state_t* ui, lf_widget_t* widget, bool parent_shaped) {
-  bool shaped = false;
+void lf_ui_core_shape_widgets_if_needed(lf_ui_state_t* ui, lf_widget_t* widget) {
+  if (!widget) return;
 
-  if (!parent_shaped && widget->_needs_shape) {
+  if (widget->_needs_shape || widget->_needs_size_calc || widget->_changed_size) {
     lf_widget_shape(ui, widget);
-    shaped = true;  
-  }
-  for (uint32_t i = 0; i < widget->num_childs; i++) {
-    lf_ui_core_shape_widgets_if_needed(ui, widget->childs[i], shaped);
+  } else {
+    for (uint32_t i = 0; i < widget->num_childs; i++) {
+      lf_ui_core_shape_widgets_if_needed(ui, widget->childs[i]);
+    }
   }
 }
 
@@ -546,7 +546,7 @@ void render_ui(lf_ui_state_t* ui) {
     lf_windowing_set_wait_events(true);
   }
 
-  lf_ui_core_shape_widgets_if_needed(ui, ui->root, false);
+  lf_ui_core_shape_widgets_if_needed(ui, ui->root);
 
   if(lf_windowing_get_current_event() == LF_EVENT_WINDOW_REFRESH) {
     ui->needs_render = true;
