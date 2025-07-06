@@ -20,16 +20,28 @@ typedef enum {
   LF_TEXT_LEVEL_PARGRAPH = 6
 } lf_text_level;
 
-#define lf_style_submit(ui, widget) \
-  if(!ui->_ez._assignment_only) {         \
-    (widget)->_component_props = (widget)->_rendered_props; \
-  } 
 
 #define lf_style_widget_prop(ui, widget, prop, val) \
   do { \
     lf_widget_set_prop((ui), (widget), &(widget)->props.prop, (val)); \
     (widget)->_initial_props.prop = (val); \
     (widget)->_rendered_props.prop = (val); \
+  } while(0)
+
+#define lf_style_widget_padding(ui, widget, val) \
+  do { \
+    lf_style_widget_prop((ui), (widget), padding_left, (val)); \
+    lf_style_widget_prop((ui), (widget), padding_right, (val)); \
+    lf_style_widget_prop((ui), (widget), padding_top, (val)); \
+    lf_style_widget_prop((ui), (widget), padding_bottom, (val)); \
+  } while(0)
+
+#define lf_style_widget_margin(ui, widget, val) \
+  do { \
+      lf_style_widget_prop((ui), (widget), margin_left, (val)); \
+      lf_style_widget_prop((ui), (widget), margin_right, (val)); \
+      lf_style_widget_prop((ui), (widget), margin_top, (val)); \
+      lf_style_widget_prop((ui), (widget), margin_bottom, (val)); \
   } while(0)
 
 #define lf_style_widget_prop_color(ui, widget, prop, val) \

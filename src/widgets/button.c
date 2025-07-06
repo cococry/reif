@@ -28,8 +28,7 @@ static void _reset_buttons(
 ) {
   if(widget != skip && widget->type == LF_WIDGET_TYPE_BUTTON) {
     lf_button_t* btn = ((lf_button_t*)widget);
-    if(btn->_was_hovered)
-      lf_widget_set_props(ui, widget, btn->_before_hovered_props);
+    widget->props = btn->_before_hovered_props;
   }
   for(uint32_t i = 0; i < widget->num_childs; i++) {
     _reset_buttons(ui, widget->childs[i], skip);
@@ -56,17 +55,15 @@ _button_handle_event(
 
   lf_button_t* button = (lf_button_t*)widget;
   bool on_button = lf_point_intersets_container(mouse, container);
- if(!on_button && !button->_hovered && event->type == LF_EVENT_MOUSE_MOVE && !lf_widget_props_equal(widget->props, widget->_initial_props) && button->_was_hovered) {
-    _reset_buttons(ui, ui->root, widget);
+  if(!lf_widget_props_equal(widget->props, button->_before_hovered_props) && button->_was_hovered && !on_button && !button->_held) {
     lf_widget_set_props(ui, widget, button->_before_hovered_props);
-    ui->needs_render = true;
     button->_was_hovered = false;
   }
   if(!on_button && event->type == LF_EVENT_MOUSE_MOVE &&  !button->_held && button->_hovered) {
     button->_held = false;
     button->_hovered = false;
     ui->needs_render = true;
-    _reset_buttons(ui, ui->root, widget);
+
     lf_widget_set_props(ui, widget, button->_before_hovered_props);
 
     lf_win_set_cursor(ui->win, LF_CURSOR_ARROW); 
@@ -79,13 +76,13 @@ _button_handle_event(
     !button->_hovered && ui->active_widget_id == 0) {
     button->_hovered = true;
     button->_before_hovered_props = widget->_rendered_props; 
+    button->_was_hovered = true;
     lf_widget_set_props(ui, widget, button->hovered_props);
     ui->needs_render = true;
     lf_win_set_cursor(ui->win, LF_CURSOR_ARROW);
     if(button->on_enter) {
       button->on_enter(ui, widget);
     }
-    button->_was_hovered = true;
     return;
   }
 

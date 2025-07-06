@@ -27,53 +27,64 @@ lf_animation_keyframe_t keyframe_create(
 
 lf_animation_t*
 lf_animation_create(
-  lf_animation_t** head,
-  float *target,
-  lf_animation_keyframe_t keyframes[], 
-  uint32_t n_keyframes,
-  bool looping
+    lf_animation_t** head,
+    float *target,
+    lf_animation_keyframe_t keyframes[],
+    uint32_t n_keyframes,
+    bool looping
 ) {
-  if(!head) return NULL;
-  if(!target) return NULL;
-  lf_animation_t* anim = malloc(sizeof(*anim));
-  if(!anim) return NULL;
+    if (!head || !target || n_keyframes == 0 || !keyframes)
+        return NULL;
 
-  anim->target = target;
-  if(n_keyframes == 1) {
-    lf_animation_keyframe_t keyframe = keyframe_create(keyframes[0], target);  
-    if(keyframe.duration != 0.0f) {
-      anim->keyframes = malloc(sizeof(lf_animation_keyframe_t) * n_keyframes);
-      anim->keyframes[0] = keyframe;
-      anim->n_keyframes = n_keyframes;
+    lf_animation_t* anim = malloc(sizeof(*anim));
+    if (!anim)
+        return NULL;
+
+    anim->target = target;
+    anim->i_keyframes = 0;
+    anim->elapsed_time = 0.0f;
+    anim->active = true;
+    anim->looping = looping;
+    anim->finish_cb = NULL;
+    anim->tick_cb = NULL;
+    anim->user_data = NULL;
+
+    // Allocate keyframes
+    anim->keyframes = NULL;
+    anim->n_keyframes = 0;
+
+    if (n_keyframes == 1) {
+        lf_animation_keyframe_t keyframe = keyframe_create(keyframes[0], target);
+        if (keyframe.duration > 0.0f) {
+            anim->keyframes = malloc(sizeof(lf_animation_keyframe_t));
+            if (!anim->keyframes) {
+                free(anim);
+                return NULL;
+            }
+            anim->keyframes[0] = keyframe;
+            anim->n_keyframes = 1;
+        } else {
+            free(anim);
+            return NULL;
+        }
     } else {
-      anim->keyframes = NULL;
-      anim->keyframes = 0;
+        anim->keyframes = malloc(sizeof(lf_animation_keyframe_t) * n_keyframes);
+        if (!anim->keyframes) {
+            free(anim);
+            return NULL;
+        }
+        for (uint32_t i = 0; i < n_keyframes; ++i)
+            anim->keyframes[i] = keyframes[i];
+        anim->n_keyframes = n_keyframes;
     }
-  } else {
-    anim->keyframes = malloc(sizeof(lf_animation_keyframe_t) * n_keyframes);
-    for(uint32_t i = 0; i < n_keyframes; i++) {
-      anim->keyframes[i] = keyframes[i];
-    }
-    anim->n_keyframes = n_keyframes;
-  }
-  anim->i_keyframes = 0;
 
-  anim->elapsed_time = 0.0f;
-  anim->active = true;
-  lf_windowing_set_wait_events(false);
-  lf_windowing_wake_up_event_loop(); 
+    anim->next = *head;
+    *head = anim;
 
+    lf_windowing_set_wait_events(false);
+    lf_windowing_wake_up_event_loop();
 
-  anim->looping = looping;
-
-  anim->next = *head;
-  *head = anim;
-
-  anim->finish_cb = NULL;
-  anim->tick_cb = NULL;
-  anim->user_data = NULL;
-
-  return anim;
+    return anim;
 }
 
 void 
@@ -106,6 +117,7 @@ lf_animation_update(lf_animation_t* anim, float dt) {
         if(anim->finish_cb) {
           anim->finish_cb(anim, anim->user_data);
         }
+        lf_windowing_set_wait_events(true);
       }
     }
   } else {

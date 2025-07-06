@@ -41,7 +41,6 @@ widget_animate(lf_ui_state_t* ui, lf_widget_t* widget) {
   while (anim) {
     if (anim->active) {
       lf_animation_update(anim, ui->delta_time);
-      // This is a fucking disgusting hack
       if(
         anim->target == &widget->props.padding_left || 
         anim->target == &widget->props.padding_right || 
@@ -66,7 +65,6 @@ widget_animate(lf_ui_state_t* ui, lf_widget_t* widget) {
       animated = true;
     }
     if (!anim->active) {
-      // TODO: Desync of the list head due to deletions. WTF???
       if (prev) {
         prev->next = anim->next;
       } else {

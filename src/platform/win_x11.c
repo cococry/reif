@@ -785,7 +785,7 @@ void lf_windowing_next_event(void) {
     return;
   }
 
-  if (wait_events) {
+  if (false) {
     fd_set in_fds;
     FD_ZERO(&in_fds);
     FD_SET(x11_fd, &in_fds);

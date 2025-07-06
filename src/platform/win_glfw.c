@@ -429,11 +429,7 @@ lf_windowing_get_current_event(void) {
 
 void 
 lf_windowing_next_event(void) {
-  if(wait_events) {
-    glfwWaitEvents();
-  } else {
     glfwPollEvents();
-  }
   for(uint32_t i = 0; i < n_windows; i++) {
     if(window_callbacks[i].windowing_event_cb) {
       window_callbacks[i].windowing_event_cb(&current_event, window_callbacks[i].ui);
