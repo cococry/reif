@@ -392,7 +392,8 @@ lf_widget_render(lf_ui_state_t* ui,  lf_widget_t* widget) {
 }
 
 void lf_widget_shape(lf_ui_state_t* ui, lf_widget_t* widget) {
-  if (!widget || !widget->shape || !widget->_needs_shape) return;
+  if (!widget || !widget->shape) return;
+  if (!widget->_needs_shape && !widget->_needs_size_calc && !widget->_changed_size) return;
 
   if (widget != ui->root && widget->parent) {
     if (!lf_container_intersets_container(
@@ -427,7 +428,10 @@ void lf_widget_shape(lf_ui_state_t* ui, lf_widget_t* widget) {
   widget->props.corner_radius = h * (widget->props.corner_radius_percent / 100.0f); 
 
   for (uint32_t i = 0; i < widget->num_childs; i++) {
-    lf_widget_shape(ui, widget->childs[i]);
+    lf_widget_t* child = widget->childs[i];
+    if (child->_needs_shape || child->_needs_size_calc) {
+      lf_widget_shape(ui, child);
+    }
   }
 }
 
