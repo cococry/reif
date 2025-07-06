@@ -96,6 +96,8 @@ struct lf_ui_state_t {
   void* user_data;
 
   lf_widget_t* hovered_widget;
+
+  bool _first_render;
 };
 
 struct lf_page_t {

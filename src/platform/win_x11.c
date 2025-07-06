@@ -293,16 +293,26 @@ handle_event(XEvent *event) {
       }
       case ClientMessage:
         if (event->xclient.message_type == wm_protocols) {
-          Atom protocol = (Atom)event->xclient.data.l[0]; 
-          if(protocol == wm_delete_window) {
+          Atom protocol = (Atom)event->xclient.data.l[0];
+          if (protocol == wm_delete_window) {
             ev.type = LF_EVENT_WINDOW_CLOSE;
             current_event = ev.type;
-            if(win_data.ui)
+
+            if (win_data.ui) {
               lf_widget_handle_event(win_data.ui, win_data.ui->root, &ev);
+            }
+
             if (window_callbacks[i].ev_close_cb && win_data.ui) {
               window_callbacks[i].ev_close_cb(win_data.ui, (lf_window_t)event->xany.window);
             }
+
             glXDestroyContext(display, window_callbacks[i].glcontext);
+            XDestroyWindow(display, window_callbacks[i].win);  
+            for (int j = i; j < n_windows - 1; j++) {
+              window_callbacks[j] = window_callbacks[j + 1];
+            }
+            n_windows--;
+            i--;
           } else if(protocol == net_wm_ping) {
             XEvent reply = *event;
             reply.xclient.window = DefaultRootWindow(display);
@@ -529,7 +539,6 @@ create_window(
     XSelectInput(display, win, StructureNotifyMask | KeyPressMask | KeyReleaseMask |
                  ButtonPressMask | ButtonReleaseMask | PointerMotionMask | ExposureMask | LeaveWindowMask);
   }
-  //XSelectInput(display, root, SubstructureNotifyMask);
   textprop.value = (unsigned char*)title;
   textprop.encoding = XA_STRING;
   textprop.format = 8;
@@ -760,48 +769,65 @@ lf_windowing_get_current_event(void) {
 
 void lf_windowing_next_event(void) {
   XEvent event;
-
   int x11_fd = ConnectionNumber(display);
 
-if (wait_events) {
-  // wait for x event or pipe wakeup
-  fd_set in_fds;
-  FD_ZERO(&in_fds);
-  FD_SET(x11_fd, &in_fds);
-  FD_SET(pipe_fds[0], &in_fds);
-  int max_fd = (x11_fd > pipe_fds[0] ? x11_fd : pipe_fds[0]) + 1;
-
-  select(max_fd, &in_fds, NULL, NULL, NULL);
-
-  if (FD_ISSET(pipe_fds[0], &in_fds)) {
-    drain_pipe(); // clear wakeup
+  // First: always check if events are already queued
+  if (XPending(display)) {
+    do {
+      XNextEvent(display, &event);
+      handle_event(&event);
+      for (uint32_t i = 0; i < n_windows; i++) {
+        if (window_callbacks[i].windowing_event_cb) {
+          window_callbacks[i].windowing_event_cb(&event, window_callbacks[i].ui);
+        }
+      }
+    } while (XPending(display));
+    return;
   }
 
-  // 🔥 FIX: Handle *all* queued events after waking up
-  while (XPending(display)) {
-    XNextEvent(display, &event);
-    handle_event(&event);
-    for (uint32_t i = 0; i < n_windows; i++) {
-      if (window_callbacks[i].windowing_event_cb) {
-        window_callbacks[i].windowing_event_cb(&event, window_callbacks[i].ui);
+  if (wait_events) {
+    fd_set in_fds;
+    FD_ZERO(&in_fds);
+    FD_SET(x11_fd, &in_fds);
+    FD_SET(pipe_fds[0], &in_fds);
+    int max_fd = (x11_fd > pipe_fds[0] ? x11_fd : pipe_fds[0]) + 1;
+
+    if (select(max_fd, &in_fds, NULL, NULL, NULL) > 0) {
+      if (FD_ISSET(pipe_fds[0], &in_fds)) {
+        drain_pipe();
+      }
+
+      if (FD_ISSET(x11_fd, &in_fds)) {
+        XNextEvent(display, &event);
+        handle_event(&event);
+        for (uint32_t i = 0; i < n_windows; i++) {
+          if (window_callbacks[i].windowing_event_cb) {
+            window_callbacks[i].windowing_event_cb(&event, window_callbacks[i].ui);
+          }
+        }
+        while (XPending(display)) {
+          XNextEvent(display, &event);
+          handle_event(&event);
+          for (uint32_t i = 0; i < n_windows; i++) {
+            if (window_callbacks[i].windowing_event_cb) {
+              window_callbacks[i].windowing_event_cb(&event, window_callbacks[i].ui);
+            }
+          }
+        }
       }
     }
-  }
-
-} else {
-  // polling mode
-  while (XPending(display)) {
-    XNextEvent(display, &event);
-    handle_event(&event);
-    for (uint32_t i = 0; i < n_windows; i++) {
-      if (window_callbacks[i].windowing_event_cb) {
-        window_callbacks[i].windowing_event_cb(&event, window_callbacks[i].ui);
+  } else {
+    while (XPending(display)) {
+      XNextEvent(display, &event);
+      handle_event(&event);
+      for (uint32_t i = 0; i < n_windows; i++) {
+        if (window_callbacks[i].windowing_event_cb) {
+          window_callbacks[i].windowing_event_cb(&event, window_callbacks[i].ui);
+        }
       }
     }
   }
 }
-}
-
 void* 
 lf_win_get_x11_display(void) {
   return display;

@@ -114,6 +114,7 @@ init_state(lf_ui_state_t* state, lf_window_t win) {
   state->win = win;
   state->refresh_rate = lf_win_get_refresh_rate(win);
   state->_frame_duration = 1.0f / state->refresh_rate;
+  state->_first_render = true;
 
   state->theme = lf_ui_core_default_theme();
 
@@ -547,7 +548,9 @@ void render_ui(lf_ui_state_t* ui) {
 
   lf_ui_core_shape_widgets_if_needed(ui, ui->root, false);
 
-  ui->needs_render = true;
+  if(lf_windowing_get_current_event() == LF_EVENT_WINDOW_REFRESH) {
+    ui->needs_render = true;
+  }
   if (ui->needs_render) {
     lf_win_make_gl_context(ui->win);
     lf_ui_core_commit_entire_render(ui);
@@ -555,19 +558,17 @@ void render_ui(lf_ui_state_t* ui) {
   }
 }
 
-static bool first_render = true;
 void lf_ui_core_next_event(lf_ui_state_t* ui) {
   if (ui->crnt_page_id == 0 && ui->pages.size != 0) {
     lf_ui_core_set_page_by_id(ui, ui->pages.items[0].id);
     fprintf(stderr, "leif: no active page set, but pages available, defaulting to first page.\n");
   }
 
-  if(first_render) {
+  if(ui->_first_render) {
     render_ui(ui);
-    first_render = false;
+    ui->_first_render = false;
   }
   lf_task_flush_all_tasks();
-  lf_windowing_next_event();
 
   for (uint32_t i = 0; i < ui->timers.size; i++) {
     if(!ui->timers.items[i].paused)

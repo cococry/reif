@@ -21,6 +21,20 @@ static void _button_size_calc(
   lf_ui_state_t* ui, 
   lf_widget_t* widget);
 
+static void _reset_buttons(
+  lf_ui_state_t* ui, 
+  lf_widget_t* widget,
+  lf_widget_t* skip
+) {
+  if(widget != skip && widget->type == LF_WIDGET_TYPE_BUTTON) {
+    lf_button_t* btn = ((lf_button_t*)widget);
+    if(btn->_was_hovered)
+      lf_widget_set_props(ui, widget, btn->_before_hovered_props);
+  }
+  for(uint32_t i = 0; i < widget->num_childs; i++) {
+    _reset_buttons(ui, widget->childs[i], skip);
+  }
+}
 void 
 _button_handle_event(
   lf_ui_state_t* ui, 
@@ -43,7 +57,8 @@ _button_handle_event(
   lf_button_t* button = (lf_button_t*)widget;
   bool on_button = lf_point_intersets_container(mouse, container);
  if(!on_button && !button->_hovered && event->type == LF_EVENT_MOUSE_MOVE && !lf_widget_props_equal(widget->props, widget->_initial_props) && button->_was_hovered) {
-    lf_widget_set_props(ui, widget, widget->_component_props);
+    _reset_buttons(ui, ui->root, widget);
+    lf_widget_set_props(ui, widget, button->_before_hovered_props);
     ui->needs_render = true;
     button->_was_hovered = false;
   }
@@ -51,7 +66,8 @@ _button_handle_event(
     button->_held = false;
     button->_hovered = false;
     ui->needs_render = true;
-    lf_widget_set_props(ui, widget, widget->_component_props);
+    _reset_buttons(ui, ui->root, widget);
+    lf_widget_set_props(ui, widget, button->_before_hovered_props);
 
     lf_win_set_cursor(ui->win, LF_CURSOR_ARROW); 
     if(button->on_leave) {
@@ -62,6 +78,7 @@ _button_handle_event(
  if(on_button && event->type == LF_EVENT_MOUSE_MOVE &&
     !button->_hovered && ui->active_widget_id == 0) {
     button->_hovered = true;
+    button->_before_hovered_props = widget->_rendered_props; 
     lf_widget_set_props(ui, widget, button->hovered_props);
     ui->needs_render = true;
     lf_win_set_cursor(ui->win, LF_CURSOR_ARROW);
@@ -115,7 +132,7 @@ _button_render(
       .x = widget->container.size.x + widget->props.padding_left + widget->props.padding_right,
       .y = widget->container.size.y + widget->props.padding_top + widget->props.padding_bottom
     },
-    widget->_rendered_props.color, widget->props.border_color,
+    widget->props.color, widget->props.border_color,
     widget->props.border_width, widget->props.corner_radius);
 }
 

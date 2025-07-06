@@ -124,6 +124,7 @@ lf_widget_create(
   widget->container = fallback_container;
   widget->props = props;
   widget->_rendered_props = props;
+  widget->_component_props = props;
   widget->_initial_props = props;
   widget->justify_type = LF_JUSTIFY_START;
   widget->sizing_type = LF_SIZING_FIT_PARENT;
@@ -445,7 +446,6 @@ bool lf_widget_animate(
       if (*o_shape == NULL) {
         *o_shape = widget;
       }
-      lf_widget_submit_props(widget);
     }
   } 
 
@@ -866,7 +866,6 @@ lf_widget_set_fixed_height_percent(lf_ui_state_t* ui, lf_widget_t* widget, float
   if(!widget) return NULL;
   lf_animation_t* anim = 
     lf_widget_set_prop(ui, widget, &widget->_height_percent, percent / 100.0f);
-  lf_widget_submit_props(widget);
   widget->_fixed_height = true;
   widget->_changed_size = true;
   if(!widget->anims)
@@ -1127,7 +1126,6 @@ lf_animation_t* lf_widget_set_prop(
       widget->transition_time, widget->transition_func); 
   } else {
     *prop = val;
-    lf_widget_submit_props(widget);
     return NULL;
   }
 }
@@ -1179,7 +1177,6 @@ lf_widget_set_prop_color(
   lf_widget_set_prop(ui, widget, &prop->g, val.g);
   lf_widget_set_prop(ui, widget, &prop->b, val.b);
   lf_animation_t* anim = lf_widget_set_prop(ui, widget, &prop->a, val.a);
-  lf_widget_submit_props(widget);
   ui->needs_render = true;
   return anim;
 }
