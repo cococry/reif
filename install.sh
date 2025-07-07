@@ -79,6 +79,17 @@ install_void() {
   harfbuzz-devel
 }
 
+install_gentoo() {
+    sudo emerge --ask \
+        media-libs/mesa \
+        media-libs/harfbuzz \
+        media-libs/freetype \
+        sys-libs/zlib \
+        media-libs/libpng \
+        dev-libs/cglm \
+        x11-libs/libX11
+}
+
 get_distro
 
 echo "Detected distribution: $DISTRO"
@@ -95,6 +106,10 @@ case "$DISTRO" in
     arch)
         echo "Installing dependencies for Arch Linux..."
         install_arch
+        ;;
+    gentoo)
+        echo "Installing dependencies for Gentoo..."
+        install_gentoo
         ;;
     opensuse|sles)
         echo "Installing dependencies for openSUSE/SLES..."
