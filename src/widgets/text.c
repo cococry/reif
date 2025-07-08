@@ -12,7 +12,10 @@ _recalculate_label(
 ) {
   if(!text->base._needs_size_calc) return;
   lf_widget_t* widget = &text->base;
-
+  if(widget->parent->sizing_type == LF_SIZING_FIT_CONTENT && !widget->_changed_size) {
+    printf("SKIPPING %s\n", text->label);
+    return;
+  }
   float wrap = widget->parent->container.pos.x +
     widget->parent->scroll_offset.x + widget->parent->container.size.x +
     widget->parent->props.padding_left / 2.0f; 
@@ -23,6 +26,7 @@ _recalculate_label(
     .x = widget->container.pos.x + widget->props.padding_left, 
     .y =  widget->container.pos.y + widget->props.padding_top 
   };
+  printf("Recalculating label %i\n", text->base.id);
   lf_text_dimension_t text_dimension = ui->render_get_paragraph_dimension(
     ui->render_state,
     text->label,
@@ -35,6 +39,7 @@ _recalculate_label(
   );
   if((text->_text_dimension.width != text_dimension.width || 
       text->_text_dimension.height != text_dimension.height)) {
+    widget->_changed_size = true;
   }
   if(!widget->_fixed_width)
     text->base.container.size.x = text_dimension.width; 
@@ -133,6 +138,7 @@ lf_text_t* _text_create(
   text->_changed_label = true;
   text->base.props.text_color = parent->props.text_color;
   text->base.layout_type = LF_LAYOUT_NONE;
+  text->base._changed_size = true;
   lf_widget_add_child(parent, (lf_widget_t*)text);
 
 

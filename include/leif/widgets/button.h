@@ -15,7 +15,7 @@ typedef struct {
 
   bool _hovered, _held;
 
-  lf_widget_props_t hovered_props;
+  lf_widget_props_t hovered_props, held_props;
   lf_widget_props_t _before_hovered_props;
   bool _was_hovered;
 } lf_button_t;

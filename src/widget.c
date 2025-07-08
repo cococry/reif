@@ -5,6 +5,7 @@
 #include "../include/leif/widgets/text.h"
 #include "../include/leif/widgets/div.h"
 #include "../include/leif/widgets/slider.h"
+#include "../include/leif/widgets/button.h"
 #include <stdbool.h>
 #include <string.h>
 #include <time.h>
@@ -221,6 +222,13 @@ lf_widget_render(lf_ui_state_t* ui,  lf_widget_t* widget) {
       rn_set_cull_end_x((RnState*)ui->render_state, parent_end_x );
     }
 #endif
+    float h = lf_widget_height(widget);
+    if(widget->type == LF_WIDGET_TYPE_SLIDER) {
+      h =  widget->container.size.y + 
+        widget->props.padding_top       +
+        widget->props.padding_bottom;
+    }
+    widget->props.corner_radius = h * (widget->props.corner_radius_percent / 100.0f); 
     widget->render(ui, widget);
     widget->rendered = true;
 #ifdef LF_RUNARA
@@ -391,46 +399,82 @@ lf_widget_render(lf_ui_state_t* ui,  lf_widget_t* widget) {
 
 }
 
-void lf_widget_shape(lf_ui_state_t* ui, lf_widget_t* widget) {
-  if (!widget || !widget->shape || !widget->_needs_shape) return;
-
-  if (widget != ui->root && widget->parent) {
-    if (!lf_container_intersets_container(
-          LF_WIDGET_CONTAINER(widget), ui->root->container) ||
-        !lf_container_intersets_container(
-          LF_WIDGET_CONTAINER(widget), LF_WIDGET_CONTAINER(widget->parent))) {
-      return;
+char* printwidgettype(lf_widget_t* widget ){
+  switch (widget->type) {
+    case LF_WIDGET_TYPE_DIV:
+      return ("(Div widget)\n");
+      break;
+    case LF_WIDGET_TYPE_TEXT: {
+      char* buf = malloc(128);
+      sprintf(buf, "(Text widget) \'%s\'\n", ((lf_text_t*)(widget))->label);
+      return buf; 
     }
+    case LF_WIDGET_TYPE_BUTTON: {
+      char* buf = malloc(128);
+      sprintf(buf, "(Button widget) \'%s\'\n", ((lf_text_t*)widget->childs[0])->label);
+      return buf; 
+    }
+    default: break;
   }
+  return "none";
+}
+void lf_widget_size_calc(lf_ui_state_t* ui, lf_widget_t* widget) {
+  if(!widget || !ui) return;
   vec2s size_before = widget->container.size;
 
-  if (widget->size_calc && widget->_needs_size_calc){
+  for (uint32_t i = 0; i < widget->num_childs; i++) {
+    lf_widget_size_calc(ui, widget->childs[i]);
+  }
+
+  if (widget->size_calc && (widget->_needs_size_calc || widget->_changed_size)) {
     widget->size_calc(ui, widget);
     widget->_needs_size_calc = false;
+    char* buf = printwidgettype(widget);
+    
+    printf("calculated size: %f for widget %i (%s)\n", widget->container.size.y, widget->id, buf);
+    if(widget->type == LF_WIDGET_TYPE_TEXT || widget->type == LF_WIDGET_TYPE_BUTTON) {
+      free(buf);
+    }
   }
 
   widget->_changed_size = !(widget->container.size.x == size_before.x &&
     widget->container.size.y == size_before.y);
 
-  if (widget->_needs_shape || widget->_changed_size) {
+}
+
+
+void lf_widget_shape(
+    lf_ui_state_t* ui,
+    lf_widget_t* widget) {
+  if (!widget) return;
+
+  bool skip = !widget->_needs_shape;
+
+  if (widget != ui->root && widget->parent && !skip) {
+    skip = (!lf_container_intersets_container(
+      LF_WIDGET_CONTAINER(widget), ui->root->container) ||
+      !lf_container_intersets_container(
+        LF_WIDGET_CONTAINER(widget), LF_WIDGET_CONTAINER(widget->parent)));
+  }
+
+  if(!skip) skip = widget->shape == NULL;
+  if (!skip && (widget->_needs_shape || widget->_changed_size)) {
     widget->shape(ui, widget);
     widget->_needs_shape = false;
   }
-
-  float h = lf_widget_height(widget);
-  if(widget->type == LF_WIDGET_TYPE_SLIDER) {
-    h =  widget->container.size.y + 
-      widget->props.padding_top       +
-      widget->props.padding_bottom;
-  }
-
-  widget->props.corner_radius = h * (widget->props.corner_radius_percent / 100.0f); 
-
   for (uint32_t i = 0; i < widget->num_childs; i++) {
-    lf_widget_shape(ui, widget->childs[i]);
+    lf_widget_t* child = widget->childs[i];
+    lf_widget_shape(ui, child);
   }
 }
 
+void lf_widget_layout(
+    lf_ui_state_t* ui,
+    lf_widget_t* widget) {
+  if(!widget || !ui) return;
+  lf_widget_size_calc(ui, widget);
+  lf_widget_shape(ui, widget);
+}
 
 bool lf_widget_animate(
   lf_ui_state_t* ui,
@@ -605,9 +649,9 @@ lf_animation_t* lf_widget_set_padding(
   lf_widget_set_prop(ui, widget, &widget->props.padding_top, padding); 
   lf_animation_t* anim = lf_widget_set_prop(ui, widget, &widget->props.padding_bottom, padding); 
 
-  if(!widget->transition_func) {
+  if(!widget->transition_func && ui->delta_time) {
     ui->needs_render = true;
-  widget->_changed_size = true;
+    widget->_changed_size = true;
     lf_widget_flag_for_layout(ui, widget);
   }
 
@@ -1134,6 +1178,7 @@ void lf_widget_set_props(
     lf_widget_props_t props) {
   if (!widget) return;
 
+  vec2s sizebefore = LF_WIDGET_SIZE_RENDERED_V2(widget);
   // Padding
   lf_widget_set_prop(ui, widget, &widget->props.padding_left, props.padding_left);
   lf_widget_set_prop(ui, widget, &widget->props.padding_right, props.padding_right);
@@ -1160,7 +1205,12 @@ void lf_widget_set_props(
   // Trigger layout/size update if not animated
   if (!widget->transition_func) {
     ui->needs_render = true;
-    widget->_changed_size = true;
+    if(
+      sizebefore.x != LF_WIDGET_SIZE_RENDERED_V2(widget).x || 
+      sizebefore.y != LF_WIDGET_SIZE_RENDERED_V2(widget).y  
+    ) {
+      widget->_changed_size = true;
+    }
     lf_widget_flag_for_layout(ui, widget);
   }
 }

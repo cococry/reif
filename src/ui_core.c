@@ -546,7 +546,7 @@ void render_ui(lf_ui_state_t* ui) {
     lf_windowing_set_wait_events(true);
   }
 
-  lf_ui_core_shape_widgets_if_needed(ui, ui->root, false);
+  lf_widget_layout(ui, ui->root);
 
   if(lf_windowing_get_current_event() == LF_EVENT_WINDOW_REFRESH) {
     ui->needs_render = true;

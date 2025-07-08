@@ -105,7 +105,8 @@ _button_handle_event(
     return;
   }
   if(event->type == LF_EVENT_MOUSE_PRESS && on_button) {
-    lf_widget_set_props(ui, widget, button->held_props);
+    button.held_props = button->hovered_props;
+    lf_widget_set_props(ui, widget, held_props);
     button->_held = true;
     ui->active_widget_id = widget->id;
     ui->needs_render = true;

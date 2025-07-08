@@ -118,7 +118,15 @@ void lf_widget_handle_event(
     lf_widget_t* widget,
     lf_event_t* event);
 
+void lf_widget_size_calc(
+    lf_ui_state_t* ui,
+    lf_widget_t* widget);
+
 void lf_widget_shape(
+    lf_ui_state_t* ui,
+    lf_widget_t* widget);
+
+void lf_widget_layout(
     lf_ui_state_t* ui,
     lf_widget_t* widget);
 

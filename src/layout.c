@@ -50,6 +50,10 @@ static void widget_grow_horz(lf_ui_state_t* ui, lf_widget_t* widget) {
       if (child->sizing_type == LF_SIZING_GROW) {
         num_grow_widgets++;
       } else {
+        if(child->_needs_size_calc) {
+          child->size_calc(ui, widget);
+          child->_needs_size_calc = false;
+        }
         total_width += lf_widget_effective_size(child).x;
       }
     }
@@ -314,6 +318,14 @@ void lf_layout_responsive_grid(lf_ui_state_t* ui, lf_widget_t* widget) {
   free(column_widths);
 }
 
+void 
+mark_widget_and_children_finished(lf_widget_t* widget) {
+  if (widget == NULL) return;
+  widget->_changed_size = false;
+  for(uint32_t i = 0; i < widget->num_childs; i++) {
+    mark_widget_and_children_finished(widget->childs[i]);
+  }
+}
 
 void lf_size_calc_vertical(lf_ui_state_t* ui, lf_widget_t* widget) {
   if(!widget->_needs_size_calc) return;
@@ -330,10 +342,6 @@ void lf_size_calc_vertical(lf_ui_state_t* ui, lf_widget_t* widget) {
 
   lf_widget_apply_size_hints(widget);
 
-  for (size_t i = 0; i < widget->num_childs; i++) {
-    if(widget->childs[i]->size_calc)
-      widget->childs[i]->size_calc(ui, widget->childs[i]);  
-  }
   vec2s child_max;
   vec2s child_size = lf_widget_measure_children(widget, &child_max);
 
@@ -368,7 +376,7 @@ void lf_size_calc_vertical(lf_ui_state_t* ui, lf_widget_t* widget) {
     fabs(widget->container.size.x - widget->total_child_size.x)) {
     widget->scroll_offset.x = 0; 
   }
-  widget->_changed_size = false;
+  mark_widget_and_children_finished(widget);
 }
 
 
@@ -423,7 +431,7 @@ lf_size_calc_horizontal(lf_ui_state_t* ui, lf_widget_t* widget) {
     fabs(widget->container.size.x - widget->total_child_size.x)) {
     widget->scroll_offset.x = 0; 
   }
-  widget->_changed_size = false;
+  mark_widget_and_children_finished(widget);
 }
 
 void 
