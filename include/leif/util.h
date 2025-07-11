@@ -30,7 +30,7 @@ typedef struct lf_ui_state_t lf_ui_state_t;
     .y = lf_widget_height_ex(widget, widget->_rendered_props)})         \
 
 #define LF_WIDGET_CONTAINER(widget) ((lf_container_t){        \
-    .pos = (widget)->container.pos,                           \
+    .pos = (widget)->rendered_pos,                           \
     .size = LF_WIDGET_SIZE_V2((widget))})                     \
 
 #define lf_vector_init(vec)                                                       \

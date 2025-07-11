@@ -148,7 +148,7 @@ void
 _div_render(lf_ui_state_t* ui, lf_widget_t* widget) {
   lf_div_t* div = (lf_div_t*)widget;
   ui->render_rect(
-    ui->render_state, div->base.container.pos,
+    ui->render_state, div->base.rendered_pos,
     LF_WIDGET_SIZE_V2(widget),
     widget->props.color, widget->props.border_color, 
     widget->props.border_width, widget->props.corner_radius);

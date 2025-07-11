@@ -12,6 +12,7 @@ typedef struct {
 
   lf_text_dimension_t _text_dimension;
   bool _changed_font_size, _changed_label;
+  float wrap;
 } lf_text_t;
 
 

@@ -86,7 +86,7 @@ struct lf_widget_t {
   lf_font_style_t font_style;
 
   vec2s total_child_size;
-  vec2s scroll_offset;
+  vec2s scroll_offset, rendered_pos;
 
   float transition_time;
   lf_animation_func_t transition_func;
@@ -246,6 +246,8 @@ void lf_widget_set_font_family(lf_ui_state_t* ui, lf_widget_t* widget, const cha
 void lf_widget_set_font_size(lf_ui_state_t* ui, lf_widget_t* widget, uint32_t pixel_size); 
 
 vec2s lf_widget_measure_children(lf_widget_t* widget, vec2s* o_max);
+
+vec2s lf_widget_measure_children_wrapped(lf_ui_state_t* ui, lf_widget_t* widget, vec2s* o_max);
 
 vec2s lf_widget_effective_size(lf_widget_t* widget);
 

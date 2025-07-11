@@ -5,6 +5,12 @@
 #include <runara/runara.h>
 #endif
 
+int32_t getchildidxof(lf_widget_t* child, lf_widget_t* parent) {
+  for(uint32_t i = 0; i < parent->num_childs; i++) {
+    if(parent->childs[i] == child) return i;
+  }
+  return -1; 
+}
 void 
 _recalculate_label(
   lf_ui_state_t* ui,
@@ -13,27 +19,49 @@ _recalculate_label(
   if(!text->base._needs_size_calc) return;
   lf_widget_t* widget = &text->base;
   if(widget->parent->sizing_type == LF_SIZING_FIT_CONTENT && !widget->_changed_size) {
-    printf("SKIPPING %s\n", text->label);
     return;
   }
-  float wrap = widget->parent->container.pos.x +
-    widget->parent->scroll_offset.x + widget->parent->container.size.x +
-    widget->parent->props.padding_left / 2.0f; 
+
+  float rightsiblingw = 0.0f;
+  int32_t texti = getchildidxof(widget, widget->parent);
+  if(texti == -1) {
+    fprintf(stderr, "reif: cannot find text widget in parent.\n");
+    return;
+  }
+  for(int32_t i = texti + 1; i < widget->parent->num_childs; i++) {
+    lf_widget_t* child = widget->parent->childs[i];
+    if(!child) continue;
+    if (!child->visible) continue;
+    rightsiblingw += lf_widget_effective_size(child).x
+      + child->props.margin_left + child->props.margin_right;
+  }
+
+  float wrap = widget->parent->container.pos.x + widget->parent->container.size.x +
+    widget->parent->props.padding_left / 2.0f - rightsiblingw; 
+  
   if(widget->parent->sizing_type == LF_SIZING_FIT_CONTENT || widget->_positioned_absolute_x) {
     wrap = -1.0f;
   }
+  text->wrap = wrap;
+  printf("My size: %f, Right size: %f, Combined: %f: Parent: %f\n",
+         lf_widget_effective_size(widget).x, rightsiblingw, lf_widget_effective_size(widget).x + rightsiblingw,
+         widget->parent->container.size.x);
+  if(!(lf_widget_effective_size(widget).x + rightsiblingw > widget->parent->container.size.x + widget->parent->props.padding_right)) {
+    wrap = -1.0f;
+  }
+  printf("wrapping at: %f\n", wrap);
+  printf("right sibling w: %f\n", rightsiblingw);
   vec2s text_pos = (vec2s){
     .x = widget->container.pos.x + widget->props.padding_left, 
     .y =  widget->container.pos.y + widget->props.padding_top 
   };
-  printf("Recalculating label %i\n", text->base.id);
   lf_text_dimension_t text_dimension = ui->render_get_paragraph_dimension(
     ui->render_state,
     text->label,
     text_pos,
     text->font.font,
     (lf_paragraph_props_t){
-      .wrap = wrap, 
+      .wrap = text->wrap, 
       .align = widget->props.text_align
     }
   );
@@ -68,19 +96,13 @@ _text_render(
 
   lf_text_t* text = (lf_text_t*)widget;
   vec2s text_pos = (vec2s){
-    .x = widget->container.pos.x + widget->props.padding_left, 
-    .y =  widget->container.pos.y + widget->props.padding_top 
+    .x = widget->rendered_pos.x + widget->props.padding_left, 
+    .y =  widget->rendered_pos.y + widget->props.padding_top 
   };
-
-  float wrap = widget->parent->container.pos.x + widget->parent->scroll_offset.x + widget->parent->container.size.x + widget->parent->props.padding_left / 2.0f; 
-   
-  if(widget->parent->sizing_type == LF_SIZING_FIT_CONTENT || widget->_positioned_absolute_x) {
-    wrap = -1.0f;
-  }
 
   ui->render_rect(
     ui->render_state, 
-    widget->container.pos,
+    widget->rendered_pos,
     LF_WIDGET_SIZE_V2(&text->base), 
     widget->props.color, widget->props.border_color,
     widget->props.border_width, widget->props.corner_radius);
@@ -92,7 +114,7 @@ _text_render(
       text_pos,
       widget->props.text_color,
       (lf_paragraph_props_t){
-        .wrap = wrap, 
+        .wrap = text->wrap, 
         .align = widget->props.text_align
       }
     );

@@ -122,7 +122,7 @@ _button_render(
 
   ui->render_rect(
     ui->render_state, 
-    widget->container.pos,
+    widget->rendered_pos,
     (vec2s){
       .x = widget->container.size.x + widget->props.padding_left + widget->props.padding_right,
       .y = widget->container.size.y + widget->props.padding_top + widget->props.padding_bottom
