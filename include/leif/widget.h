@@ -72,6 +72,8 @@ struct lf_widget_t {
   bool _needs_size_calc, _needs_shape;
   bool _positioned_absolute_x, _positioned_absolute_y;
 
+  bool wrapping;
+
   lf_animation_t* anims;
 
   float _width_percent;
@@ -245,9 +247,7 @@ void lf_widget_set_font_family(lf_ui_state_t* ui, lf_widget_t* widget, const cha
 
 void lf_widget_set_font_size(lf_ui_state_t* ui, lf_widget_t* widget, uint32_t pixel_size); 
 
-vec2s lf_widget_measure_children(lf_widget_t* widget, vec2s* o_max);
-
-vec2s lf_widget_measure_children_wrapped(lf_ui_state_t* ui, lf_widget_t* widget, vec2s* o_max);
+vec2s lf_widget_measure_children(lf_ui_state_t* ui, lf_widget_t* widget, vec2s* o_max);
 
 vec2s lf_widget_effective_size(lf_widget_t* widget);
 

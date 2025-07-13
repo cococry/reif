@@ -31,26 +31,20 @@ _recalculate_label(
   for(int32_t i = texti + 1; i < widget->parent->num_childs; i++) {
     lf_widget_t* child = widget->parent->childs[i];
     if(!child) continue;
+    if(child->sizing_type == LF_SIZING_GROW) continue;
     if (!child->visible) continue;
     rightsiblingw += lf_widget_effective_size(child).x
       + child->props.margin_left + child->props.margin_right;
   }
 
-  float wrap = widget->parent->container.pos.x + widget->parent->container.size.x +
-    widget->parent->props.padding_left / 2.0f - rightsiblingw; 
-  
+  float wrap = widget->parent->container.pos.x + widget->parent->container.size.x;
   if(widget->parent->sizing_type == LF_SIZING_FIT_CONTENT || widget->_positioned_absolute_x) {
     wrap = -1.0f;
   }
-  text->wrap = wrap;
-  printf("My size: %f, Right size: %f, Combined: %f: Parent: %f\n",
-         lf_widget_effective_size(widget).x, rightsiblingw, lf_widget_effective_size(widget).x + rightsiblingw,
-         widget->parent->container.size.x);
+  text->wrap = text->naturalpass ? -1.0f : wrap;
   if(!(lf_widget_effective_size(widget).x + rightsiblingw > widget->parent->container.size.x + widget->parent->props.padding_right)) {
     wrap = -1.0f;
   }
-  printf("wrapping at: %f\n", wrap);
-  printf("right sibling w: %f\n", rightsiblingw);
   vec2s text_pos = (vec2s){
     .x = widget->container.pos.x + widget->props.padding_left, 
     .y =  widget->container.pos.y + widget->props.padding_top 

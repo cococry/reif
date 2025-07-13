@@ -127,6 +127,7 @@ lf_widget_create(
   widget->_initial_props = props;
   widget->justify_type = LF_JUSTIFY_START;
   widget->sizing_type = LF_SIZING_FIT_PARENT;
+  widget->wrapping = false;
 
   widget->render = render;
   widget->handle_event = handle_event;
@@ -414,16 +415,28 @@ char* printwidgettype(lf_widget_t* widget ){
   return "none";
 }
 static void lf_widget_fit_parent(lf_widget_t* widget) {
-  lf_widget_props_t props = widget->props;
-  float min_width = -1.0f;
   if(widget->sizing_type == LF_SIZING_FIT_PARENT) {
     if (widget->parent && !widget->_fixed_width) {
-      min_width = widget->parent->container.size.x
-        - props.padding_left - props.padding_right
-        - props.margin_left  - props.margin_right;
-      widget->container.size.x = min_width;
+      lf_widget_t* p = widget->parent;
+      widget->container.size.x = p->container.size.x
+        - p->props.padding_left - p->props.padding_right
+        - p->props.margin_left  - p->props.margin_right;
+      widget->container.size.y = p->container.size.y
+        - p->props.padding_top - p->props.padding_bottom
+        - p->props.margin_left  - p->props.margin_right;
     }
   }
+}
+
+static bool isflexcontainer(lf_widget_t* widget) {
+  if(widget->type != LF_WIDGET_TYPE_DIV) return false;
+  for(uint32_t i = 0; i < widget->num_childs; i++) {
+    if(widget->childs[i]->type == LF_WIDGET_TYPE_DIV &&
+      widget->childs[i]->layout_type == LF_LAYOUT_HORIZONTAL) {
+      return true;
+    }
+  }
+  return false;
 }
 void lf_widget_size_calc(lf_ui_state_t* ui, lf_widget_t* widget) {
   if(!widget || !ui) return;
@@ -433,8 +446,11 @@ void lf_widget_size_calc(lf_ui_state_t* ui, lf_widget_t* widget) {
   }
 
   if (widget->size_calc && (widget->_needs_size_calc || widget->_changed_size)) {
-    widget->size_calc(ui, widget);
-    widget->_needs_size_calc = false;
+    bool istextonflex =widget->type == LF_WIDGET_TYPE_TEXT;
+    if(!istextonflex) {
+      widget->size_calc(ui, widget);
+      widget->_needs_size_calc = false;
+    }
   }
 
   widget->_changed_size = !(widget->container.size.x == size_before.x &&
@@ -1114,8 +1130,9 @@ lf_widget_set_font_size(lf_ui_state_t* ui, lf_widget_t* widget, uint32_t pixel_s
   }
 }
 
+
 vec2s 
-lf_widget_measure_children_wrapped(lf_ui_state_t* ui, lf_widget_t* widget, vec2s* o_max) {
+lf_widget_measure_children(lf_ui_state_t* ui, lf_widget_t* widget, vec2s* o_max) {
   if (!widget || !widget->visible) return (vec2s){.x = 0, .y = 0};
 
   lf_widget_props_t widget_props = widget->props;
@@ -1136,11 +1153,14 @@ lf_widget_measure_children_wrapped(lf_ui_state_t* ui, lf_widget_t* widget, vec2s
     lf_widget_t* child = widget->childs[i];
     if (!child || !child->visible) continue;
 
-    if(child->_needs_size_calc && child->size_calc) {
+    if (child->_needs_size_calc && child->size_calc) {
       child->size_calc(ui, child);
     }
+
     vec2s size = LF_WIDGET_SIZE_V2(child);
-    if(child->sizing_type == LF_SIZING_GROW) nowrapping = true;
+    bool flex = child->sizing_type == LF_SIZING_GROW;
+    if (flex) nowrapping = true;
+
     float margin_left = child->props.margin_left;
     float margin_right = child->props.margin_right;
     float margin_top = child->props.margin_top;
@@ -1148,7 +1168,8 @@ lf_widget_measure_children_wrapped(lf_ui_state_t* ui, lf_widget_t* widget, vec2s
 
     float child_total_width = margin_left + size.x + margin_right;
     float child_total_height = margin_top + size.y + margin_bottom;
-    if(!nowrapping) {
+
+    if (widget->wrapping && !nowrapping) {
       if (line_width > 0 && (line_width - margin_right + lf_widget_width(child)) > container_width) {
         if (line_width > max_width) max_width = line_width;
         total_height += line_height;
@@ -1159,15 +1180,20 @@ lf_widget_measure_children_wrapped(lf_ui_state_t* ui, lf_widget_t* widget, vec2s
     }
 
     line_width += child_total_width;
-    if (child_total_height > line_height) {
+    if (!flex && child_total_height > line_height) {
       line_height = child_total_height;
     }
 
-    if(child->sizing_type != LF_SIZING_GROW) {
-      if (child->container.size.x > max_child.x) max_child.x = lf_widget_effective_size(child).x + child->props.margin_left; 
-      if (child->container.size.y > max_child.y) max_child.y = lf_widget_effective_size(child).y; 
+    if (!flex) {
+      if (child->container.size.x > max_child.x)
+        max_child.x = lf_widget_effective_size(child).x + child->props.margin_left;
+      if (child->container.size.y > max_child.y)
+        max_child.y = lf_widget_effective_size(child).y;
     }
   }
+
+  if (max_child.y > line_height)
+    line_height = max_child.y;
 
   // Add last line if there were children on it
   if (line_width > 0 || total_height == 0.0f) {
@@ -1175,56 +1201,9 @@ lf_widget_measure_children_wrapped(lf_ui_state_t* ui, lf_widget_t* widget, vec2s
     total_height += line_height;
   }
 
-
   if (o_max) *o_max = max_child;
 
   return (vec2s){ .x = max_width, .y = total_height };
-}
-
-
-vec2s 
-lf_widget_measure_children(lf_widget_t* widget, vec2s* o_max) {
-  vec2s size = (vec2s){
-    .x = 0,
-    .y = 0
-  };
-  vec2s max = (vec2s){
-    .x = 0,
-    .y = 0
-  };
-
-  vec2s ptr = (vec2s){
-    .x = widget->container.pos.x,
-    .y = widget->container.pos.y 
-  };
-  vec2s ptr_before = ptr;
-  for(uint32_t i = 0; i < widget->num_childs; i++) {
-    lf_widget_t* child = widget->childs[i];
-    if (!child->visible) continue;
-
-    vec2s size = lf_widget_effective_size(child);
-    ptr.x += size.x; 
-    ptr.y += size.y; 
-
-    if(size.x > max.x) {
-      max.x = size.x; 
-    }
-    if(size.y > max.y) {
-      max.y = size.y; 
-    }
-  }
-
-  size.x = ptr.x - ptr_before.x; 
-  size.y = ptr.y - ptr_before.y;
-
-  widget->total_child_size = size;
-
-  if(o_max) {
-    *o_max = max;
-  }
-
-  return size;
-
 }
 
 vec2s

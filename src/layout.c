@@ -98,8 +98,6 @@ lf_layout_vertical(lf_ui_state_t* ui, lf_widget_t* widget) {
 
 }
 
-
-
 void lf_layout_horizontal(lf_ui_state_t* ui, lf_widget_t* widget) {
   if (!widget->visible) return;
   lf_widget_props_t widget_props = widget->props; 
@@ -108,10 +106,10 @@ void lf_layout_horizontal(lf_ui_state_t* ui, lf_widget_t* widget) {
     .x = widget_props.padding_left,
     .y = widget_props.padding_top
   };
-  if(lf_flag_exists(&widget->alignment_flags, LF_ALIGN_CENTER_HORIZONTAL)) {
+  if (lf_flag_exists(&widget->alignment_flags, LF_ALIGN_CENTER_HORIZONTAL)) {
     offset.x = (lf_widget_width_ex(widget, widget_props) - widget->total_child_size.x) / 2.0f;
   }
-  if(lf_flag_exists(&widget->alignment_flags, LF_ALIGN_CENTER_VERTICAL)) {
+  if (lf_flag_exists(&widget->alignment_flags, LF_ALIGN_CENTER_VERTICAL)) {
     offset.y = 0;
   }
   vec2s ptr = (vec2s){
@@ -119,57 +117,64 @@ void lf_layout_horizontal(lf_ui_state_t* ui, lf_widget_t* widget) {
     .y = widget->container.pos.y + offset.y 
   };
 
-  if(widget->justify_type == LF_JUSTIFY_END) {
+  if (widget->justify_type == LF_JUSTIFY_END) {
     ptr.x = widget->container.pos.x + widget->container.size.x;
   }
 
-  float s = (MAX(widget->total_child_size.x, widget->container.size.x) - widget->total_child_size.x) / (widget->num_childs - 1);
+  float s = (MAX(widget->total_child_size.x, widget->container.size.x) - 
+    widget->total_child_size.x) / (widget->num_childs - 1);
 
   float start_x = ptr.x;
   float line_h = 0.0f;
 
   uint32_t widgets_on_this_line = 0;
   bool nowrapping = false;
-  for(uint32_t i = 0; i < widget->num_childs; i++) {
+
+  for (uint32_t i = 0; i < widget->num_childs; i++) {
     lf_widget_t* child = widget->childs[i];
-    if(child->_abs_x_percent != -1.0f && child->_positioned_absolute_x) {
+
+    if (child->_abs_x_percent != -1.0f && child->_positioned_absolute_x) {
       child->container.pos.x = widget->container.pos.x + widget->props.padding_left + 
         (widget->container.size.x - lf_widget_width(child)) * (child->_abs_x_percent / 100.0f); 
     }
+
     if (!child->visible) continue;
-    if(child->sizing_type == LF_SIZING_GROW) nowrapping = true;
+    if (child->sizing_type == LF_SIZING_GROW) nowrapping = true;
 
     vec2s size = LF_WIDGET_SIZE_V2(child);
 
-
     bool centered_vertical = lf_flag_exists(&widget->alignment_flags, LF_ALIGN_CENTER_VERTICAL);
-    if(widget->justify_type == LF_JUSTIFY_START)
+
+    if (widget->justify_type == LF_JUSTIFY_START)
       ptr.x += child->props.margin_left;
-    else if(widget->justify_type == LF_JUSTIFY_END) 
+    else if (widget->justify_type == LF_JUSTIFY_END) 
       ptr.x -= size.x + child->props.margin_right;
 
     lf_widget_set_pos_y(child, ptr.y + ((centered_vertical) ? (
                         (LF_WIDGET_SIZE_V2(widget).y - 
                         (child->type != LF_WIDGET_TYPE_SLIDER ? 
-                        LF_WIDGET_SIZE_V2(child).y : child->container.size.y) ) / 2.0f) :
+                        LF_WIDGET_SIZE_V2(child).y : child->container.size.y)) / 2.0f) :
                         child->props.margin_top));
 
     lf_widget_set_pos_x(child, ptr.x);
 
-    if(widget->justify_type == LF_JUSTIFY_START)
+    if (widget->justify_type == LF_JUSTIFY_START)
       ptr.x += size.x + child->props.margin_right; 
     else if (widget->justify_type == LF_JUSTIFY_SPACE_BETWEEN) 
-      ptr.x += size.x + child->props.margin_right + (widget->justify_type == LF_JUSTIFY_SPACE_BETWEEN ?  s : 0.0f); 
+      ptr.x += size.x + child->props.margin_right + (widget->justify_type == LF_JUSTIFY_SPACE_BETWEEN ? s : 0.0f); 
     else
       ptr.x -= child->props.margin_left;
-    if(child->_abs_y_percent != -1.0f && child->_positioned_absolute_y) {
+
+    if (child->_abs_y_percent != -1.0f && child->_positioned_absolute_y) {
       child->container.pos.x = widget->container.pos.x + widget->props.padding_left; 
       child->container.pos.y = widget->container.pos.y + widget->props.padding_top + 
         (widget->container.size.y - lf_widget_height(child)) * (child->_abs_y_percent / 100.0f); 
     }
-    if(!nowrapping) {
+
+    // wrapping: only if widget->wrapping is true and child is not a grow-type
+    if (widget->wrapping && !nowrapping) {
       if (widgets_on_this_line > 0 &&
-        ptr.x - widget->props.padding_right > widget->container.pos.x + widget->container.size.x) {
+          ptr.x - widget->props.padding_right > widget->container.pos.x + widget->container.size.x) {
         lf_widget_set_pos_x(child, start_x + child->props.margin_left);
         lf_widget_set_pos_y(child, child->container.pos.y + line_h); 
         ptr.x = start_x + size.x + child->props.margin_left + child->props.margin_right; 
@@ -178,13 +183,12 @@ void lf_layout_horizontal(lf_ui_state_t* ui, lf_widget_t* widget) {
         widgets_on_this_line = 0;
       }
     }
-    line_h  = MAX(lf_widget_effective_size(child).y, line_h);
-    widgets_on_this_line++;
 
+    line_h = MAX(lf_widget_effective_size(child).y, line_h);
+    widgets_on_this_line++;
   }
 
   lf_widget_apply_size_hints(widget);
-
 }
 
 
@@ -334,7 +338,7 @@ void lf_size_calc_vertical(lf_ui_state_t* ui, lf_widget_t* widget) {
   }
 
   vec2s child_max;
-  vec2s child_size = lf_widget_measure_children(widget, &child_max);
+  vec2s child_size = lf_widget_measure_children(ui, widget, &child_max);
   if(widget->sizing_type == LF_SIZING_FIT_CONTENT) {
     if (!widget->_fixed_width) {
       widget->container.size.x = child_max.x;
@@ -363,7 +367,7 @@ void lf_size_calc_vertical(lf_ui_state_t* ui, lf_widget_t* widget) {
   mark_widget_and_children_finished(widget);
 }
 
-void text_unbound_pass(lf_ui_state_t* ui, lf_text_t* text) {
+void textnaturalpass(lf_ui_state_t* ui, lf_text_t* text) {
   if(!text->base._needs_size_calc) return;
   lf_widget_t* widget = &text->base;
   if(widget->parent->sizing_type == LF_SIZING_FIT_CONTENT && !widget->_changed_size) {
@@ -394,103 +398,143 @@ void text_unbound_pass(lf_ui_state_t* ui, lf_text_t* text) {
 
   text->_text_dimension = text_dimension;
 }
-
-void grow_pass(lf_ui_state_t* ui, lf_widget_t* widget) {
+static bool isgrowcontainer(lf_widget_t* widget) {
+  if(widget->type != LF_WIDGET_TYPE_DIV) return false;
+  for(uint32_t i = 0; i < widget->num_childs; i++) {
+    if(widget->childs[i]->type == LF_WIDGET_TYPE_DIV &&
+      widget->childs[i]->sizing_type == LF_SIZING_GROW) {
+      return true;
+    }
+  }
+  return false;
 }
-void lf_size_calc_horizontal(lf_ui_state_t* ui, lf_widget_t* widget) {
-  if (!widget->_needs_size_calc) return;
 
+vec2s computegrowers(lf_ui_state_t* ui, lf_widget_t* widget) {
+  float total_nongrow_width = 0.0f;
+  int grow_count = 0;
+
+  // first pass: compute total width of non-grow children and count grow children
+  for (size_t i = 0; i < widget->num_childs; i++) {
+    lf_widget_t* child = widget->childs[i];
+    if (!child->visible) continue;
+    if (child->sizing_type == LF_SIZING_GROW) {
+      grow_count++;
+    } else {
+      total_nongrow_width += lf_widget_effective_size(child).x;
+    }
+  }
+
+  float available = widget->container.size.x - total_nongrow_width;
+  float shared_width = (grow_count > 0) ? (available / (float)grow_count) : 0.0f;
+
+  vec2s child_max;
+  vec2s child_size = lf_widget_measure_children(ui, widget, &child_max);
+
+  // second pass: assign size to growing children
+  for (size_t i = 0; i < widget->num_childs; i++) {
+    lf_widget_t* child = widget->childs[i];
+    if (!child->visible) continue;
+    if (child->sizing_type == LF_SIZING_GROW && !child->_fixed_width) {
+      child->container.size.x =
+        MAX(-(child->props.padding_left + child->props.padding_right),
+            shared_width - widget->props.padding_right - child->props.padding_right);
+      if (!child->_fixed_height) {
+        child->container.size.y = child_size.y;
+      }
+    }
+  }
+
+  return child_size;
+}
+
+vec2s growpass(lf_ui_state_t* ui, lf_widget_t* widget) {
   // first pass: calculate unbound sizes for text widgets
   for(uint32_t i = 0; i < widget->num_childs; i++) {
     lf_widget_t* child = widget->childs[i];
     if(child->type == LF_WIDGET_TYPE_TEXT) {
       child->_needs_size_calc = true;
-      text_unbound_pass(ui, (lf_text_t*)child);
+      textnaturalpass(ui, (lf_text_t*)child);
     }
   }
-  // then pass all non-growing non-text children
-  float total_nongrow_width = 0.0f;
-  int grow_count = 0;
 
-  // second pass, calculate growing children 
-  for (size_t i = 0; i < widget->num_childs; i++) {
+  // compute grow sizes with unbound texts
+  computegrowers(ui, widget);
+
+  // second pass: handle text widgets with wrapped size
+  for (uint32_t i = 0; i < widget->num_childs; i++) {
     lf_widget_t* child = widget->childs[i];
-    if (!child->visible) continue;
-    if (child->sizing_type == LF_SIZING_GROW) {
-      grow_count++;
-    } else {
-      total_nongrow_width += lf_widget_effective_size(child).x;
+    if (child->type == LF_WIDGET_TYPE_TEXT && child->size_calc) {
+      child->_needs_size_calc = true;
+      child->size_calc(ui, child);
     }
   }
-  float available = widget->container.size.x - total_nongrow_width;
-  float shared_width = (grow_count > 0) ? (available / (float)grow_count) : 0.0f;
+  // compute grow sizes with bound texts
+  return computegrowers(ui, widget);
+}
 
-  vec2s child_max;
-  vec2s child_size = lf_widget_measure_children_wrapped(ui, widget, &child_max);
-  for (size_t i = 0; i < widget->num_childs; i++) {
-    lf_widget_t* child = widget->childs[i];
-    if (!child->visible) continue;
-    if (child->sizing_type == LF_SIZING_GROW && !child->_fixed_width) {
-      child->container.size.x =
-        MAX(-(child->props.padding_left + child->props.padding_right), shared_width - widget->props.padding_right  - 
-            child->props.padding_right );
-      if (!child->_fixed_height) {
-        child->container.size.y = child_max.y;
+bool containsflexboxes(lf_widget_t* widget) {
+  
+}
+
+void lf_size_calc_horizontal(lf_ui_state_t* ui, lf_widget_t* widget) {
+  if (!widget->_needs_size_calc) return;
+
+  vec2s childsize;
+  if(isgrowcontainer(widget)) {
+    childsize = growpass(ui, widget);
+    if (!widget->_fixed_width) {
+      widget->container.size.x = childsize.x;
+    }
+
+    if(widget->sizing_type == LF_SIZING_FIT_CONTENT) {
+      if (!widget->_fixed_height && widget->sizing_type != LF_SIZING_GROW) {
+        widget->container.size.y = childsize.y;
       }
     }
-  }
+  } else {
+    float total_natural_width = 0.0f;
+    for (uint32_t i = 0; i < widget->num_childs; i++) {
+      lf_widget_t* child = widget->childs[i];
+      if(child->type == LF_WIDGET_TYPE_TEXT) {
+        ((lf_text_t*)child)->naturalpass = true;
+      }
+      child->size_calc(ui, child); 
+      total_natural_width += lf_widget_effective_size(child).x; 
+    }
+    float available_width = widget->container.size.x;
+    bool needs_shrink = total_natural_width > available_width;
+    float shrink_ratio = needs_shrink ? available_width / total_natural_width : 1.0f;
 
-  // third pass, calculate size of wrapped texts 
-  for(uint32_t i = 0; i < widget->num_childs; i++) {
-    lf_widget_t* child = widget->childs[i];
-    if(child->type == LF_WIDGET_TYPE_TEXT && child->size_calc) {
+    if(needs_shrink) {
+      for (uint32_t i = 0; i < widget->num_childs; i++) {
+        lf_widget_t* child = widget->childs[i];
+        if(child->type == LF_WIDGET_TYPE_DIV && child->layout_type == LF_LAYOUT_HORIZONTAL)
+          child->container.size.x *= shrink_ratio;
+      }
+    }
+    for (uint32_t i = 0; i < widget->num_childs; i++) {
+      lf_widget_t* child = widget->childs[i];
+      if(child->type == LF_WIDGET_TYPE_TEXT) {
+        ((lf_text_t*)child)->naturalpass = false;
+      }
       child->_needs_size_calc = true;
       child->size_calc(ui, child); 
     }
-  }
-  // then pass all non-growing non-text children
-  total_nongrow_width = 0.0f;
-  grow_count = 0;
 
-  // second pass, calculate growing children 
-  for (size_t i = 0; i < widget->num_childs; i++) {
-    lf_widget_t* child = widget->childs[i];
-    if (!child->visible) continue;
-    if (child->sizing_type == LF_SIZING_GROW) {
-      grow_count++;
-    } else {
-      total_nongrow_width += lf_widget_effective_size(child).x;
-    }
-  }
-  available = widget->container.size.x - total_nongrow_width;
-  shared_width = (grow_count > 0) ? (available / (float)grow_count) : 0.0f;
 
-  child_size = lf_widget_measure_children_wrapped(ui, widget, &child_max);
-  for (size_t i = 0; i < widget->num_childs; i++) {
-    lf_widget_t* child = widget->childs[i];
-    if (!child->visible) continue;
-    if (child->sizing_type == LF_SIZING_GROW && !child->_fixed_width) {
-      child->container.size.x =
-        MAX(-(child->props.padding_left + child->props.padding_right), shared_width - widget->props.padding_right  - 
-            child->props.padding_right);
-      if (!child->_fixed_height) {
-        child->container.size.y = child_max.y;
+    if(widget->sizing_type == LF_SIZING_FIT_CONTENT) {
+      if (!widget->_fixed_height && widget->sizing_type != LF_SIZING_GROW) {
+        widget->container.size.y = childsize.y;
       }
     }
   }
 
-  if (widget->sizing_type == LF_SIZING_FIT_CONTENT && !widget->_fixed_width) {
-    widget->container.size.x = child_size.x;
-  }
-
-  if (!widget->_fixed_height && widget->sizing_type != LF_SIZING_GROW) {
-    widget->container.size.y = child_max.y;
-  }
+  printf("root width: %f\n", ui->root->container.size.x);
 
   lf_widget_apply_size_hints(widget);
-  widget->_needs_size_calc = false;
-  widget->total_child_size.x = child_size.x;
-  widget->total_child_size.y = child_max.y;
+  widget->total_child_size.x = childsize.x;
+  widget->total_child_size.y = childsize.y;
+  widget->_needs_size_calc = false; 
 
   if (fabs(widget->scroll_offset.y) > fabs(widget->container.size.y - widget->total_child_size.y)) {
     widget->scroll_offset.y = 0;
