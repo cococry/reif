@@ -99,12 +99,13 @@ lf_layout_vertical(lf_ui_state_t* ui, lf_widget_t* widget) {
 }
 
 void lf_layout_horizontal(lf_ui_state_t* ui, lf_widget_t* widget) {
+  if(!widget) return;
   if (!widget->visible) return;
   lf_widget_props_t widget_props = widget->props; 
 
   vec2s offset = (vec2s){
     .x = widget_props.padding_left,
-    .y = widget_props.padding_top
+    .y = widget_props.padding_right,
   };
   if (lf_flag_exists(&widget->alignment_flags, LF_ALIGN_CENTER_HORIZONTAL)) {
     offset.x = (lf_widget_width_ex(widget, widget_props) - widget->total_child_size.x) / 2.0f;
@@ -128,10 +129,14 @@ void lf_layout_horizontal(lf_ui_state_t* ui, lf_widget_t* widget) {
   float line_h = 0.0f;
 
   uint32_t widgets_on_this_line = 0;
-  bool nowrapping = false;
+  bool nowrapping = true;
 
+  if(widget->num_childs > 1) {
+    printf("--- layouting ---\n");
+  }
   for (uint32_t i = 0; i < widget->num_childs; i++) {
     lf_widget_t* child = widget->childs[i];
+    if(!child) continue;
 
     if (child->_abs_x_percent != -1.0f && child->_positioned_absolute_x) {
       child->container.pos.x = widget->container.pos.x + widget->props.padding_left + 
@@ -170,7 +175,9 @@ void lf_layout_horizontal(lf_ui_state_t* ui, lf_widget_t* widget) {
       child->container.pos.y = widget->container.pos.y + widget->props.padding_top + 
         (widget->container.size.y - lf_widget_height(child)) * (child->_abs_y_percent / 100.0f); 
     }
-
+    if(child->type == LF_WIDGET_TYPE_TEXT) {
+      printf("%ith text: %f\n", i, child->container.size.x);
+    }
     // wrapping: only if widget->wrapping is true and child is not a grow-type
     if (widget->wrapping && !nowrapping) {
       if (widgets_on_this_line > 0 &&
@@ -186,6 +193,9 @@ void lf_layout_horizontal(lf_ui_state_t* ui, lf_widget_t* widget) {
 
     line_h = MAX(lf_widget_effective_size(child).y, line_h);
     widgets_on_this_line++;
+  }
+  if(widget->num_childs > 1) {
+  printf("----------------\n");
   }
 
   lf_widget_apply_size_hints(widget);
@@ -409,6 +419,16 @@ static bool isgrowcontainer(lf_widget_t* widget) {
   return false;
 }
 
+static bool isflexcontainer(lf_widget_t* widget) {
+  if(widget->type != LF_WIDGET_TYPE_DIV) return false;
+  for(uint32_t i = 0; i < widget->num_childs; i++) {
+    if(widget->childs[i]->type == LF_WIDGET_TYPE_DIV) {
+      return true;
+    }
+  }
+  return false;
+}
+
 vec2s computegrowers(lf_ui_state_t* ui, lf_widget_t* widget) {
   float total_nongrow_width = 0.0f;
   int grow_count = 0;
@@ -472,12 +492,10 @@ vec2s growpass(lf_ui_state_t* ui, lf_widget_t* widget) {
   return computegrowers(ui, widget);
 }
 
-bool containsflexboxes(lf_widget_t* widget) {
-  
-}
+
 
 void lf_size_calc_horizontal(lf_ui_state_t* ui, lf_widget_t* widget) {
-  if (!widget->_needs_size_calc) return;
+  /*if (!widget->_needs_size_calc) return;
 
   vec2s childsize;
   if(isgrowcontainer(widget)) {
@@ -492,42 +510,8 @@ void lf_size_calc_horizontal(lf_ui_state_t* ui, lf_widget_t* widget) {
       }
     }
   } else {
-    float total_natural_width = 0.0f;
-    for (uint32_t i = 0; i < widget->num_childs; i++) {
-      lf_widget_t* child = widget->childs[i];
-      if(child->type == LF_WIDGET_TYPE_TEXT) {
-        ((lf_text_t*)child)->naturalpass = true;
-      }
-      child->size_calc(ui, child); 
-      total_natural_width += lf_widget_effective_size(child).x; 
-    }
-    float available_width = widget->container.size.x;
-    bool needs_shrink = total_natural_width > available_width;
-    float shrink_ratio = needs_shrink ? available_width / total_natural_width : 1.0f;
-
-    if(needs_shrink) {
-      for (uint32_t i = 0; i < widget->num_childs; i++) {
-        lf_widget_t* child = widget->childs[i];
-        if(child->type == LF_WIDGET_TYPE_DIV && child->layout_type == LF_LAYOUT_HORIZONTAL)
-          child->container.size.x *= shrink_ratio;
-      }
-    }
-    for (uint32_t i = 0; i < widget->num_childs; i++) {
-      lf_widget_t* child = widget->childs[i];
-      if(child->type == LF_WIDGET_TYPE_TEXT) {
-        ((lf_text_t*)child)->naturalpass = false;
-      }
-      child->_needs_size_calc = true;
-      child->size_calc(ui, child); 
-    }
-
-
-    if(widget->sizing_type == LF_SIZING_FIT_CONTENT) {
-      if (!widget->_fixed_height && widget->sizing_type != LF_SIZING_GROW) {
-        widget->container.size.y = childsize.y;
-      }
-    }
-  }
+    flexbox_size_calc(ui, widget, widget->container.size.x);
+  }   
 
   printf("root width: %f\n", ui->root->container.size.x);
 
@@ -542,7 +526,7 @@ void lf_size_calc_horizontal(lf_ui_state_t* ui, lf_widget_t* widget) {
   if (fabs(widget->scroll_offset.x) > fabs(widget->container.size.x - widget->total_child_size.x)) {
     widget->scroll_offset.x = 0;
   }
-  mark_widget_and_children_finished(widget);
+  mark_widget_and_children_finished(widget);*/
 }
 
 void 

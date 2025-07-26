@@ -202,7 +202,7 @@ lf_div_create(
 
   lf_widget_add_child(parent, (lf_widget_t*)div);
 
-  div->base.layout_type =  parent->layout_type;
+  div->base.layout_type =  LF_LAYOUT_HORIZONTAL; 
   div->_column_count = 0;
 
   return div;

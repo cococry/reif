@@ -22,29 +22,6 @@ _recalculate_label(
     return;
   }
 
-  float rightsiblingw = 0.0f;
-  int32_t texti = getchildidxof(widget, widget->parent);
-  if(texti == -1) {
-    fprintf(stderr, "reif: cannot find text widget in parent.\n");
-    return;
-  }
-  for(int32_t i = texti + 1; i < widget->parent->num_childs; i++) {
-    lf_widget_t* child = widget->parent->childs[i];
-    if(!child) continue;
-    if(child->sizing_type == LF_SIZING_GROW) continue;
-    if (!child->visible) continue;
-    rightsiblingw += lf_widget_effective_size(child).x
-      + child->props.margin_left + child->props.margin_right;
-  }
-
-  float wrap = widget->parent->container.pos.x + widget->parent->container.size.x;
-  if(widget->parent->sizing_type == LF_SIZING_FIT_CONTENT || widget->_positioned_absolute_x) {
-    wrap = -1.0f;
-  }
-  text->wrap = text->naturalpass ? -1.0f : wrap;
-  if(!(lf_widget_effective_size(widget).x + rightsiblingw > widget->parent->container.size.x + widget->parent->props.padding_right)) {
-    wrap = -1.0f;
-  }
   vec2s text_pos = (vec2s){
     .x = widget->container.pos.x + widget->props.padding_left, 
     .y =  widget->container.pos.y + widget->props.padding_top 
@@ -63,10 +40,24 @@ _recalculate_label(
       text->_text_dimension.height != text_dimension.height)) {
     widget->_changed_size = true;
   }
-  if(!widget->_fixed_width)
-    text->base.container.size.x = text_dimension.width; 
-  if(!widget->_fixed_height)
-    text->base.container.size.y = text_dimension.height;
+
+  if(text->wrap != -1.0f) {
+    if(!widget->_fixed_width) {
+      text->base.container.size.x = text_dimension.width; 
+    }
+    if(!widget->_fixed_height) {
+      text->base.container.size.y = text_dimension.height;
+    }
+  } else {
+    if(!widget->_fixed_width)
+      text->base.naturalsize.x = text_dimension.width + 
+        widget->props.padding_left + widget->props.padding_right + 
+      widget->props.margin_left + widget->props.margin_right;
+    if(!widget->_fixed_height)
+    text->base.naturalsize.y = text_dimension.height +
+        widget->props.padding_top + widget->props.padding_bottom + 
+        widget->props.margin_top + widget->props.margin_bottom;
+  }
 
   text->_text_dimension = text_dimension;
 }

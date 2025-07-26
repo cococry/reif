@@ -141,6 +141,7 @@ init_state(lf_ui_state_t* state, lf_window_t win) {
   state->root->font_family = "Inter";
   state->root->font_style = LF_FONT_STYLE_REGULAR;
   state->root->font_size = -1;
+  state->root->layout_type = LF_LAYOUT_HORIZONTAL;
 
   lf_widget_set_listener(state->root, root_resize, LF_EVENT_WINDOW_RESIZE);
 
@@ -536,7 +537,7 @@ void lf_ui_core_shape_widgets_if_needed(lf_ui_state_t* ui, lf_widget_t* widget, 
 }
 
 void render_ui(lf_ui_state_t* ui) {
-  lf_widget_t* animated = NULL;
+  /*lf_widget_t* animated = NULL;
   if (lf_widget_animate(ui, ui->root, &animated)) {
     if(animated->_changed_size) {
       lf_widget_shape(ui, lf_widget_flag_for_layout(ui, animated));
@@ -544,7 +545,7 @@ void render_ui(lf_ui_state_t* ui) {
     ui->needs_render = true;
   } else {
     lf_windowing_set_wait_events(true);
-  }
+  }*/
 
   lf_widget_layout(ui, ui->root);
 
@@ -564,10 +565,6 @@ void lf_ui_core_next_event(lf_ui_state_t* ui) {
     fprintf(stderr, "leif: no active page set, but pages available, defaulting to first page.\n");
   }
 
-  if(ui->_first_render) {
-    render_ui(ui);
-    ui->_first_render = false;
-  }
   lf_task_flush_all_tasks();
 
   for (uint32_t i = 0; i < ui->timers.size; i++) {

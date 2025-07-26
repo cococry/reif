@@ -44,6 +44,7 @@ struct lf_widget_t {
   void* user_data;
 
   lf_container_t container;
+  vec2s naturalsize, allocatedsize, minsize, fixedsize;
 
   lf_widget_props_t props, _rendered_props, _initial_props; 
   lf_widget_props_t _component_props;
