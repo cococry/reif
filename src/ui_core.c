@@ -141,7 +141,6 @@ init_state(lf_ui_state_t* state, lf_window_t win) {
   state->root->font_family = "Inter";
   state->root->font_style = LF_FONT_STYLE_REGULAR;
   state->root->font_size = -1;
-  state->root->layout_type = LF_LAYOUT_HORIZONTAL;
 
   lf_widget_set_listener(state->root, root_resize, LF_EVENT_WINDOW_RESIZE);
 
@@ -555,6 +554,7 @@ void render_ui(lf_ui_state_t* ui) {
   if (ui->needs_render) {
     lf_win_make_gl_context(ui->win);
     lf_ui_core_commit_entire_render(ui);
+  printf("rendered.\n");
     ui->needs_render = false;
   }
 }

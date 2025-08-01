@@ -72,7 +72,7 @@ _button_handle_event(
     }
     return;
   }
- if(on_button && event->type == LF_EVENT_MOUSE_MOVE &&
+  if(on_button && event->type == LF_EVENT_MOUSE_MOVE &&
     !button->_hovered && ui->active_widget_id == 0) {
     button->_hovered = true;
     button->_before_hovered_props = widget->_rendered_props; 
@@ -179,7 +179,7 @@ lf_button_create(
   button->hovered_props.color = 
     lf_color_dim(button->base._initial_props.color, 90.0f);
 
-  button->base.layout_type = LF_LAYOUT_HORIZONTAL;
+  button->base.layout_type =  LF_LAYOUT_HORIZONTAL; 
   lf_widget_set_alignment(&button->base, LF_ALIGN_CENTER_VERTICAL | LF_ALIGN_CENTER_HORIZONTAL);
   button->base.sizing_type = LF_SIZING_FIT_CONTENT;
 

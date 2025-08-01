@@ -12,10 +12,10 @@ lf_point_intersets_container(vec2s point, lf_container_t container) {
 
 bool 
 lf_container_intersets_container(lf_container_t a, lf_container_t b) {
-    if (a.pos.x + a.size.x <= b.pos.x ||  
-        b.pos.x + b.size.x <= a.pos.x || 
-        a.pos.y + a.size.y <= b.pos.y ||
-        b.pos.y + b.size.y <= a.pos.y) {  
+    if (a.pos.x + a.size.x < b.pos.x ||  
+        b.pos.x + b.size.x < a.pos.x || 
+        a.pos.y + a.size.y < b.pos.y ||
+        b.pos.y + b.size.y < a.pos.y) {  
         return false;
     }
     return true;

@@ -50,13 +50,9 @@ _recalculate_label(
     }
   } else {
     if(!widget->_fixed_width)
-      text->base.naturalsize.x = text_dimension.width + 
-        widget->props.padding_left + widget->props.padding_right + 
-      widget->props.margin_left + widget->props.margin_right;
+      text->base.naturalsize.x = text_dimension.width;
     if(!widget->_fixed_height)
-    text->base.naturalsize.y = text_dimension.height +
-        widget->props.padding_top + widget->props.padding_bottom + 
-        widget->props.margin_top + widget->props.margin_bottom;
+    text->base.naturalsize.y = text_dimension.height;
   }
 
   text->_text_dimension = text_dimension;

@@ -105,13 +105,10 @@ void lf_layout_horizontal(lf_ui_state_t* ui, lf_widget_t* widget) {
 
   vec2s offset = (vec2s){
     .x = widget_props.padding_left,
-    .y = widget_props.padding_right,
+    .y = widget_props.padding_top,
   };
   if (lf_flag_exists(&widget->alignment_flags, LF_ALIGN_CENTER_HORIZONTAL)) {
-    offset.x = (lf_widget_width_ex(widget, widget_props) - widget->total_child_size.x) / 2.0f;
-  }
-  if (lf_flag_exists(&widget->alignment_flags, LF_ALIGN_CENTER_VERTICAL)) {
-    offset.y = 0;
+    offset.x = ((widget->container.size.x - widget->total_child_size.x) / 2.0f) + widget_props.padding_left; 
   }
   vec2s ptr = (vec2s){
     .x = widget->container.pos.x + offset.x,
@@ -129,11 +126,8 @@ void lf_layout_horizontal(lf_ui_state_t* ui, lf_widget_t* widget) {
   float line_h = 0.0f;
 
   uint32_t widgets_on_this_line = 0;
-  bool nowrapping = true;
+  bool nowrapping = false;
 
-  if(widget->num_childs > 1) {
-    printf("--- layouting ---\n");
-  }
   for (uint32_t i = 0; i < widget->num_childs; i++) {
     lf_widget_t* child = widget->childs[i];
     if(!child) continue;
@@ -155,10 +149,12 @@ void lf_layout_horizontal(lf_ui_state_t* ui, lf_widget_t* widget) {
     else if (widget->justify_type == LF_JUSTIFY_END) 
       ptr.x -= size.x + child->props.margin_right;
 
-    lf_widget_set_pos_y(child, ptr.y + ((centered_vertical) ? (
-                        (LF_WIDGET_SIZE_V2(widget).y - 
-                        (child->type != LF_WIDGET_TYPE_SLIDER ? 
-                        LF_WIDGET_SIZE_V2(child).y : child->container.size.y)) / 2.0f) :
+    if(child->type == LF_WIDGET_TYPE_TEXT) {
+      printf("CHild size: %f\n", child->container.size.y);
+      printf("CHild size: %f\n", child->container.size.y);
+    } 
+    float cspacingv = child->props.margin_left + child->props.margin_right + child->props.padding_left + child->props.padding_right; 
+    lf_widget_set_pos_y(child, ptr.y + ((centered_vertical) ? ((widget->container.size.y - (child->container.size.y + cspacingv)) / 2.0f) + child->props.margin_top :
                         child->props.margin_top));
 
     lf_widget_set_pos_x(child, ptr.x);
@@ -175,9 +171,6 @@ void lf_layout_horizontal(lf_ui_state_t* ui, lf_widget_t* widget) {
       child->container.pos.y = widget->container.pos.y + widget->props.padding_top + 
         (widget->container.size.y - lf_widget_height(child)) * (child->_abs_y_percent / 100.0f); 
     }
-    if(child->type == LF_WIDGET_TYPE_TEXT) {
-      printf("%ith text: %f\n", i, child->container.size.x);
-    }
     // wrapping: only if widget->wrapping is true and child is not a grow-type
     if (widget->wrapping && !nowrapping) {
       if (widgets_on_this_line > 0 &&
@@ -191,11 +184,10 @@ void lf_layout_horizontal(lf_ui_state_t* ui, lf_widget_t* widget) {
       }
     }
 
+    if(child->type == LF_WIDGET_TYPE_TEXT)
+      printf("Child Position (%i): %f, %f\n", child->id, child->container.pos.x, child->container.pos.y);
     line_h = MAX(lf_widget_effective_size(child).y, line_h);
     widgets_on_this_line++;
-  }
-  if(widget->num_childs > 1) {
-  printf("----------------\n");
   }
 
   lf_widget_apply_size_hints(widget);
