@@ -431,8 +431,8 @@ void lf_widget_fit_parent(lf_widget_t* widget) {
     if (!widget->_fixed_height)
       widget->container.size.y = p->container.size.y - (widget->props.padding_top + widget->props.padding_bottom); 
   }
-  widget->container.pos.x = p->container.pos.x + p->props.padding_left + widget->props.margin_left; 
-  widget->container.pos.y = p->container.pos.y + p->props.padding_top + widget->props.margin_top; 
+  widget->container.pos.x = p->container.pos.x + p->props.padding_left + widget->props.margin_left + widget->props.padding_left; 
+  widget->container.pos.y = p->container.pos.y + p->props.padding_top + widget->props.margin_top + widget->props.padding_top; 
 
   for (uint32_t i = 0; i < widget->num_childs; i++) {
     lf_widget_fit_parent(widget->childs[i]);
@@ -474,15 +474,36 @@ static void layout_flex_horizontal(lf_ui_state_t* ui, lf_widget_t* widget, float
 
 void layout_flex_vertical(lf_ui_state_t* ui, lf_widget_t* widget) {
   if (widget->type == LF_WIDGET_TYPE_TEXT) {
-    ((lf_text_t*)widget)->wrap = widget->container.pos.x + widget->parent->container.size.x; 
+    ((lf_text_t*)widget)->wrap = widget->container.pos.x +  widget->container.size.x;
+    printf("Widget container pos x: %f\n", widget->container.pos.x);
+    printf("Widget container size x: %f\n", widget->container.size.x);
     widget->_needs_size_calc = true;
     widget->size_calc(ui, widget);
     return;
   }
 
-  float accumalated = 0.0f;
+  float wspacing = widget->props.padding_left + widget->props.padding_right + widget->props.margin_left + widget->props.margin_right; 
+  float allocated = 0; 
   for(uint32_t i = 0; i < widget->num_childs; i++) {
     lf_widget_t* child = widget->childs[i];
+    float cspacing = child->props.padding_left + child->props.margin_left +
+                    child->props.margin_right + child->props.padding_right;
+    allocated = MAX(allocated, child->naturalsize.x + cspacing);
+  }
+  if(widget->parent) {
+  allocated = MIN(allocated, widget->parent->container.size.x - wspacing);
+  }
+
+  widget->container.size.x = allocated; 
+
+  float accumalatedh = 0.0f;
+  float width = 0.0f; 
+  for(uint32_t i = 0; i < widget->num_childs; i++) {
+    lf_widget_t* child = widget->childs[i];
+    float cspacing = child->props.padding_left + child->props.margin_left +
+                    child->props.margin_right + child->props.padding_right;
+    child->container.pos.x = widget->container.pos.x + child->props.margin_left + child->props.padding_left; 
+    child->container.size.x = MIN(child->naturalsize.x, widget->container.size.x - cspacing); 
     if(child->type == LF_WIDGET_TYPE_TEXT) {
       layout_flex_vertical(ui, child); 
     } else {
@@ -492,10 +513,14 @@ void layout_flex_vertical(lf_ui_state_t* ui, lf_widget_t* widget) {
         layout_flex_vertical(ui, child);
       }
     }
-    accumalated += lf_widget_effective_size(child).y; 
+    width = MAX(width, child->container.size.x  + 
+                child->props.padding_left + child->props.padding_right + 
+                child->props.margin_left + child->props.margin_right); 
+
+    accumalatedh += lf_widget_effective_size(child).y; 
   }
 
-  widget->container.size.y = accumalated;
+  widget->container.size.y = accumalatedh;;
 }
 
 
@@ -634,7 +659,15 @@ void layout_flex_horizontal(lf_ui_state_t* ui, lf_widget_t* widget, float availa
     child->container.pos.x = ptrx; 
 
     float allocatedw = child->container.size.x; 
-    layout_flex_horizontal(ui, child, allocatedw); 
+    if(child->type == LF_WIDGET_TYPE_TEXT) {
+      layout_flex_horizontal(ui, child, allocatedw); 
+    } else {
+      if(child->layout_type == LF_LAYOUT_HORIZONTAL) {
+        layout_flex_horizontal(ui, child, allocatedw); 
+      } else {
+        layout_flex_vertical(ui, child);
+      }
+    }
 
     allocatedw = child->container.size.x;
     totalchildw += allocatedw;
