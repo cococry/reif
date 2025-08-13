@@ -7,6 +7,18 @@ static void _div_render(lf_ui_state_t* ui, lf_widget_t* widget);
 static void _div_shape(lf_ui_state_t* ui, lf_widget_t* widget);
 static void _div_calc_size(lf_ui_state_t* ui, lf_widget_t* widget);
 
+
+void 
+_set_scroll(lf_widget_t* widget, bool horizontal, float scroll) {
+  if(horizontal)
+    widget->scroll_offset.x = scroll;
+  else 
+    widget->scroll_offset.y = scroll;
+  for(uint32_t i = 0; i < widget->num_childs; i++) {
+    _set_scroll(widget->childs[i], horizontal,  scroll);
+  }
+}
+
 void 
 _div_handle_event(lf_ui_state_t* ui, lf_widget_t* widget, lf_event_t* event) {
   if(!lf_container_intersets_container(
@@ -94,7 +106,7 @@ _div_handle_event(lf_ui_state_t* ui, lf_widget_t* widget, lf_event_t* event) {
         lf_color_dim(ui->theme->scrollbar_props.color, 90.0f));
       ui->needs_render = true;
     }
-    else if (event->type == LF_EVENT_MOUSE_MOVE&& scrollbar->held) {
+    else if (event->type == LF_EVENT_MOUSE_MOVE && scrollbar->held) {
       if(i == LF_SCROLLBAR_VERTICAL) {
         float total_scrollable_area = widget->total_child_size.y - widget->container.size.y;
         float total_scrollbar_movable_area = widget->container.size.y - 
@@ -111,6 +123,7 @@ _div_handle_event(lf_ui_state_t* ui, lf_widget_t* widget, lf_event_t* event) {
           if (widget->scroll_offset.y <= -total_scrollable_area) {
             widget->scroll_offset.y = -total_scrollable_area;
           }
+          _set_scroll(widget, false, widget->scroll_offset.y);
 
           lf_widget_invalidate_layout(widget);
           lf_widget_shape(ui, widget);
@@ -133,6 +146,8 @@ _div_handle_event(lf_ui_state_t* ui, lf_widget_t* widget, lf_event_t* event) {
           if (widget->scroll_offset.x <= -total_scrollable_area) {
             widget->scroll_offset.x = -total_scrollable_area;
           }
+          printf("Setting offset to: %f\n", widget->scroll_offset.x);
+          _set_scroll(widget, true, widget->scroll_offset.x);
 
           lf_widget_invalidate_layout(widget);
           lf_widget_shape(ui, widget);
@@ -152,6 +167,8 @@ _div_render(lf_ui_state_t* ui, lf_widget_t* widget) {
     LF_WIDGET_SIZE_V2(widget),
     widget->props.color, widget->props.border_color, 
     widget->props.border_width, widget->props.corner_radius);
+
+  printf("Div scrolloffset: %f\n", div->base.scroll_offset.x);
  }
 
 void 

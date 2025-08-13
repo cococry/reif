@@ -95,7 +95,7 @@ _text_render(
       text_pos,
       widget->props.text_color,
       (lf_paragraph_props_t){
-        .wrap = text->wrap, 
+        .wrap = text->wrap + widget->scroll_offset.x, 
         .align = widget->props.text_align
       }
     );

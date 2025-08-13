@@ -94,6 +94,9 @@ struct lf_widget_t {
   float transition_time;
   lf_animation_func_t transition_func;
 
+  int32_t flex_grow;
+  bool flex_overflow, flex_fit_text;
+
   float cull_end_y, cull_start_y;
   float cull_end_x, cull_start_x;
 };
