@@ -146,7 +146,6 @@ _div_handle_event(lf_ui_state_t* ui, lf_widget_t* widget, lf_event_t* event) {
           if (widget->scroll_offset.x <= -total_scrollable_area) {
             widget->scroll_offset.x = -total_scrollable_area;
           }
-          printf("Setting offset to: %f\n", widget->scroll_offset.x);
           _set_scroll(widget, true, widget->scroll_offset.x);
 
           lf_widget_invalidate_layout(widget);

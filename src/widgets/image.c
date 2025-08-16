@@ -45,6 +45,9 @@ lf_image_t* _img_create(
     NULL
   );
 
+  lf_widget_set_fixed_width(ui, &img->base, img->width);
+  lf_widget_set_fixed_height(ui, &img->base, img->height);
+
   img->base.layout_type = LF_LAYOUT_NONE;
   lf_widget_add_child(parent, (lf_widget_t*)img);
 
@@ -125,6 +128,8 @@ lf_image_t* lf_image_create_ex_h(
   );
 
   img->base.layout_type = LF_LAYOUT_NONE;
+  img->base._fixed_width = true;
+  img->base._fixed_height = true;
   lf_widget_add_child(parent, (lf_widget_t*)img);
 
   return img;

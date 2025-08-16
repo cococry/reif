@@ -148,7 +148,8 @@ init_state(lf_ui_state_t* state, lf_window_t win) {
 
   state->root->props.color = state->theme->background_color;
   state->root->props.text_color = state->theme->text_color;
-  state->root->layout_type = LF_LAYOUT_VERTICAL;
+  state->root->layout_type = LF_LAYOUT_HORIZONTAL;
+  state->root->sizing_type = LF_SIZING_NONE;
   state->root->_fixed_width = true;
   state->root->_fixed_height = true;
 

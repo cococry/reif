@@ -44,7 +44,7 @@ struct lf_widget_t {
   void* user_data;
 
   lf_container_t container;
-  vec2s naturalsize, allocatedsize, minsize, fixedsize;
+  vec2s naturalsize, allocatedsize, fixedsize;
 
   lf_widget_props_t props, _rendered_props, _initial_props; 
   lf_widget_props_t _component_props;
@@ -96,6 +96,7 @@ struct lf_widget_t {
 
   int32_t flex_grow;
   bool flex_overflow, flex_fit_text;
+  vec2s flex_minsize;
 
   float cull_end_y, cull_start_y;
   float cull_end_x, cull_start_x;

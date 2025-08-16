@@ -24,7 +24,8 @@ typedef enum {
 } lf_justify_type_t;
 
 typedef enum {
-  LF_SIZING_FIT_PARENT = 0,
+  LF_SIZING_NONE = 0,
+  LF_SIZING_FIT_PARENT,
   LF_SIZING_FIT_CONTENT,
   LF_SIZING_GROW 
 } lf_sizing_type_t;
